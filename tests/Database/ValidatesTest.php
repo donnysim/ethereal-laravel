@@ -1,0 +1,94 @@
+<?php
+
+use Ethereal\Database\Ethereal;
+use Orchestra\Testbench\TestCase;
+
+class RelationsTest extends TestCase
+{
+    public function setUp()
+    {
+        parent::setUp();
+    }
+
+    /**
+     * @expectedException \Illuminate\Validation\ValidationException
+     */
+    public function testBaseValidation()
+    {
+        $model = new ValidationBaseStub();
+        static::assertFalse($model->valid());
+        static::assertTrue($model->invalid());
+
+        $model = new ValidationBaseStub(['email' => 'myagi@check.yi']);
+        static::assertTrue($model->valid());
+        static::assertTrue($model->validOrFail());
+        static::assertFalse($model->invalid());
+
+        $model = new ValidationBaseStub(['email' => '']);
+        $model->validOrFail();
+    }
+
+    public function testFullyValid()
+    {
+        $model = new ValidationBaseStub(['email' => 'myagi@check.yi']);
+        $model->setRelation('profile', new RelationsProfilesStub([
+            'name' => 'Chuck',
+        ]));
+
+        static::assertTrue($model->valid());
+        static::assertFalse($model->fullyValid());
+
+        $model->setRelation('profile', new RelationsProfilesStub([
+            'name' => 'Chuck',
+            'last_name' => 'Norris'
+        ]));
+
+        static::assertTrue($model->fullyValid());
+    }
+}
+
+class ValidationBaseStub extends Ethereal
+{
+    protected $table = 'users';
+
+    protected $guarded = [];
+
+    public function validationRules()
+    {
+        return [
+            'email' => ['required', 'email']
+        ];
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(RelationsRolesStub::class, 'role_user', 'user_id', 'role_id');
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(RelationsProfilesStub::class, 'user_id', 'id');
+    }
+}
+
+class RelationsProfilesStub extends Ethereal
+{
+    protected $table = 'profiles';
+
+    protected $guarded = [];
+
+    public function validationRules()
+    {
+        return [
+            'name' => 'required',
+            'last_name' => 'required',
+        ];
+    }
+}
+
+class RelationsRolesStub extends Ethereal
+{
+    protected $table = 'roles';
+
+    protected $guarded = [];
+}

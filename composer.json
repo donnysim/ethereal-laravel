@@ -1,0 +1,31 @@
+{
+    "name": "donnysim/ethereal",
+    "description": "",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "auth"
+    ],
+    "minimum-stability": "dev",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Donatas Šimkevičius"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "laravel/framework": "5.2.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0",
+        "phpspec/phpspec": "~2.1",
+        "orchestra/testbench": "~3.2",
+        "mockery/mockery": "0.9.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ethereal\\": "src"
+        }
+    }
+}
