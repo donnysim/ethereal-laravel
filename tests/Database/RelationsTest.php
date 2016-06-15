@@ -245,6 +245,38 @@ class RelationsTest extends TestCase
         $model->setRelation('hoRelation', new RelationsProfilesStub);
         static::assertInstanceOf(Ethereal::class, $model->getRelation('hoRelation'));
     }
+
+    public function testHasOnePush()
+    {
+        $model = new RelationsBaseStub;
+        $model->setAttribute('email', 'ethereal@laravel.test');
+        $model->setAttribute('password', 'dummy-text');
+
+        $relation = new RelationsProfilesStub;
+        $relation->setAttribute('name', 'My Name');
+        $relation->setAttribute('last_name', 'My Last Name');
+
+        $model->setRelation('hoRelation', $relation);
+        static::assertTrue($model->smartPush());
+
+        // Relation should be saved and linked to parent
+        static::assertTrue(DB::table('profiles')->where('user_id', $model->getKey())->exists());
+        static::assertTrue(DB::table('profiles')->where('user_id', $model->getKey())->where('name', 'My Name')->where('last_name', 'My Last Name')->exists());
+
+        // Resaving should have no effect
+        static::assertTrue($model->smartPush());
+        static::assertEquals(1, DB::table('profiles')->where('user_id', $model->getKey())->count());
+
+        // Resaving should successfully update model value
+        $relation->setAttribute('name', 'New Name');
+        static::assertTrue($model->smartPush());
+        static::assertTrue(DB::table('profiles')->where('user_id', $model->getKey())->where('name', 'New Name')->exists());
+
+        // Delete option should remove the item from relation
+        static::assertTrue($model->smartPush(['relations' => ['hoRelation' => Ethereal::OPTION_DELETE]]));
+        static::assertFalse(DB::table('profiles')->where('user_id', $model->getKey())->exists());
+        static::assertEquals(0, $model->getRelation('hoRelation')->count());
+    }
 }
 
 class RelationsBaseStub extends Ethereal
