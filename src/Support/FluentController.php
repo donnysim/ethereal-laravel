@@ -4,8 +4,8 @@ namespace Ethereal\Support;
 
 use ArrayAccess;
 use Closure;
-use Ethereal\Database\Ethereal;
 use Ethereal\Http\JsonResponse;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 /**
  * @property \Ethereal\Http\JsonResponse json
  */
-abstract class EtherealController extends Controller implements ArrayAccess
+abstract class FluentController extends Controller implements ArrayAccess
 {
     /**
      * Attribute values.
@@ -30,98 +30,22 @@ abstract class EtherealController extends Controller implements ArrayAccess
     protected $request;
 
     /**
+     * Dependency container.
+     *
+     * @var Container
+     */
+    protected $container;
+
+    /**
      * Controller constructor.
      *
      * @param $request
      */
-    public function __construct(Request $request)
+    public function __construct(Request $request, Container $container)
     {
         $this->request = $request;
+        $this->container = $container;
     }
-
-    /**
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Query\Builder $class
-     * @param \Closure $callback
-     * @return $this
-     */
-    protected function query($class, Closure $callback)
-    {
-        $builder = null;
-
-        if (is_object($class)) {
-            $builder = new Builders\QueryBuilder($class, $this);
-        } else {
-            $builder = new Builders\QueryBuilder($class::query(), $this);
-        }
-
-        $callback($builder);
-
-        return $this;
-    }
-
-    /**
-     * @param \Illuminate\Database\Eloquent\Model $class
-     * @param null|int $id
-     * @param \Closure $callback
-     * @return $this
-     */
-    protected function model($class, $id = null, Closure $callback = null)
-    {
-        $builder = null;
-
-        if (is_object($class)) {
-            $builder = new Builders\ModelBuilder($class, $this);
-        } elseif (is_numeric($id)) {
-            $builder = new Builders\ModelBuilder($class::findOrFail($id), $this);
-        } else {
-            $builder = new Builders\ModelBuilder(new $class, $this);
-        }
-
-        if ($id instanceof Closure) {
-            $id($builder);
-        } elseif ($callback instanceof Closure) {
-            $callback($builder);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Build a json response.
-     *
-     * @param Closure|null $callback
-     * @return \Ethereal\Http\JsonResponse|$this
-     */
-    protected function json(Closure $callback = null)
-    {
-        if ($callback instanceof Closure) {
-            $callback($this->json);
-
-            return $this;
-        }
-
-        return $this->json;
-    }
-
-    /**
-     * Get json response object.
-     *
-     * @return \Ethereal\Http\JsonResponse
-     */
-    private function getJsonProperty()
-    {
-        return $this->properties['json'] = new JsonResponse();
-    }
-
-    /**
-     * Authorize user action.
-     *
-     * @param string $action
-     * @param mixed $target
-     * @param array $params
-     * @return $this
-     */
-    abstract protected function authorize($action, $target = null, array $params = []);
 
     /**
      * is utilized for reading data from inaccessible members.
@@ -158,6 +82,18 @@ abstract class EtherealController extends Controller implements ArrayAccess
         } else {
             $this->properties[$name] = $value;
         }
+    }
+
+    /**
+     * is triggered by calling isset() or empty() on inaccessible members.
+     *
+     * @param $name string
+     * @return bool
+     * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.members
+     */
+    public function __isset($name)
+    {
+        return isset($this->properties[$name]);
     }
 
     /**
@@ -248,5 +184,112 @@ abstract class EtherealController extends Controller implements ArrayAccess
     public function offsetUnset($offset)
     {
         unset($this->properties);
+    }
+
+    /**
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Query\Builder $class
+     * @param \Closure $callback
+     * @return $this
+     */
+    protected function query($class, Closure $callback)
+    {
+        $builder = null;
+
+        if (is_object($class)) {
+            $builder = new Builders\QueryBuilder($class, $this);
+        } else {
+            $builder = new Builders\QueryBuilder($class::query(), $this);
+        }
+
+        $callback($builder);
+
+        return $this;
+    }
+
+    /**
+     * @param \Illuminate\Database\Eloquent\Model $class
+     * @param null|int $id
+     * @param \Closure $callback
+     * @return $this
+     */
+    protected function model($class, $id = null, Closure $callback = null)
+    {
+        $builder = null;
+
+        if (is_object($class)) {
+            $builder = new Builders\ModelBuilder($class, $this);
+        } elseif (is_numeric($id)) {
+            $builder = new Builders\ModelBuilder($class::findOrFail($id), $this);
+        } else {
+            $builder = new Builders\ModelBuilder(new $class, $this);
+        }
+
+        if ($id instanceof Closure) {
+            $id($builder);
+        } elseif ($callback instanceof Closure) {
+            $callback($builder);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Check if cached value exists, if not cache it, and store as result.
+     *
+     * @param string $name Store result as.
+     * @param string $key Cache key.
+     * @param \DateTime|int $duration Duration to remember. -1 means forever.
+     * @param \Closure $callback
+     * @return $this
+     */
+    protected function cacheAs($name, $key, $duration, Closure $callback)
+    {
+        /** @var \Illuminate\Cache\CacheManager|\Illuminate\Cache\Repository $cache */
+        $cache = $this->container->make('cache');
+
+        if ($duration === -1) {
+            $this[$name] = $cache->rememberForever($key, $callback);
+        } else {
+            $this[$name] = $cache->remember($key, $duration, $callback);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Build a json response.
+     *
+     * @param Closure|null $callback
+     * @return \Ethereal\Http\JsonResponse|$this
+     */
+    protected function json(Closure $callback = null)
+    {
+        if ($callback instanceof Closure) {
+            $callback($this->json);
+
+            return $this;
+        }
+
+        return $this->json;
+    }
+
+    /**
+     * Authorize user action.
+     *
+     * @param string $action
+     * @param mixed $target
+     * @param array $params
+     * @return $this
+     */
+    abstract protected function authorize($action, $target = null, array $params = []);
+
+    /**
+     * Get json response object.
+     *
+     * @return \Ethereal\Http\JsonResponse
+     */
+    private function getJsonProperty()
+    {
+        return $this->properties['json'] = new JsonResponse();
     }
 }
