@@ -289,6 +289,8 @@ class JsonResponse extends Response
         // in order to not overwrite a custom definition.
         elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
             $this->headers->set('Content-Type', 'application/json');
+        } else {
+            $this->headers->set('Content-Type', 'application/json');
         }
 
         return parent::sendHeaders();
