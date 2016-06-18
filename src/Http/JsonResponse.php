@@ -87,6 +87,19 @@ class JsonResponse extends Response
     }
 
     /**
+     * Create a new json response.
+     *
+     * @param mixed $data
+     * @param int $status
+     * @param array $headers
+     * @return static
+     */
+    public static function make($data = null, $status = 200, $headers = [])
+    {
+        return new static($data, $status, $headers);
+    }
+
+    /**
      * Set response data.
      *
      * @param mixed $data

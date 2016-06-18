@@ -6,9 +6,11 @@ use ArrayAccess;
 use Closure;
 use Ethereal\Http\JsonResponse;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Validation\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @property \Ethereal\Http\JsonResponse json
@@ -35,6 +37,13 @@ abstract class FluentController extends Controller implements ArrayAccess
      * @var Container
      */
     protected $container;
+
+    /**
+     * Last initiated validator.
+     *
+     * @var \Illuminate\Validation\Validator|null
+     */
+    protected $validator;
 
     /**
      * Controller constructor.
@@ -271,6 +280,57 @@ abstract class FluentController extends Controller implements ArrayAccess
         }
 
         return $this->json;
+    }
+
+    /**
+     * Validate current request.
+     *
+     * @param array $rules
+     * @param array $messages
+     * @param array $customAttributes
+     * @return \Ethereal\Support\FluentController
+     */
+    protected function validateRequest(array $rules = [], array $messages = [], array $customAttributes = [])
+    {
+        return $this->validate($this->request->all(), $rules, $messages, $customAttributes);
+    }
+
+    protected function validate(array $data = [], array $rules = [], array $messages = [], array $customAttributes = [])
+    {
+        $this->validator = $this->validationFactory()->make($data, $rules, $messages, $customAttributes);
+
+        if ($this->validator->fails()) {
+            $this->throwValidationException($this->validator);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get validation factory.
+     *
+     * @return Factory
+     */
+    protected function validationFactory()
+    {
+        return app(Factory::class);
+    }
+
+    /**
+     * Throw validation exception.
+     *
+     * @param \Illuminate\Validation\Validator $validator
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function throwValidationException($validator)
+    {
+        if ($this->request->ajax() && ! $this->request->pjax() || $this->request->wantsJson()) {
+            $response = JsonResponse::make(null, 422)->error($validator);
+        } else {
+            $response = redirect()->back()->withInput($this->request->input())->withErrors($validator->messages());
+        }
+
+        throw new ValidationException($validator, $response);
     }
 
     /**
