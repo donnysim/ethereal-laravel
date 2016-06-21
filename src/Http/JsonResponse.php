@@ -100,20 +100,48 @@ class JsonResponse extends Response
     }
 
     /**
-     * Set response data.
+     * Check if data is paginated.
      *
-     * @param mixed $data
-     * @return $this
+     * @param $data
+     * @return bool
      */
-    public function setData($data)
+    public static function isPaginated($data)
     {
-        if ($data === null) {
-            $data = new \ArrayObject();
+        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
+    }
+
+    /**
+     * Get pagination data without details.
+     *
+     * @param $data
+     * @return mixed
+     */
+    public static function getPaginationData($data)
+    {
+        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
+            $pagination = $data->toArray();
+
+            return $pagination['data'];
         }
 
-        $this->data = $data;
+        return $data['data'];
+    }
 
-        return $this;
+    /**
+     * Get pagination details without data.
+     *
+     * @param array|\Illuminate\Contracts\Support\Arrayable|\Illuminate\Pagination\AbstractPaginator $data
+     * @return array
+     */
+    public static function getPagination($data)
+    {
+        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
+            $pagination = $data->toArray();
+
+            return Arr::except($pagination, 'data');
+        }
+
+        return Arr::except($data, 'data');
     }
 
     /**
@@ -130,6 +158,23 @@ class JsonResponse extends Response
         }
 
         return $this->data;
+    }
+
+    /**
+     * Set response data.
+     *
+     * @param mixed $data
+     * @return $this
+     */
+    public function setData($data)
+    {
+        if ($data === null) {
+            $data = new \ArrayObject();
+        }
+
+        $this->data = $data;
+
+        return $this;
     }
 
     /**
@@ -207,30 +252,6 @@ class JsonResponse extends Response
     }
 
     /**
-     * Get structured response data.
-     */
-    public function getResponseData()
-    {
-        $responseData = [
-            'success' => $this->isSuccessful(),
-        ];
-
-        if ($this->error && (! $this->isSuccessful())) {
-            $responseData['error'] = $this->getErrorData();
-        }
-
-        if ($this->message) {
-            $responseData['message'] = $this->message;
-        }
-
-        if (count($this->attach) > 0) {
-            $responseData = array_merge_recursive($responseData, $this->attach);
-        }
-
-        return $responseData;
-    }
-
-    /**
      * Sends content for the current web response.
      *
      * @return Response
@@ -274,74 +295,27 @@ class JsonResponse extends Response
     }
 
     /**
-     * Sends HTTP headers.
-     *
-     * @return $this
+     * Get structured response data.
      */
-    public function sendHeaders()
+    public function getResponseData()
     {
-        if ($this->callback !== null) {
-            // Not using application/javascript for compatibility reasons with older browsers.
-            $this->headers->set('Content-Type', 'text/javascript');
+        $responseData = [
+            'success' => $this->isSuccessful(),
+        ];
+
+        if ($this->error && (! $this->isSuccessful())) {
+            $responseData['error'] = $this->getErrorData();
         }
 
-        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
-        // in order to not overwrite a custom definition.
-        elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
-            $this->headers->set('Content-Type', 'application/json');
-        } else {
-            $this->headers->set('Content-Type', 'application/json');
+        if ($this->message) {
+            $responseData['message'] = $this->message;
         }
 
-        return parent::sendHeaders();
-    }
-
-    /**
-     * Sets the JSONP callback.
-     *
-     * @param string|null $callback The JSONP callback or null to use none
-     * @return JsonResponse
-     * @throws \InvalidArgumentException When the callback name is not valid
-     */
-    public function callback($callback = null)
-    {
-        if ($callback !== null) {
-            // taken from http://www.geekality.net/2011/08/03/valid-javascript-identifier/
-            $pattern = '/^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\x{200C}\x{200D}]*+$/u';
-            $parts = explode('.', $callback);
-            foreach ($parts as $part) {
-                if (! preg_match($pattern, $part)) {
-                    throw new \InvalidArgumentException('The callback name is not valid.');
-                }
-            }
+        if (count($this->attach) > 0) {
+            $responseData = array_merge_recursive($responseData, $this->attach);
         }
 
-        $this->callback = $callback;
-
-        return $this;
-    }
-
-    /**
-     * Returns options used while encoding data to JSON.
-     *
-     * @return int
-     */
-    public function encodingOptions()
-    {
-        return $this->encodingOptions;
-    }
-
-    /**
-     * Sets options used while encoding data to JSON.
-     *
-     * @param int $encodingOptions
-     * @return JsonResponse
-     */
-    public function setEncodingOptionsOrig($encodingOptions)
-    {
-        $this->encodingOptions = (int) $encodingOptions;
-
-        return $this;
+        return $responseData;
     }
 
     /**
@@ -450,48 +424,87 @@ class JsonResponse extends Response
     }
 
     /**
-     * Check if data is paginated.
+     * Sends HTTP headers.
      *
-     * @param $data
-     * @return bool
+     * @return $this
      */
-    public static function isPaginated($data)
+    public function sendHeaders()
     {
-        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
+        if ($this->callback !== null) {
+            // Not using application/javascript for compatibility reasons with older browsers.
+            $this->headers->set('Content-Type', 'text/javascript');
+        }
+
+        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
+        // in order to not overwrite a custom definition.
+        elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
+            $this->headers->set('Content-Type', 'application/json');
+        } else {
+            $this->headers->set('Content-Type', 'application/json');
+        }
+
+        return parent::sendHeaders();
     }
 
     /**
-     * Get pagination data without details.
+     * Sets the JSONP callback.
      *
-     * @param $data
-     * @return mixed
+     * @param string|null $callback The JSONP callback or null to use none
+     * @return JsonResponse
+     * @throws \InvalidArgumentException When the callback name is not valid
      */
-    public static function getPaginationData($data)
+    public function callback($callback = null)
     {
-        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
-            $pagination = $data->toArray();
-
-            return $pagination['data'];
+        if ($callback !== null) {
+            // taken from http://www.geekality.net/2011/08/03/valid-javascript-identifier/
+            $pattern = '/^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\x{200C}\x{200D}]*+$/u';
+            $parts = explode('.', $callback);
+            foreach ($parts as $part) {
+                if (! preg_match($pattern, $part)) {
+                    throw new \InvalidArgumentException('The callback name is not valid.');
+                }
+            }
         }
 
-        return $data['data'];
+        $this->callback = $callback;
+
+        return $this;
     }
 
     /**
-     * Get pagination details without data.
+     * Returns options used while encoding data to JSON.
      *
-     * @param array|\Illuminate\Contracts\Support\Arrayable|\Illuminate\Pagination\AbstractPaginator $data
-     * @return array
+     * @return int
      */
-    public static function getPagination($data)
+    public function encodingOptions()
     {
-        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
-            $pagination = $data->toArray();
+        return $this->encodingOptions;
+    }
 
-            return Arr::except($pagination, 'data');
-        }
+    /**
+     * Sets options used while encoding data to JSON.
+     *
+     * @param int $encodingOptions
+     * @return JsonResponse
+     */
+    public function setEncodingOptionsOrig($encodingOptions)
+    {
+        $this->encodingOptions = (int) $encodingOptions;
 
-        return Arr::except($data, 'data');
+        return $this;
+    }
+
+    /**
+     * Set response status code.
+     *
+     * @param int $code
+     * @return $this
+     */
+    public function status($code)
+    {
+        $this->setStatusCode($code);
+
+        return $this;
     }
 
 }
