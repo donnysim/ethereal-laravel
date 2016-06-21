@@ -269,14 +269,12 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Build a json response.
      *
      * @param Closure|null $callback
-     * @return \Ethereal\Http\JsonResponse|$this
+     * @return \Ethereal\Http\JsonResponse
      */
     protected function json(Closure $callback = null)
     {
         if ($callback instanceof Closure) {
             $callback($this->json);
-
-            return $this;
         }
 
         return $this->json;
