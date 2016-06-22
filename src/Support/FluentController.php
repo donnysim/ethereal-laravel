@@ -48,7 +48,8 @@ abstract class FluentController extends Controller implements ArrayAccess
     /**
      * Controller constructor.
      *
-     * @param $request
+     * @param \Illuminate\Http\Request $request
+     * @param \Illuminate\Contracts\Container\Container $container
      */
     public function __construct(Request $request, Container $container)
     {
@@ -330,16 +331,6 @@ abstract class FluentController extends Controller implements ArrayAccess
 
         throw new ValidationException($validator, $response);
     }
-
-    /**
-     * Authorize user action.
-     *
-     * @param string $action
-     * @param mixed $target
-     * @param array $params
-     * @return $this
-     */
-    abstract protected function authorize($action, $target = null, array $params = []);
 
     /**
      * Get json response object.
