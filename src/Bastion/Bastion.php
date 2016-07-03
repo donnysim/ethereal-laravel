@@ -58,7 +58,7 @@ class Bastion
      */
     public function allow($authorities)
     {
-        return new GivesAbilities($authorities);
+        return new GivesAbilities(func_get_args());
     }
 
     /**
@@ -69,7 +69,7 @@ class Bastion
      */
     public function disallow($authorities)
     {
-        return new RemovesAbilities($authorities);
+        return new RemovesAbilities(func_get_args());
     }
 
     /**
@@ -80,7 +80,7 @@ class Bastion
      */
     public function assign($roles)
     {
-        return new AssignsRoles($roles);
+        return new AssignsRoles(func_get_args());
     }
 
     /**
@@ -91,7 +91,7 @@ class Bastion
      */
     public function retract($roles)
     {
-        return new RemovesRoles($roles);
+        return new RemovesRoles(func_get_args());
     }
 
     /**
