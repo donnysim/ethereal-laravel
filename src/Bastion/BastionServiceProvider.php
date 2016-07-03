@@ -3,6 +3,7 @@
 namespace Ethereal\Bastion;
 
 use Illuminate\Cache\ArrayStore;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
