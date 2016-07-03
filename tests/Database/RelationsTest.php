@@ -12,7 +12,7 @@ class RelationsTest extends TestCase
 
         $this->artisan('migrate', [
             '--database' => 'ethereal',
-            '--realpath' => __DIR__ . '/../../migrations'
+            '--realpath' => __DIR__ . '/../migrations'
         ]);
     }
 
@@ -92,19 +92,19 @@ class RelationsTest extends TestCase
         static::assertTrue($model->smartPush());
 
         // Relation should be saved and linked to parent
-        static::assertTrue(DB::table('roles')->where('slug', 'user.index')->exists());
+        static::assertTrue(DB::table('test_roles')->where('slug', 'user.index')->exists());
         static::assertTrue(DB::table('role_user')->where('role_id', $relation->getKey())->where('user_id', $model->getKey())->exists());
 
         // Resaving should have no effect
         static::assertTrue($model->smartPush());
-        static::assertEquals(1, DB::table('roles')->where('slug', 'user.index')->count());
+        static::assertEquals(1, DB::table('test_roles')->where('slug', 'user.index')->count());
         static::assertEquals(1, DB::table('role_user')->where('role_id', $relation->getKey())->where('user_id', $model->getKey())->count());
 
         // Resaving should successfully update model value
         $relation->setAttribute('slug', 'user.edit');
         static::assertTrue($model->smartPush());
-        static::assertFalse(DB::table('roles')->where('slug', 'user.index')->exists());
-        static::assertEquals(1, DB::table('roles')->where('slug', 'user.edit')->count());
+        static::assertFalse(DB::table('test_roles')->where('slug', 'user.index')->exists());
+        static::assertEquals(1, DB::table('test_roles')->where('slug', 'user.edit')->count());
 
         // Detaching option should remove the relation
         static::assertTrue($model->smartPush(['relations' => ['btmRelation' => Ethereal::OPTION_DETACH]]));
@@ -310,7 +310,7 @@ class RelationsProfilesStub extends Ethereal
 
 class RelationsRolesStub extends Ethereal
 {
-    protected $table = 'roles';
+    protected $table = 'test_roles';
 
     protected $guarded = [];
 }

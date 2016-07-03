@@ -18,6 +18,13 @@ use InvalidArgumentException;
 trait HandlesRelations
 {
     /**
+     * Whether to use smart relations setting.
+     *
+     * @var bool
+     */
+    protected $userSmartRelations = true;
+
+    /**
      * Save all relations.
      *
      * @param array|Collection $options
@@ -87,6 +94,10 @@ trait HandlesRelations
      */
     public function setRelation($name, $value)
     {
+        if (! $this->userSmartRelations) {
+            return $this->setRawRelation($name, $value);
+        }
+
         if ($value === null) {
             unset($this->relations[$name]);
         } else {

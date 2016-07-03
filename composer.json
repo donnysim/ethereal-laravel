@@ -27,5 +27,10 @@
         "psr-4": {
             "Ethereal\\": "src"
         }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests"
+        ]
     }
 }
