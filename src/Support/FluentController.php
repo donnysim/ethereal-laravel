@@ -269,13 +269,15 @@ abstract class FluentController extends Controller implements ArrayAccess
     /**
      * Build a json response.
      *
-     * @param Closure|null $callback
+     * @param array|Closure|null $payload
      * @return \Ethereal\Http\JsonResponse
      */
-    protected function json(Closure $callback = null)
+    protected function json($payload = null)
     {
-        if ($callback instanceof Closure) {
-            $callback($this->json);
+        if (is_array($payload)) {
+            $this->json->attachData($payload);
+        } elseif ($payload instanceof Closure) {
+            $payload($this->json);
         }
 
         return $this->json;
@@ -294,6 +296,15 @@ abstract class FluentController extends Controller implements ArrayAccess
         return $this->validate($this->request->all(), $rules, $messages, $customAttributes);
     }
 
+    /**
+     * Validate data, if validation fails, throw an exception.
+     *
+     * @param array $data
+     * @param array $rules
+     * @param array $messages
+     * @param array $customAttributes
+     * @return $this
+     */
     protected function validate(array $data = [], array $rules = [], array $messages = [], array $customAttributes = [])
     {
         $this->validator = $this->validationFactory()->make($data, $rules, $messages, $customAttributes);
@@ -323,7 +334,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      */
     protected function throwValidationException($validator)
     {
-        if ($this->request->ajax() && ! $this->request->pjax() || $this->request->wantsJson()) {
+        if (($this->request->ajax() && ! $this->request->pjax()) || $this->request->wantsJson()) {
             $response = JsonResponse::make(null, 422)->error($validator);
         } else {
             $response = redirect()->back()->withInput($this->request->input())->withErrors($validator->messages());
