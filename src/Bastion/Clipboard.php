@@ -100,16 +100,16 @@ class Clipboard
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @return array [$allowed, $forbidden]
      */
-    protected function getAbilityMap(Model $authority)
+    public function getAbilityMap(Model $authority)
     {
         $abilities = $this->getAbilities($authority);
 
         return [
             $abilities->filter(function ($value) {
-                return ((bool)$value['forbidden']) === false;
+                return ((bool) $value['forbidden']) === false;
             })->keyBy('identifier'),
             $abilities->filter(function ($value) {
-                return ((bool)$value['forbidden']) === true;
+                return ((bool) $value['forbidden']) === true;
             })->keyBy('identifier'),
         ];
     }
@@ -227,7 +227,7 @@ class Clipboard
             return $available->count() === 0;
         }
 
-        return $available->count() === count((array)$roles);
+        return $available->count() === count((array) $roles);
     }
 
     /**
