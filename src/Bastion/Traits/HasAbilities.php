@@ -29,6 +29,17 @@ trait HasAbilities
     }
 
     /**
+     * Get all of the model's abilities grouped by allowed and forbidden.
+     * The returned value is an array [allowed, forbidden].
+     *
+     * @return array
+     */
+    public function getAbilitiesMap()
+    {
+        return Helper::clipboard()->getAbilityMap($this);
+    }
+
+    /**
      * Give abilities to the model.
      *
      * @param $ablitity
