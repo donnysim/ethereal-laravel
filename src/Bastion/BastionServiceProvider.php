@@ -8,15 +8,15 @@ use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
 {
-    /**
-     * Register the service provider.
-     *
-     * @return void
-     */
     public function register()
     {
         $this->registerClipboard();
         $this->registerBastion();
+    }
+
+    public function boot()
+    {
+        $this->registerAtGate();
     }
 
     protected function registerClipboard()
@@ -36,5 +36,12 @@ class BastionServiceProvider extends ServiceProvider
 
             return $bastion;
         });
+    }
+
+    protected function registerAtGate()
+    {
+        $gate = $this->app->make(Gate::class);
+        $clipboard = $this->app->make(Clipboard::class);
+        $clipboard->registerAt($gate);
     }
 }
