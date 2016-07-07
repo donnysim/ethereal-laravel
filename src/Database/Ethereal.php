@@ -2,6 +2,7 @@
 
 namespace Ethereal\Database;
 
+use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -16,6 +17,13 @@ class Ethereal extends Model
     const OPTION_ATTACH = 16;
     const OPTION_SYNC = 32;
     const OPTION_DETACH = 64;
+
+    /**
+     * Fillable relations.
+     *
+     * @var string[]
+     */
+    protected $fillableRelations = [];
 
     /**
      * Save model and relations. When saving relations, they are linked to this model.
@@ -47,4 +55,34 @@ class Ethereal extends Model
 
         return true;
     }
+
+    /**
+     * Fill attributes and relations.
+     *
+     * @param array $attributes
+     * @return $this
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    public function smartFill(array $attributes)
+    {
+        $totallyGuarded = $this->totallyGuarded();
+
+        foreach ($this->fillableFromArray($attributes) as $key => $value) {
+            $key = $this->removeTableFromKey($key);
+
+            // The developers may choose to place some attributes in the "fillable"
+            // array, which means only those attributes may be set through mass
+            // assignment to the model, and all others will just be ignored.
+            if ($this->isFillable($key)) {
+                $this->setAttribute($key, $value);
+            } elseif ($totallyGuarded) {
+                throw new MassAssignmentException($key);
+            } elseif (in_array($key, $this->fillableRelations, true)) {
+                $this->setRelation($key, $value);
+            }
+        }
+
+        return $this;
+    }
+
 }
