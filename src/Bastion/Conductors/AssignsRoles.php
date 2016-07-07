@@ -4,6 +4,7 @@ namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class AssignsRoles
 {
@@ -28,6 +29,7 @@ class AssignsRoles
      * Assign roles to authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array $authority
+     * @throws \InvalidArgumentException
      */
     public function to($authority)
     {
@@ -35,6 +37,10 @@ class AssignsRoles
         $roles = Helper::collectRoles($this->roles)->keyBy('id');
 
         foreach ($authorities as $auth) {
+            if (! $authority->exists) {
+                throw new InvalidArgumentException('Cannot assign roles [' . implode(', ', $this->roles) . '] for authority that does not exist.');
+            }
+
             $existingRoles = $this->getExistingRoles($auth)->keyBy('id');
             $missingRoles = $roles->keys()->diff($existingRoles->keys());
             $inserts = [];
