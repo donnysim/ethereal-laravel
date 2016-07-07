@@ -85,4 +85,14 @@ class Ethereal extends Model
         return $this;
     }
 
+    /**
+     * Set attribute ignoring setters.
+     *
+     * @param string $attribute
+     * @param mixed $value
+     */
+    public function setRawAttribute($attribute, $value)
+    {
+        $this->attributes[$attribute] = $value;
+    }
 }
