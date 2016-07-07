@@ -36,6 +36,7 @@ class Ethereal extends Model
     {
         $model = new static;
         $model->smartFill($attributes);
+        $model->save();
 
         return $model;
     }
