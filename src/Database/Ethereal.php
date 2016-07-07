@@ -32,9 +32,9 @@ class Ethereal extends Model
      * @return static
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
-    public static function create(array $attributes = [])
+    public static function smartCreate(array $attributes = [])
     {
-        $model = new static();
+        $model = new static;
         $model->smartFill($attributes);
 
         return $model;
