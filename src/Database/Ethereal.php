@@ -26,6 +26,21 @@ class Ethereal extends Model
     protected $fillableRelations = [];
 
     /**
+     * Save a new model and return the instance.
+     *
+     * @param array $attributes
+     * @return static
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    public static function create(array $attributes = [])
+    {
+        $model = new static();
+        $model->smartFill($attributes);
+
+        return $model;
+    }
+
+    /**
      * Save model and relations. When saving relations, they are linked to this model.
      *
      * @param array $options
