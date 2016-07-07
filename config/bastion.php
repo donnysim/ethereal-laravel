@@ -2,7 +2,7 @@
 
 return [
     /*
-     * Bastion specific tabbles.
+     * Bastion specific tables.
      */
     'tables' => [
         'assigned_roles' => 'assigned_roles',
