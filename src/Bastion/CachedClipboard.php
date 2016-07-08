@@ -69,8 +69,9 @@ class CachedClipboard extends Clipboard
     public function getAbilities(Model $authority)
     {
         $key = $this->getCacheKey($authority, 'abilities');
+        $abilities = $this->cache->get($key);
 
-        if ($abilities = $this->cache->get($key)) {
+        if (is_array($abilities)) {
             return $this->deserializeAbilities($abilities);
         }
 
