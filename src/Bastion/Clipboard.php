@@ -21,7 +21,7 @@ class Clipboard
      */
     public function registerAt(GateContract $gate)
     {
-        $gate->before(function ($authority, $ability, $arguments = [], $additional = null) {
+        $gate->before(function ($authority, $ability, $arguments = [], $additional = null) use ($gate) {
 
             list($model, $additional) = $this->parseGateArguments($arguments, $additional);
 
@@ -29,7 +29,7 @@ class Clipboard
                 return null;
             }
 
-            if ($this->check($authority, $ability, $model)) {
+            if (! $gate->has($ability) && $this->check($authority, $ability, $model)) {
                 return true;
             }
 
