@@ -192,12 +192,16 @@ trait HandlesRelations
      *
      * @param \Illuminate\Database\Eloquent\Relations\BelongsToMany $relation
      * @param $data
-     * @param int $options
+     * @param int|boolean $options if value is false, defaults will be used OPTION_SAVE | OPTION_ATTACH.
      * @return bool
      * @throws \Exception
      */
-    protected function saveBelongsToMany(BelongsToMany $relation, $data, $options = Ethereal::OPTION_SAVE | Ethereal::OPTION_ATTACH)
+    protected function saveBelongsToMany(BelongsToMany $relation, $data, $options = false)
     {
+        if ($options === false) {
+            $options = Ethereal::OPTION_SAVE | Ethereal::OPTION_ATTACH;
+        }
+
         // This relation requires the parent model to be exist
         if (! $this->exists) {
             return null;
