@@ -96,7 +96,8 @@ trait HasRoles
         $roles = is_array($role) ? $role : array_slice(func_get_args(), 1);
 
         $this->scopeJoinRoles($query);
-        $query->whereIn(Helper::rolesTable() . '.name', $roles);
+
+        return $query->whereIn(Helper::rolesTable() . '.name', $roles);
     }
 
     /**
@@ -109,7 +110,7 @@ trait HasRoles
         $assignedRolesTable = Helper::assignedRolesTable();
         $rolesTable = Helper::rolesTable();
 
-        $query
+        return $query
             ->leftJoin($assignedRolesTable, "{$assignedRolesTable}.entity_id", '=', "{$this->getTable()}.{$this->getKeyName()}")
             ->where("{$assignedRolesTable}.entity_type", $this->getMorphClass())
             ->leftJoin($rolesTable, "{$assignedRolesTable}.role_id", '=', "{$rolesTable}.id")
@@ -132,6 +133,8 @@ trait HasRoles
         foreach ($roles as $name) {
             $query->where("{$rolesTable}.name", $name);
         }
+
+        return $query;
     }
 
     /**
@@ -147,8 +150,10 @@ trait HasRoles
         $this->scopeJoinRoles($query);
         $rolesTable = Helper::rolesTable();
 
-        $query
+        return $query
             ->whereNotIn("{$rolesTable}.name", $roles)
             ->orWhereNull("{$rolesTable}.name"); // includes models that have no roles
     }
+
+
 }
