@@ -34,7 +34,7 @@ class RelationsTest extends TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testBelongsToManyIsSetProperly()
+    public function test_belongs_to_many_is_set_properly()
     {
         $model = new RelationsBaseStub;
 
@@ -79,7 +79,7 @@ class RelationsTest extends TestCase
         $model->setRelation('btmRelation', new Collection([new RelationsBaseStub]));
     }
 
-    public function testBelongsToManyPush()
+    public function test_belongs_to_many_push()
     {
         $model = new RelationsBaseStub;
         $model->setAttribute('email', 'ethereal@laravel.test');
@@ -139,7 +139,7 @@ class RelationsTest extends TestCase
     /**
      * @expectedException InvalidArgumentException
      */
-    public function testHasManyIsSetProperly()
+    public function test_has_many_is_set_properly()
     {
         $model = new RelationsBaseStub;
 
@@ -184,7 +184,7 @@ class RelationsTest extends TestCase
         $model->setRelation('hmRelation', new Collection([new RelationsBaseStub]));
     }
 
-    public function testHasManyPush()
+    public function test_has_many_push()
     {
         $model = new RelationsBaseStub;
         $model->setAttribute('email', 'ethereal@laravel.test');
@@ -221,7 +221,7 @@ class RelationsTest extends TestCase
         static::assertEquals(2, DB::table('profiles')->where('user_id', $model->getKey())->count());
     }
 
-    public function testHasOneIsSetProperly()
+    public function test_has_one_is_set_properly()
     {
         $model = new RelationsBaseStub;
 
@@ -246,7 +246,7 @@ class RelationsTest extends TestCase
         static::assertInstanceOf(Ethereal::class, $model->getRelation('hoRelation'));
     }
 
-    public function testHasOnePush()
+    public function test_has_one_push()
     {
         $model = new RelationsBaseStub;
         $model->setAttribute('email', 'ethereal@laravel.test');

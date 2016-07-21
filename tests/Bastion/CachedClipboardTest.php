@@ -17,7 +17,7 @@ class CachedClipboardTest extends BaseTestCase
         });
     }
 
-    public function testItCachesAbilities()
+    public function test_it_caches_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -30,7 +30,7 @@ class CachedClipboardTest extends BaseTestCase
         $this->assertEquals(['ban-users'], $this->getAbliities($user));
     }
 
-    public function testItCachesRoles()
+    public function test_it_caches_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -43,7 +43,7 @@ class CachedClipboardTest extends BaseTestCase
         $this->assertFalse($bastion->is($user)->a('moderator'));
     }
 
-    public function testItCanRefreshTheCache()
+    public function test_it_can_refresh_the_cache()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -63,7 +63,7 @@ class CachedClipboardTest extends BaseTestCase
         $this->assertEquals(['create-posts', 'edit-posts'], $this->getAbliities($user));
     }
 
-    public function testItCanRefreshTheCacheOnlyForOneUser()
+    public function test_it_can_refresh_the_cache_only_for_one_user()
     {
         $user1 = User::create(['email' => 'test@email.com', 'password' => 'empty']);
         $user2 = User::create(['email' => 'test2@email.com', 'password' => 'empty']);

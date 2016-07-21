@@ -13,7 +13,7 @@ class RelationsTest extends TestCase
     /**
      * @expectedException \Illuminate\Validation\ValidationException
      */
-    public function testBaseValidation()
+    public function test_base_validation()
     {
         $model = new ValidationBaseStub();
         static::assertFalse($model->valid());
@@ -28,7 +28,7 @@ class RelationsTest extends TestCase
         $model->validOrFail();
     }
 
-    public function testFullyValid()
+    public function test_fully_valid()
     {
         $model = new ValidationBaseStub(['email' => 'myagi@check.yi']);
         $model->setRelation('profile', new RelationsProfilesStub([

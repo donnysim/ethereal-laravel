@@ -2,7 +2,7 @@
 
 class BastionSimpleTest extends BaseTestCase
 {
-    public function testAWildardAbilityAllowsEverything()
+    public function test_awildard_ability_allows_everything()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -17,7 +17,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('*'));
     }
 
-    public function testAModelWildardAbilityAllowsAllActionsOnAModel()
+    public function test_amodel_wildard_ability_allows_all_actions_on_amodel()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -34,7 +34,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit', $user));
     }
 
-    public function testAModelBlanketWildardAbilityAllowsAllActionsOnAllItsModels()
+    public function test_amodel_blanket_wildard_ability_allows_all_actions_on_all_its_models()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -55,7 +55,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit', User::class));
     }
 
-    public function testAnActionWithAWildcardAllowsTheActionOnAllModels()
+    public function test_an_action_with_awildcard_allows_the_action_on_all_models()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -72,7 +72,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('delete', '*'));
     }
 
-    public function testDoubleWildcardAllowsEverything()
+    public function test_double_wildcard_allows_everything()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -99,7 +99,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('ban', User::class));
     }
 
-    public function testASimpleWildardAbilityDeniesModelAbilities()
+    public function test_asimple_wildard_ability_denies_model_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -111,7 +111,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('*', User::class));
     }
 
-    public function testAModelWildardAbilityDeniesSimpleAbilities()
+    public function test_amodel_wildard_ability_denies_simple_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -121,7 +121,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('*'));
     }
 
-    public function testAModelBlanketWildardAbilityDeniesSimpleAbilities()
+    public function test_amodel_blanket_wildard_ability_denies_simple_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -131,7 +131,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit'));
     }
 
-    public function testAnActionWithAWildcardDeniesSimpleAbilities()
+    public function test_an_action_with_awildcard_denies_simple_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 

@@ -2,7 +2,7 @@
 
 class BastionSimpleTest extends BaseTestCase
 {
-    public function testBastionCanGiveAndRemoveAbilities()
+    public function test_bastion_can_give_and_remove_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -21,7 +21,7 @@ class BastionSimpleTest extends BaseTestCase
         static::assertTrue($bastion->denies('edit-picture'));
     }
 
-    public function testBastionCanGiveAndRemoveWildcardAbilities()
+    public function test_bastion_can_give_and_remove_wildcard_abilities()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -36,7 +36,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit-site'));
     }
 
-    public function testBastionCanDenyAccessIfSetToWorkExclusively()
+    public function test_bastion_can_deny_access_if_set_to_work_exclusively()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -51,7 +51,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('access-dashboard'));
     }
 
-    public function testBastionCanIgnoreDuplicateAbilityAllowances()
+    public function test_bastion_can_ignore_duplicate_ability_allowances()
     {
         $user1 = User::create(['email' => 'test@email.com', 'password' => 'empty']);
         $user2 = User::create(['email' => 'test2@email.com', 'password' => 'empty']);
@@ -71,7 +71,7 @@ class BastionSimpleTest extends BaseTestCase
         $bastion->allow('admin')->to('ban', $user1);
     }
 
-    public function testBastionCanGiveAndRemoveRoles()
+    public function test_bastion_can_give_and_remove_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -90,7 +90,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit-site'));
     }
 
-    public function testBastionCanIgnoreDuplicateRoleAssignments()
+    public function test_bastion_can_ignore_duplicate_role_assignments()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -98,7 +98,7 @@ class BastionSimpleTest extends BaseTestCase
         $bastion->assign('admin')->to($user);
     }
 
-    public function testBastionCanDisallowAbilitiesOnRoles()
+    public function test_bastion_can_disallow_abilities_on_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -109,7 +109,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertTrue($bastion->denies('edit-site'));
     }
 
-    public function testBastionCanCheckUserRoles()
+    public function test_bastion_can_check_user_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
@@ -128,7 +128,7 @@ class BastionSimpleTest extends BaseTestCase
         $this->assertFalse($bastion->is($user)->an('admin'));
     }
 
-    public function testBastionCanCheckMultipleUserRoles()
+    public function test_bastion_can_check_multiple_user_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
