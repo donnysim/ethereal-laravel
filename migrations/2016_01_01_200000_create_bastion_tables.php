@@ -57,9 +57,9 @@ class CreateBastionTables extends Migration
      */
     public function down()
     {
-        Schema::drop(Helper::permissionsTable());
-        Schema::drop(Helper::assignedRolesTable());
-        Schema::drop(Helper::rolesTable());
-        Schema::drop(Helper::abilitiesTable());
+        Schema::dropIfExists(Helper::permissionsTable());
+        Schema::dropIfExists(Helper::assignedRolesTable());
+        Schema::dropIfExists(Helper::rolesTable());
+        Schema::dropIfExists(Helper::abilitiesTable());
     }
 }
