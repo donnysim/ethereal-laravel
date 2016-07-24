@@ -4,7 +4,9 @@ namespace Ethereal\Bastion;
 
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
+use Ethereal\Bastion\Conductors\DeniesAbilities;
 use Ethereal\Bastion\Conductors\GivesAbilities;
+use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -51,7 +53,7 @@ class Bastion
     }
 
     /**
-     * Start a chain, to allow the given role a ability.
+     * Start a chain, to allow the given authority an ability.
      *
      * @param $authorities
      * @return \Ethereal\Bastion\Conductors\GivesAbilities
@@ -62,7 +64,7 @@ class Bastion
     }
 
     /**
-     * Start a chain, to disallow the given role a ability.
+     * Start a chain, to disallow the given authority an ability.
      *
      * @param $authorities
      * @return \Ethereal\Bastion\Conductors\RemovesAbilities
@@ -73,7 +75,29 @@ class Bastion
     }
 
     /**
-     * Start a chain, to assign the given role to a model.
+     * Start a chain, to forbid the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\DeniesAbilities
+     */
+    public function forbid($authorities)
+    {
+        return new DeniesAbilities(func_get_args());
+    }
+
+    /**
+     * Start a chain, to forbid the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\PermitsAbilities
+     */
+    public function permit($authorities)
+    {
+        return new PermitsAbilities(func_get_args());
+    }
+
+    /**
+     * Start a chain, to assign the given role to a authority.
      *
      * @param $roles
      * @return \Ethereal\Bastion\Conductors\AssignsRoles
@@ -84,7 +108,7 @@ class Bastion
     }
 
     /**
-     * Start a chain, to retract the given role from a model.
+     * Start a chain, to retract the given role from a authority.
      *
      * @param $roles
      * @return \Ethereal\Bastion\Conductors\RemovesRoles

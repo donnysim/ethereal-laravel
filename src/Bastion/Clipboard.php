@@ -145,7 +145,7 @@ class Clipboard
                         ->where('entity_id', $authorityKey)
                         ->where('entity_type', $authorityMorph);
                 })->where("{$permissionsTable}.entity_type", $rolesMorph);
-            })->get(['abilities.*']);
+            })->get(['abilities.*', "{$permissionsTable}.forbidden"]);
     }
 
     /**

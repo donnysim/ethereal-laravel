@@ -27,13 +27,13 @@ class BastionSimpleTest extends BaseTestCase
 
         $bastion->allow($user)->to('*');
 
-        $this->assertTrue($bastion->allows('edit-site'));
-        $this->assertTrue($bastion->allows('ban-users'));
-        $this->assertTrue($bastion->allows('*'));
+        static::assertTrue($bastion->allows('edit-site'));
+        static::assertTrue($bastion->allows('ban-users'));
+        static::assertTrue($bastion->allows('*'));
 
         $bastion->disallow($user)->to('*');
 
-        $this->assertTrue($bastion->denies('edit-site'));
+        static::assertTrue($bastion->denies('edit-site'));
     }
 
     public function test_bastion_can_deny_access_if_set_to_work_exclusively()
@@ -44,11 +44,11 @@ class BastionSimpleTest extends BaseTestCase
             return true;
         });
 
-        $this->assertTrue($bastion->allows('access-dashboard'));
+        static::assertTrue($bastion->allows('access-dashboard'));
 
         $bastion->exclusive();
 
-        $this->assertTrue($bastion->denies('access-dashboard'));
+        static::assertTrue($bastion->denies('access-dashboard'));
     }
 
     public function test_bastion_can_ignore_duplicate_ability_allowances()
@@ -82,12 +82,12 @@ class BastionSimpleTest extends BaseTestCase
         $bastion->allow($editor)->to('edit-site');
         $bastion->assign($editor)->to($user);
 
-        $this->assertTrue($bastion->allows('edit-site'));
+        static::assertTrue($bastion->allows('edit-site'));
 
         $bastion->retract('admin')->from($user);
         $bastion->retract($editor)->from($user);
 
-        $this->assertTrue($bastion->denies('edit-site'));
+        static::assertTrue($bastion->denies('edit-site'));
     }
 
     public function test_bastion_can_ignore_duplicate_role_assignments()
@@ -106,43 +106,65 @@ class BastionSimpleTest extends BaseTestCase
         $bastion->disallow('admin')->to('edit-site');
         $bastion->assign('admin')->to($user);
 
-        $this->assertTrue($bastion->denies('edit-site'));
+        static::assertTrue($bastion->denies('edit-site'));
     }
 
     public function test_bastion_can_check_user_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
-        $this->assertTrue($bastion->is($user)->notA('moderator'));
-        $this->assertTrue($bastion->is($user)->notAn('editor'));
-        $this->assertFalse($bastion->is($user)->an('admin'));
+        static::assertTrue($bastion->is($user)->notA('moderator'));
+        static::assertTrue($bastion->is($user)->notAn('editor'));
+        static::assertFalse($bastion->is($user)->an('admin'));
 
         $bastion = $this->bastion($user = User::create(['email' => 'test2@email.com', 'password' => 'empty']));
 
         $bastion->assign('moderator')->to($user);
         $bastion->assign('editor')->to($user);
 
-        $this->assertTrue($bastion->is($user)->a('moderator'));
-        $this->assertTrue($bastion->is($user)->an('editor'));
-        $this->assertFalse($bastion->is($user)->notAn('editor'));
-        $this->assertFalse($bastion->is($user)->an('admin'));
+        static::assertTrue($bastion->is($user)->a('moderator'));
+        static::assertTrue($bastion->is($user)->an('editor'));
+        static::assertFalse($bastion->is($user)->notAn('editor'));
+        static::assertFalse($bastion->is($user)->an('admin'));
     }
 
     public function test_bastion_can_check_multiple_user_roles()
     {
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
-        $this->assertTrue($bastion->is($user)->notAn('editor', 'moderator'));
-        $this->assertTrue($bastion->is($user)->notAn('admin', 'moderator'));
+        static::assertTrue($bastion->is($user)->notAn('editor', 'moderator'));
+        static::assertTrue($bastion->is($user)->notAn('admin', 'moderator'));
 
         $bastion = $this->bastion($user = User::create(['email' => 'test2@email.com', 'password' => 'empty']));
         $bastion->assign('moderator')->to($user);
         $bastion->assign('editor')->to($user);
 
-        $this->assertTrue($bastion->is($user)->a('subscriber', 'moderator'));
-        $this->assertTrue($bastion->is($user)->an('admin', 'editor'));
-        $this->assertTrue($bastion->is($user)->all('editor', 'moderator'));
-        $this->assertFalse($bastion->is($user)->notAn('editor', 'moderator'));
-        $this->assertFalse($bastion->is($user)->all('admin', 'moderator'));
+        static::assertTrue($bastion->is($user)->a('subscriber', 'moderator'));
+        static::assertTrue($bastion->is($user)->an('admin', 'editor'));
+        static::assertTrue($bastion->is($user)->all('editor', 'moderator'));
+        static::assertFalse($bastion->is($user)->notAn('editor', 'moderator'));
+        static::assertFalse($bastion->is($user)->all('admin', 'moderator'));
+    }
+
+    public function test_bastion_can_forbid_and_permit_ability()
+    {
+        $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
+        $bastion->assign('moderator')->to($user);
+        $bastion->allow('moderator')->to('*', '*');
+
+        static::assertTrue($bastion->allows('access-dashboard'));
+
+        $bastion->forbid('moderator')->to('access-dashboard');
+
+        static::assertTrue($bastion->denies('access-dashboard'));
+
+        $bastion->forbid($user)->to('access-tools');
+
+        static::assertTrue($bastion->denies('access-tools'));
+        static::assertTrue($bastion->denies('access-dashboard'));
+
+        $bastion->permit($user)->to('access-tools');
+
+        static::assertTrue($bastion->allows('access-tools'));
     }
 }

@@ -7,6 +7,16 @@ use Ethereal\Bastion\Helper;
 trait Ability
 {
     /**
+     * Get ability name.
+     *
+     * @return string
+     */
+    public function getAbilityName()
+    {
+        return $this->attributes['name'];
+    }
+
+    /**
      * Get the ability's "slug" attribute.
      *
      * @return string
