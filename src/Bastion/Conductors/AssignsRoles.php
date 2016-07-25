@@ -65,19 +65,17 @@ class AssignsRoles
      */
     protected function getExistingRoles(Model $authority)
     {
-        if (method_exists($authority, 'roles')) {
-            return $authority->roles;
-        }
-
         $rolesModel = Helper::rolesModel();
         $assignedRolesTable = Helper::assignedRolesTable();
 
-        return Helper::database()
-            ->table(Helper::rolesTable())
-            ->join($assignedRolesTable, "{$assignedRolesTable}.role_id", '=', "{$rolesModel->getTable()}.{$rolesModel->getKeyName()}")
-            ->where("{$assignedRolesTable}.entity_id", $authority->getKey())
-            ->where("{$assignedRolesTable}.entity_type", $authority->getMorphClass())
-            ->get(["{$rolesModel->getTable()}.*"]);
+        return collect(
+            Helper::database()
+                ->table(Helper::rolesTable())
+                ->join($assignedRolesTable, "{$assignedRolesTable}.role_id", '=', "{$rolesModel->getTable()}.{$rolesModel->getKeyName()}")
+                ->where("{$assignedRolesTable}.entity_id", $authority->getKey())
+                ->where("{$assignedRolesTable}.entity_type", $authority->getMorphClass())
+                ->get(["{$rolesModel->getTable()}.*"])
+        );
     }
 
     /**

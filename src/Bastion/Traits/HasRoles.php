@@ -22,6 +22,7 @@ trait HasRoles
      * Assign the given roles to the model.
      *
      * @param string|int|array $roles
+     * @return $this
      */
     public function assign($roles)
     {
@@ -90,6 +91,7 @@ trait HasRoles
      *
      * @param $query
      * @param string|string[] $role
+     * @return mixed
      */
     public function scopeWhereIs($query, $role)
     {
@@ -104,6 +106,7 @@ trait HasRoles
      * Join roles to the query.
      *
      * @param $query
+     * @return mixed
      */
     public function scopeJoinRoles($query)
     {
@@ -122,6 +125,7 @@ trait HasRoles
      *
      * @param $query
      * @param string|string[] $role
+     * @return mixed
      */
     public function scopeWhereIsAll($query, $role)
     {
@@ -142,6 +146,7 @@ trait HasRoles
      *
      * @param $query
      * @param string|string[] $role
+     * @return mixed
      */
     public function scopeWhereIsNot($query, $role)
     {

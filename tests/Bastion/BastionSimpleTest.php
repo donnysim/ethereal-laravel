@@ -95,7 +95,18 @@ class BastionSimpleTest extends BaseTestCase
         $bastion = $this->bastion($user = User::create(['email' => 'test@email.com', 'password' => 'empty']));
 
         $bastion->assign('admin')->to($user);
+
+        static::assertEquals(1,
+            \Ethereal\Bastion\Helper::database()->table(\Ethereal\Bastion\Helper::assignedRolesTable())
+                ->where('entity_id', $user->getKey())->count()
+        );
+
         $bastion->assign('admin')->to($user);
+
+        static::assertEquals(1,
+            \Ethereal\Bastion\Helper::database()->table(\Ethereal\Bastion\Helper::assignedRolesTable())
+            ->where('entity_id', $user->getKey())->count()
+        );
     }
 
     public function test_bastion_can_disallow_abilities_on_roles()
