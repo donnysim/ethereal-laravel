@@ -314,7 +314,7 @@ trait HandlesRelations
 
         // We can only save instance of collections
         if (! $data instanceof Collection) {
-            return;
+            return null;
         }
 
         if ($options & Ethereal::OPTION_SKIP) {
