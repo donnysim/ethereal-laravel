@@ -42,6 +42,35 @@ class Ethereal extends Model
     }
 
     /**
+     * Fill attributes and relations.
+     *
+     * @param array $attributes
+     * @return $this
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    public function smartFill(array $attributes)
+    {
+        $totallyGuarded = $this->totallyGuarded();
+
+        foreach ($this->fillableFromArray($attributes) as $key => $value) {
+            $key = $this->removeTableFromKey($key);
+
+            // The developers may choose to place some attributes in the "fillable"
+            // array, which means only those attributes may be set through mass
+            // assignment to the model, and all others will just be ignored.
+            if ($this->isFillable($key)) {
+                $this->setAttribute($key, $value);
+            } elseif ($totallyGuarded) {
+                throw new MassAssignmentException($key);
+            } elseif (in_array($key, $this->fillableRelations, true)) {
+                $this->setRelation($key, $value);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Save model and relations. When saving relations, they are linked to this model.
      *
      * @param array $options
@@ -73,35 +102,6 @@ class Ethereal extends Model
     }
 
     /**
-     * Fill attributes and relations.
-     *
-     * @param array $attributes
-     * @return $this
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
-     */
-    public function smartFill(array $attributes)
-    {
-        $totallyGuarded = $this->totallyGuarded();
-
-        foreach ($this->fillableFromArray($attributes) as $key => $value) {
-            $key = $this->removeTableFromKey($key);
-
-            // The developers may choose to place some attributes in the "fillable"
-            // array, which means only those attributes may be set through mass
-            // assignment to the model, and all others will just be ignored.
-            if ($this->isFillable($key)) {
-                $this->setAttribute($key, $value);
-            } elseif ($totallyGuarded) {
-                throw new MassAssignmentException($key);
-            } elseif (in_array($key, $this->fillableRelations, true)) {
-                $this->setRelation($key, $value);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
      * Set attribute ignoring setters.
      *
      * @param string $attribute
@@ -110,5 +110,25 @@ class Ethereal extends Model
     public function setRawAttribute($attribute, $value)
     {
         $this->attributes[$attribute] = $value;
+    }
+
+    /**
+     * Sanitize model.
+     *
+     * @return Ethereal
+     */
+    public function sanitize()
+    {
+        return $this;
+    }
+
+    /**
+     * Get sanitized model data as array.
+     *
+     * @return array
+     */
+    public function sanitizedArray()
+    {
+        return $this->replicate()->sanitize()->toArray();
     }
 }
