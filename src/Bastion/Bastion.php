@@ -30,15 +30,24 @@ class Bastion
     protected $gate;
 
     /**
+     * Object sanitizer.
+     *
+     * @var \Ethereal\Bastion\Sanitizer
+     */
+    private $sanitizer;
+
+    /**
      * Bastion constructor.
      *
      * @param \Illuminate\Contracts\Auth\Access\Gate|null $gate
      * @param \Ethereal\Bastion\Clipboard $clipboard
+     * @param \Ethereal\Bastion\Sanitizer $sanitizer
      */
-    public function __construct(Gate $gate, Clipboard $clipboard)
+    public function __construct(Gate $gate, Clipboard $clipboard, Sanitizer $sanitizer)
     {
         $this->gate = $gate;
         $this->clipboard = $clipboard;
+        $this->sanitizer = $sanitizer;
     }
 
     /**
@@ -224,5 +233,16 @@ class Bastion
         $this->clipboard->refreshFor($authority);
 
         return $this;
+    }
+
+    /**
+     * Sanitize target model.
+     *
+     * @param mixed $target
+     * @throws \InvalidArgumentException
+     */
+    public function sanitize(&$target)
+    {
+        $this->sanitizer->sanitize($target);
     }
 }

@@ -12,6 +12,7 @@ class BastionServiceProvider extends ServiceProvider
     {
         $this->registerClipboard();
         $this->registerBastion();
+        $this->registerSanitizer();
     }
 
     public function boot()
@@ -31,7 +32,8 @@ class BastionServiceProvider extends ServiceProvider
         $this->app->singleton(Bastion::class, function () {
             $bastion = new Bastion(
                 $this->app->make(Gate::class),
-                $this->app->make(Clipboard::class)
+                $this->app->make(Clipboard::class),
+                $this->app->make(Sanitizer::class)
             );
 
             return $bastion;
@@ -43,5 +45,12 @@ class BastionServiceProvider extends ServiceProvider
         $gate = $this->app->make(Gate::class);
         $clipboard = $this->app->make(Clipboard::class);
         $clipboard->registerAt($gate);
+    }
+
+    protected function registerSanitizer()
+    {
+        $this->app->singleton(Sanitizer::class, function () {
+            return new Sanitizer();
+        });
     }
 }
