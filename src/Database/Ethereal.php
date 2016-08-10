@@ -2,6 +2,7 @@
 
 namespace Ethereal\Database;
 
+use Ethereal\Bastion\Bastion;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -119,6 +120,8 @@ class Ethereal extends Model
      */
     public function sanitize()
     {
+        app(Bastion::class)->sanitize($this);
+
         return $this;
     }
 
