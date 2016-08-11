@@ -34,9 +34,10 @@ class Sanitizer
      * Sanitize given object.
      *
      * @param mixed $target
+     * @param array $options
      * @throws \InvalidArgumentException
      */
-    public function sanitize(&$target)
+    public function sanitize(&$target, array $options = [])
     {
         $isCollection = $target instanceof Traversable || is_array($target);
 
@@ -58,10 +59,10 @@ class Sanitizer
 
         if ($isCollection) {
             foreach ($target as &$item) {
-                $handler->sanitize($item);
+                $handler->sanitize($item, $options);
             }
         } else {
-            $handler->sanitize($target);
+            $handler->sanitize($target, $options);
         }
     }
 }

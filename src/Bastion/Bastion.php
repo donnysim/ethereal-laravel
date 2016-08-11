@@ -239,10 +239,11 @@ class Bastion
      * Sanitize target model.
      *
      * @param mixed $target
+     * @param array $options
      * @throws \InvalidArgumentException
      */
-    public function sanitize(&$target)
+    public function sanitize(&$target, array $options = [])
     {
-        $this->sanitizer->sanitize($target);
+        $this->sanitizer->sanitize($target, $options);
     }
 }
