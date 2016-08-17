@@ -7,8 +7,10 @@ use Closure;
 use Ethereal\Http\JsonResponse;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Validation\Factory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -197,7 +199,7 @@ abstract class FluentController extends Controller implements ArrayAccess
     }
 
     /**
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Query\Builder $class
+     * @param Model|\Illuminate\Database\Query\Builder $class
      * @param \Closure $callback
      * @return $this
      */
@@ -217,7 +219,7 @@ abstract class FluentController extends Controller implements ArrayAccess
     }
 
     /**
-     * @param \Illuminate\Database\Eloquent\Model $class
+     * @param Model $class
      * @param null|int $id
      * @param \Closure $callback
      * @return $this
@@ -278,6 +280,10 @@ abstract class FluentController extends Controller implements ArrayAccess
             $this->json->attachData($payload);
         } elseif ($payload instanceof Closure) {
             $payload($this->json);
+        } elseif ($payload instanceof Model) {
+            $this->json->attachData($payload->toArray());
+        } elseif ($payload instanceof Collection) {
+            $this->json->attachData($payload->toArray());
         }
 
         return $this->json;
