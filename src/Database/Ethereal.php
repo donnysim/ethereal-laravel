@@ -134,4 +134,14 @@ class Ethereal extends Model
     {
         return $this->replicate()->sanitize()->toArray();
     }
+
+    /**
+     * Get the fillable attributes for the model.
+     *
+     * @return array
+     */
+    public function getFillable()
+    {
+        return array_merge($this->fillable, $this->fillableRelations);
+    }
 }
