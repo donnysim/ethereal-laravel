@@ -3,6 +3,7 @@
 use Ethereal\Bastion\Bastion;
 use Ethereal\Bastion\Clipboard;
 use Ethereal\Bastion\Helper;
+use Ethereal\Bastion\Sanitizer;
 use Illuminate\Auth\Access\Gate;
 use Orchestra\Testbench\TestCase;
 
@@ -55,7 +56,7 @@ class BaseTestCase extends TestCase
 
     protected function bastion($authority = null)
     {
-        $bastion = new Bastion($this->gate($authority), Helper::clipboard());
+        $bastion = new Bastion($this->gate($authority), Helper::clipboard(), new Sanitizer());
 
         return $bastion;
     }

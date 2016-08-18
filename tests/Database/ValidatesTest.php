@@ -31,14 +31,14 @@ class ValidatesTest extends TestCase
     public function test_fully_valid()
     {
         $model = new ValidationBaseStub(['email' => 'myagi@check.yi']);
-        $model->setRelation('profile', new RelationsProfilesStub([
+        $model->setRelation('profile', new ValidatesProfilesStub([
             'name' => 'Chuck',
         ]));
 
         static::assertTrue($model->valid());
         static::assertFalse($model->fullyValid());
 
-        $model->setRelation('profile', new RelationsProfilesStub([
+        $model->setRelation('profile', new ValidatesProfilesStub([
             'name' => 'Chuck',
             'last_name' => 'Norris'
         ]));
@@ -62,16 +62,16 @@ class ValidationBaseStub extends Ethereal
 
     public function roles()
     {
-        return $this->belongsToMany(RelationsRolesStub::class, 'role_user', 'user_id', 'role_id');
+        return $this->belongsToMany(ValidatesRolesStub::class, 'role_user', 'user_id', 'role_id');
     }
 
     public function profile()
     {
-        return $this->hasOne(RelationsProfilesStub::class, 'user_id', 'id');
+        return $this->hasOne(ValidatesProfilesStub::class, 'user_id', 'id');
     }
 }
 
-class RelationsProfilesStub extends Ethereal
+class ValidatesProfilesStub extends Ethereal
 {
     protected $table = 'profiles';
 
@@ -86,7 +86,7 @@ class RelationsProfilesStub extends Ethereal
     }
 }
 
-class RelationsRolesStub extends Ethereal
+class ValidatesRolesStub extends Ethereal
 {
     protected $table = 'roles';
 

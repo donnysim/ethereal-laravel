@@ -66,12 +66,12 @@ class RelationsTest extends TestCase
         static::assertFalse($model->relationLoaded('btmRelation'));
 
         // Settings relation to model should wrap into collection
-        $model->setRelation('btmRelation', new RelationsRolesStub);
+        $model->setRelation('btmRelation', new ValidatesRolesStub);
         static::assertInstanceOf(Collection::class, $model->getRelation('btmRelation'));
         static::assertEquals(1, $model->getRelation('btmRelation')->count());
 
         // Settings relation to collection should keep it as is
-        $model->setRelation('btmRelation', new Collection([new RelationsRolesStub]));
+        $model->setRelation('btmRelation', new Collection([new ValidatesRolesStub]));
         static::assertInstanceOf(Collection::class, $model->getRelation('btmRelation'));
         static::assertEquals(1, $model->getRelation('btmRelation')->count());
 
@@ -85,7 +85,7 @@ class RelationsTest extends TestCase
         $model->setAttribute('email', 'ethereal@laravel.test');
         $model->setAttribute('password', 'dummy-text');
 
-        $relation = new RelationsRolesStub;
+        $relation = new ValidatesRolesStub;
         $relation->setAttribute('slug', 'user.index');
 
         $model->setRelation('btmRelation', $relation);
@@ -171,12 +171,12 @@ class RelationsTest extends TestCase
         static::assertFalse($model->relationLoaded('hmRelation'));
 
         // Settings relation to model should wrap into collection
-        $model->setRelation('hmRelation', new RelationsRolesStub);
+        $model->setRelation('hmRelation', new ValidatesRolesStub);
         static::assertInstanceOf(Collection::class, $model->getRelation('hmRelation'));
         static::assertEquals(1, $model->getRelation('hmRelation')->count());
 
         // Settings relation to collection should keep it as is
-        $model->setRelation('hmRelation', new Collection([new RelationsProfilesStub]));
+        $model->setRelation('hmRelation', new Collection([new ValidatesProfilesStub]));
         static::assertInstanceOf(Collection::class, $model->getRelation('hmRelation'));
         static::assertEquals(1, $model->getRelation('hmRelation')->count());
 
@@ -190,7 +190,7 @@ class RelationsTest extends TestCase
         $model->setAttribute('email', 'ethereal@laravel.test');
         $model->setAttribute('password', 'dummy-text');
 
-        $relation = new RelationsProfilesStub;
+        $relation = new ValidatesProfilesStub;
         $relation->setAttribute('name', 'My Name');
         $relation->setAttribute('last_name', 'My Last Name');
 
@@ -242,7 +242,7 @@ class RelationsTest extends TestCase
         static::assertFalse($model->relationLoaded('hoRelation'));
 
         // Settings relation to collection should keep it as is
-        $model->setRelation('hoRelation', new RelationsProfilesStub);
+        $model->setRelation('hoRelation', new ValidatesProfilesStub);
         static::assertInstanceOf(Ethereal::class, $model->getRelation('hoRelation'));
     }
 
@@ -252,7 +252,7 @@ class RelationsTest extends TestCase
         $model->setAttribute('email', 'ethereal@laravel.test');
         $model->setAttribute('password', 'dummy-text');
 
-        $relation = new RelationsProfilesStub;
+        $relation = new ValidatesProfilesStub;
         $relation->setAttribute('name', 'My Name');
         $relation->setAttribute('last_name', 'My Last Name');
 
@@ -287,17 +287,17 @@ class RelationsBaseStub extends Ethereal
 
     public function btmRelation()
     {
-        return $this->belongsToMany(RelationsRolesStub::class, 'role_user', 'user_id', 'role_id');
+        return $this->belongsToMany(ValidatesRolesStub::class, 'role_user', 'user_id', 'role_id');
     }
 
     public function hmRelation()
     {
-        return $this->hasMany(RelationsProfilesStub::class, 'user_id', 'id');
+        return $this->hasMany(ValidatesProfilesStub::class, 'user_id', 'id');
     }
 
     public function hoRelation()
     {
-        return $this->hasOne(RelationsProfilesStub::class, 'user_id', 'id');
+        return $this->hasOne(ValidatesProfilesStub::class, 'user_id', 'id');
     }
 }
 
