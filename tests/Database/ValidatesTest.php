@@ -3,7 +3,7 @@
 use Ethereal\Database\Ethereal;
 use Orchestra\Testbench\TestCase;
 
-class RelationsTest extends TestCase
+class ValidatesTest extends TestCase
 {
     public function setUp()
     {
