@@ -4,7 +4,7 @@ use Ethereal\Bastion\Helper;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateBastionTables extends Migration
+class TestCreateBastionTables extends Migration
 {
     /**
      * Run the migrations.
