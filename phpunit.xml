@@ -19,8 +19,6 @@
             <directory suffix=".php">./config</directory>
             <directory suffix=".php">./migrations</directory>
             <exclude>
-                <file>./app/Http/routes.php</file>
-                <file>./routes/web.php</file>
                 <directory suffix=".php">./vendor</directory>
             </exclude>
         </whitelist>
