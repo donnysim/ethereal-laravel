@@ -1,6 +1,6 @@
 <?php
 
-class BastionSimpleTest extends BaseTestCase
+class WildcardTest extends BaseTestCase
 {
     public function test_awildard_ability_allows_everything()
     {
