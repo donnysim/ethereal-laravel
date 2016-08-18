@@ -163,23 +163,12 @@ trait HandlesRelations
         } elseif (is_array($data)) {
 
             if (Arr::isAssoc($data)) {
-                // It's an object in array form
-                /** @var Ethereal $model */
-                $model = new $relatedModel($data);
-                $model->exists = isset($model[$model->getKeyName()]);
-                $container[] = $model;
+                $container[] = $this->createRelationModel($relatedModel, $data);
             } elseif (is_numeric(head($data)) && ! Arr::isAssoc($data)) {
                 return $data;
             } else {
                 foreach ($data as $item) {
-                    if ($item instanceof Model) {
-                        $container[] = $item;
-                    } else {
-                        /** @var Ethereal $model */
-                        $model = new $relatedModel($item);
-                        $model->exists = isset($model[$model->getKeyName()]);
-                        $container[] = $model;
-                    }
+                    $container[] = $this->createRelationModel($relatedModel, $item);
                 }
             }
         }
@@ -274,21 +263,10 @@ trait HandlesRelations
             $container[] = $data;
         } elseif (is_array($data)) {
             if (Arr::isAssoc($data)) {
-                // It's an object in array form
-                /** @var Ethereal $model */
-                $model = new $relatedModel($data);
-                $model->exists = isset($model[$model->getKeyName()]);
-                $container[] = $model;
+                $container[] = $this->createRelationModel($relatedModel, $data);
             } else {
                 foreach ($data as $item) {
-                    if ($item instanceof Model) {
-                        $container[] = $item;
-                    } else {
-                        /** @var Ethereal $model */
-                        $model = new $relatedModel($item);
-                        $model->exists = isset($model[$model->getKeyName()]);
-                        $container[] = $model;
-                    }
+                    $container[] = $this->createRelationModel($relatedModel, $item);
                 }
             }
         }
@@ -347,7 +325,7 @@ trait HandlesRelations
      *
      * @param \Illuminate\Database\Eloquent\Relations\HasOne $relation
      * @param $data
-     * @return array|\Illuminate\Support\Collection
+     * @return array|\Illuminate\Database\Eloquent\Model
      * @throws \InvalidArgumentException
      */
     protected function boxHasOne(HasOne $relation, $data)
@@ -359,13 +337,7 @@ trait HandlesRelations
         if ($data instanceof Model) {
             return $data;
         } elseif (Arr::isAssoc($data)) {
-            $relatedModel = get_class($relation->getRelated());
-
-            /** @var Ethereal $model */
-            $model = new $relatedModel($data);
-            $model->exists = isset($model[$model->getKeyName()]);
-
-            return $model;
+            return $this->createRelationModel($relation->getRelated(), $data);
         }
 
         return $data;
@@ -382,14 +354,14 @@ trait HandlesRelations
      */
     protected function saveHasOne(HasOne $relation, $data, $options = Ethereal::OPTION_SAVE)
     {
-        // This relation requires the parent model to be exist
+        // This relation requires the parent model to exist
         if (! $this->exists) {
             return null;
         }
 
         // We can only save instance of model
         if (! $data instanceof Model) {
-            return;
+            return null;
         }
 
         if ($options & Ethereal::OPTION_SKIP) {
@@ -414,5 +386,33 @@ trait HandlesRelations
         }
 
         return true;
+    }
+
+    /**
+     * Create new model and set existence.
+     *
+     * @param string|\Illuminate\Database\Eloquent\Model $relatedModel
+     * @param array|\Illuminate\Database\Eloquent\Model $data
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    protected function createRelationModel($relatedModel, $data)
+    {
+        if ($data instanceof Model) {
+            return $data;
+        }
+
+        if (! is_string($relatedModel)) {
+            $relatedModel = get_class($relatedModel);
+        }
+
+        /** @var Ethereal $model */
+        $model = new $relatedModel($data);
+        $keyName = $model->getKeyName();
+        if (isset($data[$keyName])) {
+            $model->setAttribute($keyName, $data[$keyName]);
+            $model->exists = $relatedModel::where($keyName, '=', $model->getKey())->exists();
+        }
+
+        return $model;
     }
 }
