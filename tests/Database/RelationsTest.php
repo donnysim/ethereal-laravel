@@ -58,8 +58,9 @@ class RelationsTest extends TestCase
 
         static::assertFalse(false, $first->exists);
 
+        // Relations should not be marked as existing if entry does not exist in database
         $model->setRelation('btmRelation', ['id' => 1, 'slug' => 'users.index', 'title' => 'Users list']);
-        static::assertTrue($model->getRelation('btmRelation')->first()->exists);
+        static::assertFalse($model->getRelation('btmRelation')->first()->exists);
 
         // Empty values should remove relation
         $model->setRelation('btmRelation', null);
@@ -164,7 +165,7 @@ class RelationsTest extends TestCase
         static::assertFalse(false, $first->exists);
 
         $model->setRelation('hmRelation', ['id' => 1, 'name' => 'Ethereal', 'last_name' => 'Laravel']);
-        static::assertTrue($model->getRelation('hmRelation')->first()->exists);
+        static::assertFalse($model->getRelation('hmRelation')->first()->exists);
 
         // Empty values should remove relation
         $model->setRelation('hmRelation', null);
@@ -224,7 +225,10 @@ class RelationsTest extends TestCase
 
     public function test_has_one_is_set_properly()
     {
-        $model = new RelationsBaseStub;
+        $model = new RelationsBaseStub([
+            'email' => 'test@test.com',
+            'password' => 'test'
+        ]);
 
         // Empty array should be set as sync array
         $model->setRelation('hoRelation', []);
@@ -235,6 +239,10 @@ class RelationsTest extends TestCase
         static::assertTrue($model->relationLoaded('hoRelation'));
         static::assertInstanceOf(Ethereal::class, $model->getRelation('hoRelation'));
 
+        $model->setRelation('hoRelation', ['id' => 1, 'name' => 'Ethereal', 'last_name' => 'Laravel']);
+        static::assertFalse($model->getRelation('hoRelation')->exists);
+
+        $model->smartPush();
         $model->setRelation('hoRelation', ['id' => 1, 'name' => 'Ethereal', 'last_name' => 'Laravel']);
         static::assertTrue($model->getRelation('hoRelation')->exists);
 
