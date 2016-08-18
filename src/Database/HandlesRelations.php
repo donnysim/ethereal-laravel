@@ -149,7 +149,7 @@ trait HandlesRelations
         $relatedModel = get_class($relation->getRelated());
 
         if ($data instanceof Collection) {
-            if (! $data->isEmpty() && $data->first() instanceof $relatedModel) {
+            if ($data->isEmpty() || $data->first() instanceof $relatedModel) {
                 return $data;
             }
 
@@ -261,7 +261,7 @@ trait HandlesRelations
         $relatedModel = get_class($relation->getRelated());
 
         if ($data instanceof Collection) {
-            if (! $data->isEmpty() && $data->first() instanceof $relatedModel) {
+            if ($data->isEmpty() || $data->first() instanceof $relatedModel) {
                 return $data;
             }
 
