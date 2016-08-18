@@ -22,7 +22,7 @@ trait HandlesRelations
      *
      * @var bool
      */
-    protected $userSmartRelations = true;
+    protected $useSmartRelations = true;
 
     /**
      * Save all relations.
@@ -94,7 +94,7 @@ trait HandlesRelations
      */
     public function setRelation($name, $value)
     {
-        if (! $this->userSmartRelations) {
+        if (! $this->useSmartRelations) {
             return $this->setRawRelation($name, $value);
         }
 
