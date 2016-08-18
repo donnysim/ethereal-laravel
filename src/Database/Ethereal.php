@@ -72,6 +72,31 @@ class Ethereal extends Model
     }
 
     /**
+     * Get the fillable attributes of a given array.
+     *
+     * @param  array $attributes
+     * @return array
+     */
+    protected function fillableFromArray(array $attributes)
+    {
+        if (count($this->getFillable()) > 0 && ! static::$unguarded) {
+            return array_intersect_key($attributes, array_flip(array_merge($this->getFillable(), $this->getFillableRelations())));
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Get fillable relations array.
+     *
+     * @return string[]
+     */
+    public function getFillableRelations()
+    {
+        return $this->fillableRelations;
+    }
+
+    /**
      * Save model and relations. When saving relations, they are linked to this model.
      *
      * @param array $options
@@ -133,15 +158,5 @@ class Ethereal extends Model
     public function sanitizedArray()
     {
         return $this->replicate()->sanitize()->toArray();
-    }
-
-    /**
-     * Get the fillable attributes for the model.
-     *
-     * @return array
-     */
-    public function getFillable()
-    {
-        return array_merge($this->fillable, $this->fillableRelations);
     }
 }
