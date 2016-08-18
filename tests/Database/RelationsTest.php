@@ -221,6 +221,13 @@ class RelationsTest extends TestCase
         $model->setRelation('hmRelation', [$relation, ['name' => 'N', 'last_name' => 'LN']]);
         static::assertTrue($model->smartPush());
         static::assertEquals(2, DB::table('profiles')->where('user_id', $model->getKey())->count());
+
+        // Test hasMany sync option
+        $model->setRelation('hmRelation', [$relation]);
+        $model->smartPush(['relations' => ['hmRelation' => Ethereal::OPTION_SAVE | Ethereal::OPTION_SYNC]]);
+        unset($model['hmRelation']);
+        static::assertEquals(1, $model->hmRelation()->count());
+        static::assertEquals($relation->getKey(), $model->hmRelation()->first()->getKey());
     }
 
     public function test_has_one_is_set_properly()

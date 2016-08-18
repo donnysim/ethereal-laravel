@@ -14,6 +14,7 @@ use InvalidArgumentException;
 /**
  * @mixin Ethereal
  * TODO: refactor because a lot of code repeats
+ * TODO: dont use instanceof as it includes parent class (some relations)
  */
 trait HandlesRelations
 {
@@ -50,7 +51,7 @@ trait HandlesRelations
 
             $method = 'save' . last(explode('\\', get_class($relation)));
             if (method_exists($this, $method)) {
-                $result = $this->{$method}($relation, $model, $relationOptions);
+                $result = $this->{$method}($relation, $relationName, $model, $relationOptions);
 
                 if ($result === true) {
                     if ($storeWaitingRelations) {
@@ -185,7 +186,7 @@ trait HandlesRelations
      * @return bool
      * @throws \Exception
      */
-    protected function saveBelongsToMany(BelongsToMany $relation, $data, $options = false)
+    protected function saveBelongsToMany(BelongsToMany $relation, $relationName, $data, $options = false)
     {
         if ($options === false) {
             $options = Ethereal::OPTION_SAVE | Ethereal::OPTION_ATTACH;
@@ -283,7 +284,7 @@ trait HandlesRelations
      * @return bool|null|void
      * @throws \Exception
      */
-    protected function saveHasMany(HasMany $relation, $data, $options = Ethereal::OPTION_SAVE)
+    protected function saveHasMany(HasMany $relation, $relationName, $data, $options = Ethereal::OPTION_SAVE)
     {
         // This relation requires the parent model to be exist
         if (! $this->exists) {
@@ -315,6 +316,10 @@ trait HandlesRelations
                         })]);
                 }
             }
+        }
+
+        if ($options & Ethereal::OPTION_SYNC) {
+            $this->syncRelation($relation, $relationName, $data);
         }
 
         return true;
@@ -352,7 +357,7 @@ trait HandlesRelations
      * @return bool|null|void
      * @throws \Exception
      */
-    protected function saveHasOne(HasOne $relation, $data, $options = Ethereal::OPTION_SAVE)
+    protected function saveHasOne(HasOne $relation, $relationName, $data, $options = Ethereal::OPTION_SAVE)
     {
         // This relation requires the parent model to exist
         if (! $this->exists) {
@@ -414,5 +419,41 @@ trait HandlesRelations
         }
 
         return $model;
+    }
+
+    protected function syncRelation(Relation $relation, $relationName, $data)
+    {
+        // We can only sync collections
+        if (! $data instanceof Collection) {
+            return false;
+        }
+
+        $related = get_class($relation->getRelated());
+
+        if ($relation instanceof HasMany) {
+            /** @var \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
+            $query = $this->{$relationName}();
+            $this->fireSyncingEvent($relationName, $query, $data);
+
+            if ($data->isEmpty()) {
+                $query->delete();
+            } else {
+                $model = $data->first();
+                $keys = $data->pluck($model->getKeyName())->toArray();
+                $query->whereNotIn($model->getKeyName(), $keys)->delete();
+            }
+        }
+    }
+
+    protected function fireSyncingEvent($relationName, $query, $data)
+    {
+        if (isset(static::$dispatcher)) {
+            $eventResult = static::$dispatcher->until("eloquent.{$relationName}: " . static::class, [$query, $data, $this]);
+
+            // If event returns false, do not sync
+            if ($eventResult === false) {
+                return false;
+            }
+        }
     }
 }
