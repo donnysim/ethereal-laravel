@@ -30,7 +30,7 @@ class CreateBastionTables extends Migration
             $table->string('title')->nullable();
             $table->boolean('system')->default(0)->comment('Is system role, should not be deleted.');
             $table->boolean('private')->default(0)->comment('Is not visible for users or lower level roles.');
-            $table->integer('level')->default(1);
+            $table->integer('level')->unsigned()->default(1);
             $table->timestamps();
         });
 
