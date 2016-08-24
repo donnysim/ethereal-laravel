@@ -15,7 +15,7 @@ trait HasAbilities
      */
     public function abilities()
     {
-        return $this->morphToMany(Helper::abilityModelClass(), 'entity', Helper::permissionsTable());
+        return $this->morphToMany(Helper::abilityModelClass(), 'entity', Helper::permissionsTable(), null, 'ability_id');
     }
 
     /**

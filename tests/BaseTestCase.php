@@ -15,7 +15,7 @@ class BaseTestCase extends TestCase
 
         $this->artisan('migrate', [
             '--database' => 'ethereal',
-            '--realpath' => __DIR__ . '/../migrations',
+            '--realpath' => __DIR__ . '/migrations',
         ]);
 
         $this->app->singleton(Clipboard::class, function () {
@@ -44,12 +44,12 @@ class BaseTestCase extends TestCase
             ],
 
             'models' => [
-                'ability' => Ability::class,
-                'role' => Role::class,
+                'ability' => TestAbilityModel::class,
+                'role' => TestRoleModel::class,
             ],
 
             'authorities' => [
-                User::class,
+                TestUserModel::class,
             ]
         ]);
     }
@@ -72,39 +72,4 @@ class BaseTestCase extends TestCase
         return $gate;
     }
 }
-
-class Role extends \Illuminate\Database\Eloquent\Model
-{
-    use \Ethereal\Bastion\Traits\Role, \Ethereal\Bastion\Traits\HasAbilities;
-
-    protected $table = 'roles';
-
-    protected $guarded = [];
-}
-
-class Ability extends \Illuminate\Database\Eloquent\Model
-{
-    use \Ethereal\Bastion\Traits\Ability;
-
-    protected $table = 'abilities';
-
-    protected $guarded = [];
-}
-
-class User extends \Illuminate\Database\Eloquent\Model
-{
-    use \Ethereal\Bastion\Traits\HasRoles, \Ethereal\Bastion\Traits\HasAbilities;
-
-    protected $table = 'users';
-
-    protected $guarded = [];
-}
-
-class Profile extends \Illuminate\Database\Eloquent\Model
-{
-    protected $table = 'profiles';
-
-    protected $guarded = [];
-}
-
 
