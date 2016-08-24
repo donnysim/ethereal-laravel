@@ -16,6 +16,7 @@ class CreateBastionTables extends Migration
         Schema::create(Helper::abilitiesTable(), function (Blueprint $table) {
             $table->increments('id');
             $table->string('name');
+            $table->string('title')->nullable();
             $table->integer('entity_id')->unsigned()->nullable();
             $table->string('entity_type')->nullable();
             $table->timestamps();
