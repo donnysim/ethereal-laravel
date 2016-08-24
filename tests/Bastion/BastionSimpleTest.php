@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Foundation\Auth\User;
+
 class BastionSimpleTest extends BaseTestCase
 {
     public function test_bastion_can_give_and_remove_abilities()
@@ -105,7 +107,7 @@ class BastionSimpleTest extends BaseTestCase
 
         static::assertEquals(1,
             \Ethereal\Bastion\Helper::database()->table(\Ethereal\Bastion\Helper::assignedRolesTable())
-            ->where('entity_id', $user->getKey())->count()
+                ->where('entity_id', $user->getKey())->count()
         );
     }
 
@@ -177,5 +179,22 @@ class BastionSimpleTest extends BaseTestCase
         $bastion->permit($user)->to('access-tools');
 
         static::assertTrue($bastion->allows('access-tools'));
+    }
+
+    public function test_bastion_can_allow_abilities_from_a_defined_callback()
+    {
+        $user = TestUserModel::random(true);
+        $user->smartPush();
+
+        $bastion = $this->bastion($user);
+        $bastion->define('edit', function ($user, $profile) {
+            if (! $profile instanceof TestProfileModel) {
+                return null;
+            }
+
+            return $user->id == $profile->user_id;
+        });
+        static::assertTrue($bastion->allows('edit', new TestProfileModel(['user_id' => $user->id])));
+        static::assertFalse($bastion->allows('edit', new TestProfileModel(['user_id' => 99])));
     }
 }
