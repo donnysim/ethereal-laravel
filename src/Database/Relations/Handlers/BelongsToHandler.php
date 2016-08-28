@@ -26,6 +26,16 @@ class BelongsToHandler extends BaseRelationHandler
     }
 
     /**
+     * Validate relation data.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function validate()
+    {
+        $this->validateClass($this->data);
+    }
+
+    /**
      * Save relation data.
      *
      * @return bool
@@ -58,16 +68,6 @@ class BelongsToHandler extends BaseRelationHandler
         }
 
         return true;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $this->validateClass($this->data);
     }
 
     /**

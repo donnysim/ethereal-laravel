@@ -57,27 +57,12 @@ class RelationProcessor
         $this->buildQueue($model);
     }
 
-    public function handle()
-    {
-        $this->handleBeforeParent();
-
-        $this->rootModel->save();
-
-        $this->handleAfterParent();
-
-        return true;
-    }
-
-    protected function handleBeforeParent()
-    {
-        $this->runQueue($this->before);
-    }
-
-    protected function handleAfterParent()
-    {
-        $this->runQueue($this->after);
-    }
-
+    /**
+     * Build before and after event queues.
+     *
+     * @param $data
+     * @param string $optionsRoot
+     */
     protected function buildQueue($data, $optionsRoot = '')
     {
         if ($data instanceof Model) {
@@ -91,37 +76,12 @@ class RelationProcessor
         }
     }
 
-    protected function runQueue(array $queue)
-    {
-        while ($action = array_shift($queue)) {
-            if ($action instanceof RelationHandler) {
-                $action->save();
-            } elseif ($action instanceof \Closure) {
-                $action();
-            }
-        }
-    }
-
     /**
-     * Append action to before queue.
+     * Build queue events for parent and it's relations.
      *
-     * @param mixed $action
+     * @param \Illuminate\Database\Eloquent\Model $parent
+     * @param string $optionsRoot
      */
-    public function before($action)
-    {
-        $this->before[] = $action;
-    }
-
-    /**
-     * Append action to after queue.
-     *
-     * @param mixed $action
-     */
-    public function after($action)
-    {
-        $this->after[] = $action;
-    }
-
     protected function buildRelationsQueue(Model $parent, $optionsRoot = '')
     {
         foreach ($parent->getRelations() as $relationName => $data) {
@@ -151,6 +111,13 @@ class RelationProcessor
         }
     }
 
+    /**
+     * Get name for relation options.
+     *
+     * @param string $root
+     * @param string $relation
+     * @return string
+     */
     protected function getRelationOptionsName($root, $relation)
     {
         if ($root === '') {
@@ -173,5 +140,74 @@ class RelationProcessor
         }
 
         return $this->options['relations']->get($key);
+    }
+
+    /**
+     * Handle all relation processing.
+     * This includes parent saving.
+     *
+     * @return bool
+     */
+    public function handle()
+    {
+        $this->handleBeforeParent();
+
+        $this->rootModel->save();
+
+        $this->handleAfterParent();
+
+        return true;
+    }
+
+    /**
+     * Process events before parent model save.
+     */
+    protected function handleBeforeParent()
+    {
+        $this->runQueue($this->before);
+    }
+
+    /**
+     * Process queue events.
+     *
+     * @param array $queue
+     */
+    protected function runQueue(array $queue)
+    {
+        while ($action = array_shift($queue)) {
+            if ($action instanceof RelationHandler) {
+                $action->save();
+            } elseif ($action instanceof \Closure) {
+                $action();
+            }
+        }
+    }
+
+    /**
+     * Process events after parent model save.
+     */
+    protected function handleAfterParent()
+    {
+        $this->runQueue($this->after);
+    }
+
+    /**
+     * Append action to before queue.
+     *
+     * @param mixed $action
+     */
+    public function before($action)
+    {
+        $this->before[] = $action;
+    }
+
+    /**
+     * Append action to after queue.
+     *
+     * @param mixed $action
+     */
+    public function after($action)
+    {
+        $this->after[] = $action;
     }
 }

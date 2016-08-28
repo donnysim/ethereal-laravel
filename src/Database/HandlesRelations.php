@@ -28,17 +28,15 @@ trait HandlesRelations
     protected $removeRelationModelOnDelete = true;
 
     /**
-     * Set the specific relationship in the model. No transformations are done.
+     * Register a saving model event with the dispatcher.
      *
-     * @param string $name
-     * @param mixed $value
-     * @return $this
+     * @param  \Closure|string $callback
+     * @param  int $priority
+     * @return void
      */
-    public function setRawRelation($name, $value)
+    public static function syncing($callback, $priority = 0)
     {
-        $this->relations[$name] = $value;
-
-        return $this;
+        static::registerModelEvent('syncing', $callback, $priority);
     }
 
     /**
@@ -77,30 +75,17 @@ trait HandlesRelations
     }
 
     /**
-     * Save all model relations.
+     * Set the specific relationship in the model. No transformations are done.
      *
-     * @param array $options
-     * @return bool
+     * @param string $name
+     * @param mixed $value
+     * @return $this
      */
-    protected function saveRelations(array $options = [])
+    public function setRawRelation($name, $value)
     {
-        if (! isset($options['removeRelationModelOnDelete'])) {
-            $options['removeRelationModelOnDelete'] = $this->removeRelationModelOnDelete;
-        }
+        $this->relations[$name] = $value;
 
-        return (new RelationProcessor($this, new Collection($options)))->handle();
-    }
-
-    /**
-     * Register a saving model event with the dispatcher.
-     *
-     * @param  \Closure|string $callback
-     * @param  int $priority
-     * @return void
-     */
-    public static function syncing($callback, $priority = 0)
-    {
-        static::registerModelEvent('syncing', $callback, $priority);
+        return $this;
     }
 
     /**
@@ -138,5 +123,18 @@ trait HandlesRelations
         return parent::__call($method, $parameters);
     }
 
+    /**
+     * Save all model relations.
+     *
+     * @param array $options
+     * @return bool
+     */
+    protected function saveRelations(array $options = [])
+    {
+        if (! isset($options['removeRelationModelOnDelete'])) {
+            $options['removeRelationModelOnDelete'] = $this->removeRelationModelOnDelete;
+        }
 
+        return (new RelationProcessor($this, new Collection($options)))->handle();
+    }
 }

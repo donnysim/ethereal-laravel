@@ -41,23 +41,6 @@ class Ethereal extends Model
     }
 
     /**
-     * Save a new model and return the instance.
-     *
-     * @param array $attributes
-     * @return static
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
-     */
-    public static function smartCreate(array $attributes = [])
-    {
-        $model = new static;
-        $model->smartFill($attributes);
-        $model->smartPush();
-
-        return $model;
-    }
-
-    /**
      * Fill attributes and relations.
      *
      * @param array $attributes
@@ -113,6 +96,38 @@ class Ethereal extends Model
     }
 
     /**
+     * Determine if the given attribute may be mass assigned.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function isFillable($key)
+    {
+        if (in_array($key, $this->fillableRelations, true)) {
+            return false;
+        }
+
+        return parent::isFillable($key);
+    }
+
+    /**
+     * Save a new model and return the instance.
+     *
+     * @param array $attributes
+     * @return static
+     * @throws \InvalidArgumentException
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    public static function smartCreate(array $attributes = [])
+    {
+        $model = new static;
+        $model->smartFill($attributes);
+        $model->smartPush();
+
+        return $model;
+    }
+
+    /**
      * Save model and relations. When saving relations, they are linked to this model.
      *
      * @param array $options
@@ -154,20 +169,5 @@ class Ethereal extends Model
     public function sanitizedArray()
     {
         return $this->replicate()->sanitize()->toArray();
-    }
-
-    /**
-     * Determine if the given attribute may be mass assigned.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public function isFillable($key)
-    {
-        if (in_array($key, $this->fillableRelations, true)) {
-            return false;
-        }
-
-        return parent::isFillable($key);
     }
 }

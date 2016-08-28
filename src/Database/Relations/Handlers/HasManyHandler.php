@@ -27,6 +27,16 @@ class HasManyHandler extends BaseRelationHandler
     }
 
     /**
+     * Validate relation data.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function validate()
+    {
+        $this->validateClass($this->data);
+    }
+
+    /**
      * Save relation data.
      *
      * @return bool
@@ -45,30 +55,6 @@ class HasManyHandler extends BaseRelationHandler
         }
 
         return true;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $this->validateClass($this->data);
-    }
-
-    /**
-     * Check if the relation is waiting for parent model to be saved.
-     *
-     * @return bool
-     */
-    public function isWaitingForParent()
-    {
-        if ($this->relationOptions === Ethereal::OPTION_DELETE) {
-            return false;
-        }
-
-        return ! $this->parent->exists;
     }
 
     /**
@@ -125,5 +111,19 @@ class HasManyHandler extends BaseRelationHandler
         }
 
         return true;
+    }
+
+    /**
+     * Check if the relation is waiting for parent model to be saved.
+     *
+     * @return bool
+     */
+    public function isWaitingForParent()
+    {
+        if ($this->relationOptions === Ethereal::OPTION_DELETE) {
+            return false;
+        }
+
+        return ! $this->parent->exists;
     }
 }

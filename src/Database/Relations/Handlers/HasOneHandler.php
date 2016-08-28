@@ -25,6 +25,16 @@ class HasOneHandler extends BaseRelationHandler
     }
 
     /**
+     * Validate relation data.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function validate()
+    {
+        $this->validateClass($this->data);
+    }
+
+    /**
      * Save relation data.
      *
      * @return bool
@@ -47,16 +57,6 @@ class HasOneHandler extends BaseRelationHandler
         }
 
         return true;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $this->validateClass($this->data);
     }
 
     /**

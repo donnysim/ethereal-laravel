@@ -44,6 +44,68 @@ class BelongsToManyHandler extends BaseRelationHandler
     }
 
     /**
+     * Check if the list is a normal relations array.
+     *
+     * @param \Illuminate\Support\Collection|array $list
+     * @return bool
+     */
+    public static function getArrayType($list)
+    {
+        if ($list instanceof Arrayable) {
+            $isAssoc = Arr::isAssoc($list->toArray());
+        } else {
+            $isAssoc = Arr::isAssoc($list);
+        }
+
+        $allArrays = true;
+
+        foreach ($list as $item) {
+            if ($allArrays && ! is_array($item)) {
+                $allArrays = false;
+            }
+
+            if (is_numeric($item) || ($isAssoc && is_array($item) && ! $allArrays)) {
+                return static::SYNC;
+            }
+        }
+
+        if ($allArrays && $isAssoc) {
+            return static::SYNC;
+        }
+
+        return static::NORMAL;
+    }
+
+    /**
+     * Validate relation data.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function validate()
+    {
+        $type = static::getArrayType($this->data);
+
+        if ($type === static::NORMAL) {
+            $this->validateClass($this->data);
+        } elseif ($type === static::SYNC) {
+
+            if ($this->data->has(0)) {
+                throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode cannot contain index of 0.");
+            }
+
+            foreach ($this->data as $key => $item) {
+                if (! is_numeric($key)) {
+                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode key can only be numeric.");
+                }
+
+                if (! is_numeric($item) && ! is_array($item)) {
+                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode can only consist of int and array.");
+                }
+            }
+        }
+    }
+
+    /**
      * Save relation data.
      *
      * @return bool
@@ -105,88 +167,6 @@ class BelongsToManyHandler extends BaseRelationHandler
     }
 
     /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $type = static::getArrayType($this->data);
-
-        if ($type === static::NORMAL) {
-            $this->validateClass($this->data);
-        } elseif ($type === static::SYNC) {
-
-            if ($this->data->has(0)) {
-                throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode cannot contain index of 0.");
-            }
-
-            foreach ($this->data as $key => $item) {
-                if (! is_numeric($key)) {
-                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode key can only be numeric.");
-                }
-
-                if (! is_numeric($item) && ! is_array($item)) {
-                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode can only consist of int and array.");
-                }
-            }
-        }
-    }
-
-    /**
-     * Check if the relation is waiting for parent model to be saved.
-     *
-     * @return bool
-     */
-    public function isWaitingForParent()
-    {
-        return ! $this->parent->exists;
-    }
-
-    /**
-     * Check if the list is a normal relations array.
-     *
-     * @param \Illuminate\Support\Collection|array $list
-     * @return bool
-     */
-    public static function getArrayType($list)
-    {
-        if ($list instanceof Arrayable) {
-            $isAssoc = Arr::isAssoc($list->toArray());
-        } else {
-            $isAssoc = Arr::isAssoc($list);
-        }
-
-        $allArrays = true;
-
-        foreach ($list as $item) {
-            if ($allArrays && ! is_array($item)) {
-                $allArrays = false;
-            }
-
-            if (is_numeric($item) || ($isAssoc && is_array($item) && ! $allArrays)) {
-                return static::SYNC;
-            }
-        }
-
-        if ($allArrays && $isAssoc) {
-            return static::SYNC;
-        }
-
-        return static::NORMAL;
-    }
-
-    /**
-     * Return foreign key column name.
-     *
-     * @return string
-     */
-    public function getOtherKeyName()
-    {
-        return explode('.', $this->relation->getOtherKey())[1];
-    }
-
-    /**
      * Get model pivot keys.
      *
      * @param \Illuminate\Database\Eloquent\Model $item
@@ -203,5 +183,25 @@ class BelongsToManyHandler extends BaseRelationHandler
         }
 
         return $attrs;
+    }
+
+    /**
+     * Return foreign key column name.
+     *
+     * @return string
+     */
+    public function getOtherKeyName()
+    {
+        return explode('.', $this->relation->getOtherKey())[1];
+    }
+
+    /**
+     * Check if the relation is waiting for parent model to be saved.
+     *
+     * @return bool
+     */
+    public function isWaitingForParent()
+    {
+        return ! $this->parent->exists;
     }
 }

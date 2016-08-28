@@ -22,17 +22,6 @@ class RelationManager
     ];
 
     /**
-     * Check if a handler is available for relation.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
-     * @return bool
-     */
-    public static function canHandle(Relation $relation)
-    {
-        return isset(static::$handlers[get_class($relation)]);
-    }
-
-    /**
      * Make relation handler.
      *
      * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
@@ -68,6 +57,17 @@ class RelationManager
         }
 
         return $handler;
+    }
+
+    /**
+     * Check if a handler is available for relation.
+     *
+     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
+     * @return bool
+     */
+    public static function canHandle(Relation $relation)
+    {
+        return isset(static::$handlers[get_class($relation)]);
     }
 
     /**

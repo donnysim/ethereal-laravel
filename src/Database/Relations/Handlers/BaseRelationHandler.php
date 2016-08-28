@@ -78,6 +78,36 @@ abstract class BaseRelationHandler implements RelationHandler
     }
 
     /**
+     * Add pre queue action.
+     *
+     * @param mixed $action
+     */
+    public function before($action)
+    {
+        $this->processor->before($action);
+    }
+
+    /**
+     * Add post queue action.
+     *
+     * @param mixed $action
+     */
+    public function after($action)
+    {
+        $this->processor->after($action);
+    }
+
+    /**
+     * Set processor.
+     *
+     * @param \Ethereal\Database\Relations\RelationProcessor $processor
+     */
+    public function setProcessor(RelationProcessor $processor)
+    {
+        $this->processor = $processor;
+    }
+
+    /**
      * Create model from given data.
      *
      * @param array|\Illuminate\Database\Eloquent\Model|null $data
@@ -101,6 +131,34 @@ abstract class BaseRelationHandler implements RelationHandler
         $this->data = static::createRelationModel($this->relation->getRelated(), $data);
 
         return $this;
+    }
+
+    /**
+     * Create new model and set existence.
+     *
+     * @param string|\Illuminate\Database\Eloquent\Model $relatedModel
+     * @param array|\Illuminate\Database\Eloquent\Model $data
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public static function createRelationModel($relatedModel, $data)
+    {
+        if ($data instanceof Model) {
+            return $data;
+        }
+
+        if (! is_string($relatedModel)) {
+            $relatedModel = get_class($relatedModel);
+        }
+
+        /** @var Model $model */
+        $model = new $relatedModel($data);
+        $keyName = $model->getKeyName();
+        if (isset($data[$keyName])) {
+            $model->setAttribute($keyName, $data[$keyName]);
+            $model->exists = $relatedModel::where($keyName, '=', $model->getKey())->exists();
+        }
+
+        return $model;
     }
 
     /**
@@ -190,64 +248,6 @@ abstract class BaseRelationHandler implements RelationHandler
     protected function shouldRemoveAfterDelete()
     {
         return isset($this->options['removeRelationModelOnDelete']) && $this->options['removeRelationModelOnDelete'];
-    }
-
-    /**
-     * Create new model and set existence.
-     *
-     * @param string|\Illuminate\Database\Eloquent\Model $relatedModel
-     * @param array|\Illuminate\Database\Eloquent\Model $data
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public static function createRelationModel($relatedModel, $data)
-    {
-        if ($data instanceof Model) {
-            return $data;
-        }
-
-        if (! is_string($relatedModel)) {
-            $relatedModel = get_class($relatedModel);
-        }
-
-        /** @var Model $model */
-        $model = new $relatedModel($data);
-        $keyName = $model->getKeyName();
-        if (isset($data[$keyName])) {
-            $model->setAttribute($keyName, $data[$keyName]);
-            $model->exists = $relatedModel::where($keyName, '=', $model->getKey())->exists();
-        }
-
-        return $model;
-    }
-
-    /**
-     * Add pre queue action.
-     *
-     * @param mixed $action
-     */
-    public function before($action)
-    {
-        $this->processor->before($action);
-    }
-
-    /**
-     * Add post queue action.
-     *
-     * @param mixed $action
-     */
-    public function after($action)
-    {
-        $this->processor->after($action);
-    }
-
-    /**
-     * Set processor.
-     *
-     * @param \Ethereal\Database\Relations\RelationProcessor $processor
-     */
-    public function setProcessor(RelationProcessor $processor)
-    {
-        $this->processor = $processor;
     }
 
     /**
