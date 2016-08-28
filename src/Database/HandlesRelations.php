@@ -2,71 +2,30 @@
 
 namespace Ethereal\Database;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Ethereal\Database\Relations\RelationManager;
+use Ethereal\Database\Relations\RelationProcessor;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use InvalidArgumentException;
+use Illuminate\Support\Str;
 
 /**
  * @mixin Ethereal
- * TODO: refactor because a lot of code repeats
- * TODO: dont use instanceof as it includes parent class (some relations)
  */
 trait HandlesRelations
 {
     /**
-     * Whether to use smart relations setting.
+     * Use smart relations by default.
      *
      * @var bool
      */
     protected $useSmartRelations = true;
 
     /**
-     * Save all relations.
+     * Remove deleted relations on delete by default.
      *
-     * @param array|Collection $options
-     * @param bool $storeWaitingRelations
-     * @return bool
+     * @var bool
      */
-    public function saveRelations($options = [], $storeWaitingRelations = false)
-    {
-        // To sync all of the relationships to the database, we will simply spin through
-        // the relationships and save each model.
-        foreach ($this->relations as $relationName => $model) {
-
-            $relationOptions = isset($options[$relationName])
-                ? $options[$relationName]
-                : Ethereal::OPTION_SAVE | Ethereal::OPTION_ATTACH;
-
-            // Skip if null, relation function does not exist or should be skipped
-            if ($model === null || ($relationOptions & Ethereal::OPTION_SKIP) || ! method_exists($this, $relationName)) {
-                continue;
-            }
-
-            $relation = $this->{$relationName}();
-
-            $method = 'save' . last(explode('\\', get_class($relation)));
-            if (method_exists($this, $method)) {
-                $result = $this->{$method}($relation, $relationName, $model, $relationOptions);
-
-                if ($result === true) {
-                    if ($storeWaitingRelations) {
-                        $options[$relationName] = Ethereal::OPTION_SKIP;
-                    }
-                    continue;
-                } elseif ($result !== null) {
-                    // null result marks that the relation requires model to exist
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
+    protected $removeRelationModelOnDelete = true;
 
     /**
      * Set the specific relationship in the model. No transformations are done.
@@ -77,11 +36,7 @@ trait HandlesRelations
      */
     public function setRawRelation($name, $value)
     {
-        if ($value === null) {
-            unset($this->relations[$name]);
-        } else {
-            $this->relations[$name] = $value;
-        }
+        $this->relations[$name] = $value;
 
         return $this;
     }
@@ -92,368 +47,96 @@ trait HandlesRelations
      * @param string $name
      * @param mixed $value
      * @return $this
+     * @throws \InvalidArgumentException
      */
     public function setRelation($name, $value)
     {
-        if (! $this->useSmartRelations) {
+        if (! $this->useSmartRelations || $value === null) {
             return $this->setRawRelation($name, $value);
         }
 
-        if ($value === null) {
-            unset($this->relations[$name]);
-        } else {
-            // Check if relation function exists, if not, we can't do
-            // anything about it so we can skip it
-            if (! method_exists($this, $name)) {
-                $this->relations[$name] = $value;
-            } else {
-                $relation = $this->{$name}();
-                $this->relations[$name] = $this->boxRelation($relation, $value);
+        // Check if relation function exists, if not, we can't do
+        // anything about it so we can skip it
+        if (method_exists($this, $name)) {
+            $relation = $this->{$name}();
+
+            if (! $relation instanceof Relation) {
+                throw new \InvalidArgumentException("`{$name}` is not a valid relation.");
             }
+
+            if (RelationManager::canHandle($relation)) {
+                $this->relations[$name] = RelationManager::makeHandler($relation, $name, $this, $value)->build();
+            } else {
+                return $this->setRawRelation($name, $value);
+            }
+        } else {
+            $this->relations[$name] = $value;
         }
 
         return $this;
     }
 
     /**
-     * Box relation data into collection or model.
+     * Save all model relations.
      *
-     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
-     * @param $data
+     * @param array $options
+     * @return bool
+     */
+    protected function saveRelations(array $options = [])
+    {
+        if (! isset($options['removeRelationModelOnDelete'])) {
+            $options['removeRelationModelOnDelete'] = $this->removeRelationModelOnDelete;
+        }
+
+        return (new RelationProcessor($this, new Collection($options)))->handle();
+    }
+
+    /**
+     * Register a saving model event with the dispatcher.
+     *
+     * @param  \Closure|string $callback
+     * @param  int $priority
+     * @return void
+     */
+    public static function syncing($callback, $priority = 0)
+    {
+        static::registerModelEvent('syncing', $callback, $priority);
+    }
+
+    /**
+     * Handle dynamic method calls into the model.
+     *
+     * @param  string $method
+     * @param  array $parameters
      * @return mixed
      */
-    protected function boxRelation(Relation $relation, $data)
+    public function __call($method, $parameters)
     {
-        $method = 'box' . last(explode('\\', get_class($relation)));
-        if (method_exists($this, $method)) {
-            return $this->{$method}($relation, $data);
-        }
+        if (Str::endsWith($method, 'Handler')) {
+            $relation = substr($method, 0, -7);
 
-        return $data;
-    }
+            if (method_exists($this, $relation)) {
+                $parametersCount = count($parameters);
+                $autoload =  $parametersCount > 0 ? (bool) $parameters[0] : false;
 
-    /**
-     * Convert belongs to many data.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\BelongsToMany $relation
-     * @param $data
-     * @return array|\Illuminate\Support\Collection
-     * @throws InvalidArgumentException
-     */
-    protected function boxBelongsToMany(BelongsToMany $relation, $data)
-    {
-        if (is_array($data) && count($data) === 0) {
-            return $data;
-        }
-
-        /** @var Model $class */
-        $relatedModel = get_class($relation->getRelated());
-
-        if ($data instanceof Collection) {
-            if ($data->isEmpty() || $data->first() instanceof $relatedModel) {
-                return $data;
-            }
-
-            throw new InvalidArgumentException("Invalid BelongsToMany collection - collection should consist of {$relatedModel} objects.");
-        }
-
-        $container = new Collection;
-
-        if ($data instanceof Model) {
-            $container[] = $data;
-        } elseif (is_array($data)) {
-
-            if (Arr::isAssoc($data)) {
-                $container[] = $this->createRelationModel($relatedModel, $data);
-            } elseif (is_numeric(head($data)) && ! Arr::isAssoc($data)) {
-                return $data;
-            } else {
-                foreach ($data as $item) {
-                    $container[] = $this->createRelationModel($relatedModel, $item);
-                }
-            }
-        }
-
-        return $container;
-    }
-
-    /**
-     * Save BelongsToMany relation.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\BelongsToMany $relation
-     * @param $data
-     * @param int|boolean $options if value is false, defaults will be used OPTION_SAVE | OPTION_ATTACH.
-     * @return bool
-     * @throws \Exception
-     */
-    protected function saveBelongsToMany(BelongsToMany $relation, $relationName, $data, $options = false)
-    {
-        if ($options === false) {
-            $options = Ethereal::OPTION_SAVE | Ethereal::OPTION_ATTACH;
-        }
-
-        // This relation requires the parent model to be exist
-        if (! $this->exists) {
-            return null;
-        }
-
-        if ($options & Ethereal::OPTION_SKIP) {
-            return true;
-        }
-
-        $ids = [];
-
-        if (is_array($data)) {
-            // If it's an array, only actions we can take is sync/attach/detach
-            $ids = $data;
-        } else {
-            foreach ($data as $item) {
-                /** @var Ethereal|mixed $item */
-                if ($options & Ethereal::OPTION_SAVE) {
-                    $item->save();
-                    $ids[] = $item->getKey();
-                } elseif ($options & Ethereal::OPTION_PUSH) {
-                    $item->push();
-                    $ids[] = $item->getKey();
-                } elseif ($options & Ethereal::OPTION_DELETE) {
-                    $ids[] = $item->getKey();
-                    $item->delete();
-                }
-            }
-        }
-
-        if ($options & Ethereal::OPTION_ATTACH) {
-            $relation->sync($ids, false);
-        } elseif ($options & Ethereal::OPTION_DETACH) {
-            $relation->detach($ids, false);
-        } elseif ($options & Ethereal::OPTION_SYNC) {
-            $relation->sync($ids);
-        }
-
-        return true;
-    }
-
-    /**
-     * Convert has many data.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\HasMany $relation
-     * @param $data
-     * @return array|\Illuminate\Support\Collection
-     * @throws \InvalidArgumentException
-     */
-    protected function boxHasMany(HasMany $relation, $data)
-    {
-        if (is_array($data) && count($data) === 0) {
-            return $data;
-        }
-
-        /** @var Model $class */
-        $relatedModel = get_class($relation->getRelated());
-
-        if ($data instanceof Collection) {
-            if ($data->isEmpty() || $data->first() instanceof $relatedModel) {
-                return $data;
-            }
-
-            throw new InvalidArgumentException("Invalid HasMany collection - collection should consist of {$relatedModel} objects.");
-        }
-
-        $container = new Collection();
-
-        if ($data instanceof Model) {
-            $container[] = $data;
-        } elseif (is_array($data)) {
-            if (Arr::isAssoc($data)) {
-                $container[] = $this->createRelationModel($relatedModel, $data);
-            } else {
-                foreach ($data as $item) {
-                    $container[] = $this->createRelationModel($relatedModel, $item);
-                }
-            }
-        }
-
-        return $container;
-    }
-
-    /**
-     * Save HasMany relation.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\HasMany $relation
-     * @param Collection $data
-     * @param int $options
-     * @return bool|null|void
-     * @throws \Exception
-     */
-    protected function saveHasMany(HasMany $relation, $relationName, $data, $options = Ethereal::OPTION_SAVE)
-    {
-        // This relation requires the parent model to be exist
-        if (! $this->exists) {
-            return null;
-        }
-
-        // We can only save instance of collections
-        if (! $data instanceof Collection) {
-            return null;
-        }
-
-        if ($options & Ethereal::OPTION_SKIP) {
-            return true;
-        }
-
-        foreach ($data as $item) {
-            /** @var Ethereal|mixed $item */
-
-            $item[$relation->getPlainForeignKey()] = $this->getKey();
-
-            if ($options & Ethereal::OPTION_SAVE) {
-                $item->save();
-            } elseif ($options & Ethereal::OPTION_PUSH) {
-                $item->push();
-            } elseif ($options & Ethereal::OPTION_DELETE) {
-                if ($item->delete()) {
-                    unset($data[$data->search(function ($i) use ($item) {
-                            return $item->getKey() === $i->getKey();
-                        })]);
-                }
-            }
-        }
-
-        if ($options & Ethereal::OPTION_SYNC) {
-            $this->syncRelation($relation, $relationName, $data);
-        }
-
-        return true;
-    }
-
-    /**
-     * Convert has one data.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\HasOne $relation
-     * @param $data
-     * @return array|\Illuminate\Database\Eloquent\Model
-     * @throws \InvalidArgumentException
-     */
-    protected function boxHasOne(HasOne $relation, $data)
-    {
-        if (empty($data)) {
-            return $data;
-        }
-
-        if ($data instanceof Model) {
-            return $data;
-        } elseif (Arr::isAssoc($data)) {
-            return $this->createRelationModel($relation->getRelated(), $data);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Save HasOne relation.
-     *
-     * @param \Illuminate\Database\Eloquent\Relations\HasOne $relation
-     * @param Collection $data
-     * @param int $options
-     * @return bool|null|void
-     * @throws \Exception
-     */
-    protected function saveHasOne(HasOne $relation, $relationName, $data, $options = Ethereal::OPTION_SAVE)
-    {
-        // This relation requires the parent model to exist
-        if (! $this->exists) {
-            return null;
-        }
-
-        // We can only save instance of model
-        if (! $data instanceof Model) {
-            return null;
-        }
-
-        if ($options & Ethereal::OPTION_SKIP) {
-            return true;
-        }
-
-        $data[$relation->getPlainForeignKey()] = $this->getKey();
-
-        if ($options & Ethereal::OPTION_SAVE) {
-            $data->save();
-        } elseif ($options & Ethereal::OPTION_PUSH) {
-            $data->push();
-        } elseif ($options & Ethereal::OPTION_DELETE) {
-            if ($data->delete()) {
-                foreach ($this->relations as $name => $rel) {
-                    if ($rel === $data) {
-                        unset($name);
-                        break;
+                if (! $this->relationLoaded($relation)) {
+                    if ($autoload) {
+                        if ($parametersCount > 1) {
+                            $this->load([$relation => $parameters[1]]);
+                        } else {
+                            $this->load($relation);
+                        }
+                    } else {
+                        return null;
                     }
                 }
+
+                return RelationManager::makeHandler($this->{$relation}(), $relation, $this, $this->getRelation($relation));
             }
         }
 
-        return true;
+        return parent::__call($method, $parameters);
     }
 
-    /**
-     * Create new model and set existence.
-     *
-     * @param string|\Illuminate\Database\Eloquent\Model $relatedModel
-     * @param array|\Illuminate\Database\Eloquent\Model $data
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    protected function createRelationModel($relatedModel, $data)
-    {
-        if ($data instanceof Model) {
-            return $data;
-        }
 
-        if (! is_string($relatedModel)) {
-            $relatedModel = get_class($relatedModel);
-        }
-
-        /** @var Ethereal $model */
-        $model = new $relatedModel($data);
-        $keyName = $model->getKeyName();
-        if (isset($data[$keyName])) {
-            $model->setAttribute($keyName, $data[$keyName]);
-            $model->exists = $relatedModel::where($keyName, '=', $model->getKey())->exists();
-        }
-
-        return $model;
-    }
-
-    protected function syncRelation(Relation $relation, $relationName, $data)
-    {
-        // We can only sync collections
-        if (! $data instanceof Collection) {
-            return false;
-        }
-
-        $related = get_class($relation->getRelated());
-
-        if ($relation instanceof HasMany) {
-            /** @var \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
-            $query = $this->{$relationName}();
-            $this->fireSyncingEvent($relationName, $query, $data);
-
-            if ($data->isEmpty()) {
-                $query->delete();
-            } else {
-                $model = $data->first();
-                $keys = $data->pluck($model->getKeyName())->toArray();
-                $query->whereNotIn($model->getKeyName(), $keys)->delete();
-            }
-        }
-    }
-
-    protected function fireSyncingEvent($relationName, $query, $data)
-    {
-        if (isset(static::$dispatcher)) {
-            $eventResult = static::$dispatcher->until("eloquent.{$relationName}: " . static::class, [$query, $data, $this]);
-
-            // If event returns false, do not sync
-            if ($eventResult === false) {
-                return false;
-            }
-        }
-    }
 }

@@ -5,7 +5,6 @@ namespace Ethereal\Database;
 use Ethereal\Bastion\Bastion;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 class Ethereal extends Model
 {
@@ -14,10 +13,9 @@ class Ethereal extends Model
     const OPTION_SKIP = 1;
     const OPTION_SAVE = 2;
     const OPTION_DELETE = 4;
-    const OPTION_PUSH = 8;
-    const OPTION_ATTACH = 16;
-    const OPTION_SYNC = 32;
-    const OPTION_DETACH = 64;
+    const OPTION_ATTACH = 8;
+    const OPTION_SYNC = 16;
+    const OPTION_DETACH = 32;
 
     /**
      * Fillable relations.
@@ -31,13 +29,30 @@ class Ethereal extends Model
      *
      * @param array $attributes
      * @return static
+     * @throws \InvalidArgumentException
+     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
+     */
+    public static function smartNew(array $attributes = [])
+    {
+        $model = new static;
+        $model->smartFill($attributes);
+
+        return $model;
+    }
+
+    /**
+     * Save a new model and return the instance.
+     *
+     * @param array $attributes
+     * @return static
+     * @throws \InvalidArgumentException
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
     public static function smartCreate(array $attributes = [])
     {
         $model = new static;
         $model->smartFill($attributes);
-        $model->save();
+        $model->smartPush();
 
         return $model;
     }
@@ -47,6 +62,7 @@ class Ethereal extends Model
      *
      * @param array $attributes
      * @return $this
+     * @throws \InvalidArgumentException
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
     public function smartFill(array $attributes)
@@ -104,27 +120,7 @@ class Ethereal extends Model
      */
     public function smartPush($options = [])
     {
-        // To minimize the amount of database requests we make two phase
-        // relations saving. First pass is to save relations that do not
-        // require parent model to be save and can set relation value
-        // directly. Second pass is so that relations that do require
-        // parent model to exist, are linked and saved correctly.
-
-        $relationOptions = isset($options['relations'])
-            ? new Collection($options['relations'])
-            : new Collection;
-
-        // Make the first save pass
-        if (! $this->saveRelations($relationOptions, true)) {
-            return false;
-        }
-
-        // Make the second save pass
-        if (! $this->save($options) || ! $this->saveRelations($relationOptions)) {
-            return false;
-        }
-
-        return true;
+        return $this->saveRelations($options);
     }
 
     /**
@@ -158,5 +154,20 @@ class Ethereal extends Model
     public function sanitizedArray()
     {
         return $this->replicate()->sanitize()->toArray();
+    }
+
+    /**
+     * Determine if the given attribute may be mass assigned.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function isFillable($key)
+    {
+        if (in_array($key, $this->fillableRelations, true)) {
+            return false;
+        }
+
+        return parent::isFillable($key);
     }
 }
