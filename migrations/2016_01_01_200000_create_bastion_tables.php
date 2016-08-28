@@ -14,6 +14,7 @@ class CreateBastionTables extends Migration
     public function up()
     {
         Schema::create(Helper::abilitiesTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('name');
             $table->string('title')->nullable();
@@ -25,6 +26,7 @@ class CreateBastionTables extends Migration
         });
 
         Schema::create(Helper::rolesTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('name')->unique();
             $table->string('title')->nullable();
@@ -35,6 +37,7 @@ class CreateBastionTables extends Migration
         });
 
         Schema::create(Helper::assignedRolesTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->integer('role_id')->unsigned()->index();
             $table->morphs('entity');
 
@@ -43,6 +46,7 @@ class CreateBastionTables extends Migration
         });
 
         Schema::create(Helper::permissionsTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->integer('ability_id')->unsigned()->index();
             $table->morphs('entity');
             $table->boolean('forbidden')->default(false);
