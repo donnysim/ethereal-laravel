@@ -3,6 +3,7 @@
 namespace Ethereal\Database\Relations\Handlers;
 
 use Ethereal\Database\Ethereal;
+use Ethereal\Database\Relations\RelationManager;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -64,13 +65,17 @@ class BelongsToManyHandler extends BaseRelationHandler
                     $this->relation->sync([$item->getKey() => $this->getPivotAttributes($item)], false);
                 }
 
-                if ($this->relationOptions & Ethereal::OPTION_DELETE || $this->relationOptions & Ethereal::OPTION_DETACH) {
+                if ($this->relationOptions & Ethereal::OPTION_DETACH) {
                     $this->relation->detach($item);
                 }
 
                 if ($this->relationOptions & Ethereal::OPTION_DELETE) {
                     if ($item->exists && ! $item->delete()) {
                         return false;
+                    }
+
+                    if (! $this->relationOptions & Ethereal::OPTION_DETACH && ! RelationManager::isSoftDeleting($item)) {
+                        $this->relation->detach($item);
                     }
 
                     if ($this->shouldRemoveAfterDelete()) {
