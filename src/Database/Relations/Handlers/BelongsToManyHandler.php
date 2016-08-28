@@ -74,7 +74,7 @@ class BelongsToManyHandler extends BaseRelationHandler
                         return false;
                     }
 
-                    if (! $this->relationOptions & Ethereal::OPTION_DETACH && ! RelationManager::isSoftDeleting($item)) {
+                    if (! ($this->relationOptions & Ethereal::OPTION_DETACH) && ! RelationManager::isSoftDeleting($item)) {
                         $this->relation->detach($item);
                     }
 
