@@ -13,8 +13,8 @@ class BelongsToRelationTest extends BaseTestCase
             'password' => 'password',
         ]);
 
-        self::assertTrue($profile->relationLoaded('user'));
-        self::assertInstanceOf(TestUserModel::class, $profile->user);
+        static::assertTrue($profile->relationLoaded('user'));
+        static::assertInstanceOf(TestUserModel::class, $profile->user);
     }
 
     public function test_empty_arrays_are_not_allowed_for_singular_relations()
@@ -76,6 +76,6 @@ class BelongsToRelationTest extends BaseTestCase
         static::assertEquals($profile->user_id, $profile->user->getKey());
 
         unset($profile['user']);
-        self::assertInstanceOf(TestUserModel::class, $profile->user);
+        static::assertInstanceOf(TestUserModel::class, $profile->user);
     }
 }

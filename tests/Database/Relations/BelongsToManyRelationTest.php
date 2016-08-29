@@ -15,12 +15,12 @@ class BelongsToManyRelationTest extends BaseTestCase
             new TestRoleModel,
         ]);
 
-        self::assertTrue($user->relationLoaded('rawRoles'));
-        self::assertInstanceOf(Collection::class, $user->rawRoles);
-        self::assertFalse($user->rawRoles->isEmpty());
+        static::assertTrue($user->relationLoaded('rawRoles'));
+        static::assertInstanceOf(Collection::class, $user->rawRoles);
+        static::assertFalse($user->rawRoles->isEmpty());
 
         foreach ($user->rawRoles as $role) {
-            self::assertInstanceOf(TestRoleModel::class, $role);
+            static::assertInstanceOf(TestRoleModel::class, $role);
         }
     }
 
@@ -33,12 +33,12 @@ class BelongsToManyRelationTest extends BaseTestCase
             ['title' => '3'],
         ]);
 
-        self::assertTrue($user->relationLoaded('rawRoles'));
-        self::assertInstanceOf(Collection::class, $user->rawRoles);
-        self::assertFalse($user->rawRoles->isEmpty());
+        static::assertTrue($user->relationLoaded('rawRoles'));
+        static::assertInstanceOf(Collection::class, $user->rawRoles);
+        static::assertFalse($user->rawRoles->isEmpty());
 
         foreach ($user->rawRoles as $role) {
-            self::assertInstanceOf(TestRoleModel::class, $role);
+            static::assertInstanceOf(TestRoleModel::class, $role);
         }
     }
 
@@ -47,8 +47,8 @@ class BelongsToManyRelationTest extends BaseTestCase
         $user = new TestUserModel;
         $user->setRelation('rawRoles', []);
 
-        self::assertTrue($user->relationLoaded('rawRoles'));
-        self::assertInstanceOf(Collection::class, $user->rawRoles);
+        static::assertTrue($user->relationLoaded('rawRoles'));
+        static::assertInstanceOf(Collection::class, $user->rawRoles);
     }
 
     public function test_array_type_is_determined_correctly()
@@ -139,12 +139,12 @@ class BelongsToManyRelationTest extends BaseTestCase
             ['title' => '3'],
         ]);
 
-        self::assertTrue($user->relationLoaded('rawRoles'));
-        self::assertInstanceOf(Collection::class, $user->rawRoles);
-        self::assertFalse($user->rawRoles->isEmpty());
+        static::assertTrue($user->relationLoaded('rawRoles'));
+        static::assertInstanceOf(Collection::class, $user->rawRoles);
+        static::assertFalse($user->rawRoles->isEmpty());
 
         foreach ($user->rawRoles as $role) {
-            self::assertInstanceOf(TestRoleModel::class, $role);
+            static::assertInstanceOf(TestRoleModel::class, $role);
         }
     }
 
@@ -160,7 +160,7 @@ class BelongsToManyRelationTest extends BaseTestCase
         $user->smartPush();
 
         foreach ($user->rawRoles as $role) {
-            self::assertTrue($role->exists);
+            static::assertTrue($role->exists);
         }
 
         $count = $this->app['db']->table('role_user')->where('user_id', $user->getKey())->count();

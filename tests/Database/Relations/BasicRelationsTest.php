@@ -9,7 +9,7 @@ class BasicRelationsTest extends BaseTestCase
     public function test_works_as_intended_when_no_relations_are_present()
     {
         $user = TestUserModel::random();
-        self::assertTrue($user->smartPush());
+        static::assertTrue($user->smartPush());
     }
 
     public function test_non_existing_relations_are_allowed()
@@ -17,8 +17,8 @@ class BasicRelationsTest extends BaseTestCase
         $user = new TestUserModel;
         $user->setRelation('dummy', []);
 
-        self::assertTrue($user->relationLoaded('dummy'));
-        self::assertEquals([], $user->dummy);
+        static::assertTrue($user->relationLoaded('dummy'));
+        static::assertEquals([], $user->dummy);
     }
 
     public function test_allows_null_relation_values()
@@ -26,8 +26,8 @@ class BasicRelationsTest extends BaseTestCase
         $user = new TestUserModel;
 
         $user->setRawRelation('profile', null);
-        self::assertTrue($user->relationLoaded('profile'));
-        self::assertNull($user->profile);
+        static::assertTrue($user->relationLoaded('profile'));
+        static::assertNull($user->profile);
     }
 
     public function test_can_set_raw_relation()
@@ -35,12 +35,12 @@ class BasicRelationsTest extends BaseTestCase
         $user = new TestUserModel;
 
         $user->setRawRelation('test', []);
-        self::assertTrue($user->relationLoaded('test'));
-        self::assertEquals([], $user->test);
+        static::assertTrue($user->relationLoaded('test'));
+        static::assertEquals([], $user->test);
 
         $user->setRawRelation('test2', null);
-        self::assertTrue($user->relationLoaded('test2'));
-        self::assertNull($user->test2);
+        static::assertTrue($user->relationLoaded('test2'));
+        static::assertNull($user->test2);
     }
 
     public function test_skips_invalid_relations()
@@ -53,7 +53,7 @@ class BasicRelationsTest extends BaseTestCase
         $user->setRawRelation('emptyCollection', Collection::make([]));
         $user->setRawRelation('noMethod', Collection::make(['1', '2']));
 
-        self::assertTrue($user->smartPush(['relations' => [
+        static::assertTrue($user->smartPush(['relations' => [
             'skipOption' => Ethereal::OPTION_SKIP,
         ]]));
     }
@@ -67,10 +67,10 @@ class BasicRelationsTest extends BaseTestCase
             'last_name' => 'Last Name',
         ]);
 
-        self::assertFalse($user->profile->exists);
+        static::assertFalse($user->profile->exists);
         $user->profile->save();
 
-        self::assertTrue($user->profile->exists);
+        static::assertTrue($user->profile->exists);
         $profileId = $user->profile->getKey();
         unset($user['profile']);
 
@@ -80,7 +80,7 @@ class BasicRelationsTest extends BaseTestCase
             'last_name' => 'New Last Name',
         ]);
 
-        self::assertTrue($user->profile->exists);
+        static::assertTrue($user->profile->exists);
     }
 
     public function test_smart_new_creates_new_instance_without_saving()
@@ -90,7 +90,7 @@ class BasicRelationsTest extends BaseTestCase
             'password' => 'my_password',
         ]);
 
-        self::assertFalse($user->exists);
+        static::assertFalse($user->exists);
     }
 
     public function test_smart_create_creates_new_instance_and_saves()
@@ -100,7 +100,7 @@ class BasicRelationsTest extends BaseTestCase
             'password' => 'my_password',
         ]);
 
-        self::assertTrue($user->exists);
+        static::assertTrue($user->exists);
     }
 
     public function test_fill_ignores_relations()
@@ -115,7 +115,7 @@ class BasicRelationsTest extends BaseTestCase
             ],
         ]);
 
-        self::assertEquals([
+        static::assertEquals([
             'email' => 'email@email.com',
             'password' => 'my_password',
         ], $user->toArray());
@@ -135,7 +135,7 @@ class BasicRelationsTest extends BaseTestCase
         ]);
         TestUserModel::reguard();
 
-        self::assertEquals([
+        static::assertEquals([
             'email' => 'email@email.com',
             'password' => 'my_password',
         ], $user->toArray());
@@ -153,7 +153,7 @@ class BasicRelationsTest extends BaseTestCase
         ];
 
         $user = TestUserModel::smartNew($attributes);
-        self::assertEquals($attributes, $user->toArray());
+        static::assertEquals($attributes, $user->toArray());
     }
 
     public function test_remove_on_delete_options_is_respected()
@@ -167,7 +167,7 @@ class BasicRelationsTest extends BaseTestCase
             ],
         ]);
 
-        self::assertNotNull($user->profile);
+        static::assertNotNull($user->profile);
     }
 
     public function test_nested_relation_options_are_read_correctly()
@@ -183,7 +183,7 @@ class BasicRelationsTest extends BaseTestCase
             'profile.user' => Ethereal::OPTION_DELETE,
         ]]);
 
-        self::assertNull($user->profile->user);
+        static::assertNull($user->profile->user);
     }
 
     public function test_can_get_handler_for_loaded_relation()
@@ -191,7 +191,7 @@ class BasicRelationsTest extends BaseTestCase
         $user = TestUserModel::random(true);
         $handler = $user->profileHandler();
 
-        self::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
     }
 
     public function test_handler_returns_null_on_missing_relation()
@@ -199,7 +199,7 @@ class BasicRelationsTest extends BaseTestCase
         $user = TestUserModel::random();
         $handler = $user->profileHandler();
 
-        self::assertNull($handler);
+        static::assertNull($handler);
     }
 
     public function test_can_autoload_relation_on_handler_call()
@@ -208,12 +208,12 @@ class BasicRelationsTest extends BaseTestCase
         $user->smartPush();
         unset($user['profile']);
 
-        self::assertFalse($user->relationLoaded('profile'));
+        static::assertFalse($user->relationLoaded('profile'));
 
         $handler = $user->profileHandler(true);
 
-        self::assertTrue($user->relationLoaded('profile'));
-        self::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertTrue($user->relationLoaded('profile'));
+        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
     }
 
     public function test_relation_handler_call_accepts_callback()
@@ -222,14 +222,14 @@ class BasicRelationsTest extends BaseTestCase
         $user->smartPush();
         unset($user['profile']);
 
-        self::assertFalse($user->relationLoaded('profile'));
+        static::assertFalse($user->relationLoaded('profile'));
 
         $handler = $user->profileHandler(true, function ($query) {
             $query->select(['id', 'user_id', 'name']);
         });
 
-        self::assertTrue($user->relationLoaded('profile'));
-        self::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
-        self::assertEquals(['id', 'user_id', 'name'], array_keys($user->getRelation('profile')->getAttributes()));
+        static::assertTrue($user->relationLoaded('profile'));
+        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertEquals(['id', 'user_id', 'name'], array_keys($user->getRelation('profile')->getAttributes()));
     }
 }

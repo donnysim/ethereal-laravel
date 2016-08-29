@@ -12,8 +12,8 @@ class HasOneRelationTest extends BaseTestCase
             'last_name' => 'Last Name',
         ]);
 
-        self::assertTrue($user->relationLoaded('profile'));
-        self::assertInstanceOf(TestProfileModel::class, $user->profile);
+        static::assertTrue($user->relationLoaded('profile'));
+        static::assertInstanceOf(TestProfileModel::class, $user->profile);
     }
 
     public function test_skips_non_existing_model_on_delete()
@@ -25,7 +25,7 @@ class HasOneRelationTest extends BaseTestCase
             ]
         ]);
 
-        self::assertNull($user->profile);
+        static::assertNull($user->profile);
     }
 
     public function test_empty_arrays_are_not_allowed()
@@ -54,7 +54,7 @@ class HasOneRelationTest extends BaseTestCase
         static::assertEquals($user->getKey(), $user->profile->user_id);
 
         unset($user['profile']);
-        self::assertInstanceOf(TestProfileModel::class, $user->profile);
+        static::assertInstanceOf(TestProfileModel::class, $user->profile);
     }
 
     public function test_singular_relation_is_set_to_null_on_delete()
@@ -66,6 +66,6 @@ class HasOneRelationTest extends BaseTestCase
             'profile' => Ethereal::OPTION_DELETE,
         ]]);
 
-        self::assertNull($user->profile);
+        static::assertNull($user->profile);
     }
 }

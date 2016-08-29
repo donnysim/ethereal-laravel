@@ -18,10 +18,10 @@ class HasManyRelationTest extends BaseTestCase
             ]
         ]);
 
-        self::assertTrue($user->relationLoaded('comments'));
+        static::assertTrue($user->relationLoaded('comments'));
 
         foreach ($user->comments as $comment) {
-            self::assertInstanceOf(TestCommentModel::class, $comment);
+            static::assertInstanceOf(TestCommentModel::class, $comment);
         }
     }
 
@@ -46,7 +46,7 @@ class HasManyRelationTest extends BaseTestCase
         }
 
         unset($user['comments']);
-        self::assertCount(2, $user->comments);
+        static::assertCount(2, $user->comments);
     }
 
     public function test_collection_relation_expects_proper_array()
@@ -95,7 +95,7 @@ class HasManyRelationTest extends BaseTestCase
             ]
         ]);
 
-        self::assertCount(0, $user->comments);
+        static::assertCount(0, $user->comments);
     }
 
     public function test_relation_can_be_synced()
@@ -124,7 +124,7 @@ class HasManyRelationTest extends BaseTestCase
         ]]);
 
         unset($user['comments']);
-        self::assertEquals(2, $user->comments->count());
+        static::assertEquals(2, $user->comments->count());
     }
 
     public function test_does_not_call_event_with_no_dispatcher()
