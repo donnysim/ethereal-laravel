@@ -50,12 +50,23 @@ trait HasRoles
      * @param string $role
      * @return bool
      */
-    public function is($role)
+    public function isA($role)
     {
         $roles = func_get_args();
         $clipboard = Helper::clipboard();
 
         return $clipboard->checkRole($this, $roles, 'or');
+    }
+
+    /**
+     * Check if the model has any of the given roles.
+     *
+     * @param string $role
+     * @return bool
+     */
+    public function isAn($role)
+    {
+        return call_user_func_array([$this, 'isA'], func_get_args());
     }
 
     /**
