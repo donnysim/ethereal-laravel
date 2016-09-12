@@ -96,7 +96,7 @@ trait Validates
      */
     protected function throwValidationException()
     {
-        throw new ValidationException($this->validator, $this);
+        throw new ValidationException($this->validator);
     }
 
     /**
