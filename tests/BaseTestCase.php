@@ -17,10 +17,10 @@ class BaseTestCase extends TestCase
             '--database' => 'ethereal',
             '--realpath' => __DIR__ . '/migrations',
         ]);
-
-        $this->app->singleton(Clipboard::class, function () {
-            return new Clipboard();
-        });
+//
+//        $this->app->singleton(Clipboard::class, function () {
+//            return new Clipboard();
+//        });
     }
 
     /**
@@ -38,14 +38,17 @@ class BaseTestCase extends TestCase
         ]);
         $app['config']->set('bastion', [
             'tables' => [
-                'assigned_roles' => 'assigned_roles',
                 'abilities' => 'abilities',
+                'assigned_roles' => 'assigned_roles',
                 'permissions' => 'permissions',
+                'roles' => 'roles',
             ],
 
             'models' => [
-                'ability' => TestAbilityModel::class,
-                'role' => TestRoleModel::class,
+                'ability' => \Ethereal\Bastion\Database\Ability::class,
+                'assigned_role' => \Ethereal\Bastion\Database\AssignedRole::class,
+                'permission' => \Ethereal\Bastion\Database\Permission::class,
+                'role' => \Ethereal\Bastion\Database\Role::class,
             ],
 
             'authorities' => [
@@ -54,22 +57,39 @@ class BaseTestCase extends TestCase
         ]);
     }
 
-    protected function bastion($authority = null)
+    /**
+     * Clean up the testing environment before the next test.
+     *
+     * @return void
+     */
+    public function tearDown()
     {
-        $bastion = new Bastion($this->gate($authority), Helper::clipboard(), new Sanitizer());
+        $this->app['files']->deleteDirectory(__DIR__ . '/cache');
 
-        return $bastion;
+        parent::tearDown();
     }
 
-    protected function gate($authority)
+    protected function cacheStore()
     {
-        $gate = new Gate($this->app, function () use ($authority) {
-            return $authority;
-        });
-
-        Helper::clipboard()->registerAt($gate);
-
-        return $gate;
+        return new \Ethereal\Cache\GroupFileStore($this->app['files'], __DIR__ . '/cache');
     }
+
+//    protected function bastion($authority = null)
+//    {
+//        $bastion = new Bastion($this->gate($authority), Helper::clipboard(), new Sanitizer());
+//
+//        return $bastion;
+//    }
+//
+//    protected function gate($authority)
+//    {
+//        $gate = new Gate($this->app, function () use ($authority) {
+//            return $authority;
+//        });
+//
+//        Helper::clipboard()->registerAt($gate);
+//
+//        return $gate;
+//    }
 }
 

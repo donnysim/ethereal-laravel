@@ -1,12 +1,25 @@
 <?php
 
-namespace Ethereal\Bastion;
+namespace Ethereal\Bastion\Store;
 
-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
+use Ethereal\Bastion\Database\Ability;
+use Ethereal\Bastion\Database\Role;
+use Ethereal\Bastion\Helper;
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Cache\Store as CacheStore;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
-class Clipboard
+class Store
 {
+    /**
+     * The tag used for caching.
+     *
+     * @var string
+     */
+    protected $tag = 'donnysim-bastion';
+
     /**
      * Whether the bastion is the exclusive authority on gate access.
      *
@@ -15,11 +28,27 @@ class Clipboard
     protected $exclusive = false;
 
     /**
+     * The cache store.
+     *
+     * @var \Illuminate\Contracts\Cache\Store
+     */
+    protected $cache;
+
+    /**
+     * Store constructor.
+     * @param \Illuminate\Contracts\Cache\Store $cache
+     */
+    public function __construct(CacheStore $cache)
+    {
+        $this->setCache($cache);
+    }
+
+    /**
      * Register the clipboard at the given gate.
      *
      * @param \Illuminate\Contracts\Auth\Access\Gate $gate
      */
-    public function registerAt(GateContract $gate)
+    public function registerAt(Gate $gate)
     {
         $gate->before(function ($authority, $ability, $arguments = [], $additional = null) use ($gate) {
 
@@ -44,8 +73,8 @@ class Clipboard
     /**
      * Parse the arguments we got from the gate.
      *
-     * @param mixed $arguments
-     * @param mixed $additional
+     * @param  mixed $arguments
+     * @param  mixed $additional
      * @return array
      */
     protected function parseGateArguments($arguments, $additional)
@@ -53,7 +82,7 @@ class Clipboard
         // The way arguments are passed into the gate's before callback has changed in Laravel
         // in the middle of the 5.2 release. Before, arguments were spread out. Now they're
         // all supplied in a single array instead. We will normalize it into two values.
-        if ($additional !== null) {
+        if (! is_null($additional)) {
             return [$arguments, $additional];
         }
 
@@ -77,75 +106,93 @@ class Clipboard
      */
     public function check(Model $authority, $ability, $model = null)
     {
-        list($allowed, $forbidden) = $this->getAbilityMap($authority);
+        $map = $this->getMap($authority);
         $requested = $this->compileAbilityIdentifiers($ability, $model);
 
-        $shouldBeAllowed = false;
+        $allows = false;
 
-        foreach ($requested as $ablt) {
-            if (isset($forbidden[$ablt])) {
+        foreach ($requested as $identifier) {
+            if ($map->forbidden($identifier)) {
                 return false;
-            } elseif (! $shouldBeAllowed && isset($allowed[$ablt])) {
-                $shouldBeAllowed = true;
+            } elseif (! $allows && $map->granted($identifier)) {
+                $allows = true;
             }
         }
 
-        return $shouldBeAllowed;
+        return $allows;
     }
 
     /**
-     * Get two arrays, first one holds allowed abilities, second holder forbidden
-     * abilities.
+     * Get authority roles and abilities map.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return array [$allowed, $forbidden]
+     * @return \Ethereal\Bastion\Store\StoreMap
      */
-    public function getAbilityMap(Model $authority)
+    public function getMap(Model $authority)
     {
-        $abilities = $this->getAbilities($authority);
+        return $this->sear($this->getCacheKey($authority), function () use ($authority) {
+            $roles = $this->getRoles($authority);
+            $abilities = $this->getAbilities($authority, $roles);
 
-        return [
-            $abilities->filter(function ($value) {
-                return ((bool) $value['forbidden']) === false;
-            })->keyBy('identifier'),
-            $abilities->filter(function ($value) {
-                return ((bool) $value['forbidden']) === true;
-            })->keyBy('identifier'),
-        ];
+            return new StoreMap($roles, $abilities);
+        });
     }
 
     /**
-     * Get a list of the authority's abilities.
+     * Get an item from the cache, or store the default value forever.
+     *
+     * @param string $key
+     * @param callable $callback
+     * @return \Ethereal\Bastion\Store\StoreMap
+     */
+    protected function sear($key, callable $callback)
+    {
+        if (($value = $this->cache->get($key)) === null) {
+            $this->cache->forever($key, $value = $callback());
+        }
+
+        return $value;
+    }
+
+    /**
+     * Get the cache key for the given model's cache type.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @return string
+     */
+    protected function getCacheKey(Model $authority)
+    {
+        return $this->tag . '/' . Str::slug($authority->getMorphClass()) . '|' . $authority->getKey();
+    }
+
+    /**
+     * Get roles assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getAbilities(Model $authority)
+    protected function getRoles(Model $authority)
     {
-        $authorityMorph = $authority->getMorphClass();
-        $authorityKey = $authority->getKey();
+        /** @var Role $class */
+        $class = Helper::getRoleModelClass();
 
-        $permissionsTable = Helper::permissionsTable();
-        $abilitiesTable = Helper::abilitiesTable();
-        $rolesMorph = Helper::rolesModel()->getMorphClass();
+        return $class::getRoles($authority);
+    }
 
-        return Helper::abilityModel()
-            // Join permissions table
-            ->join($permissionsTable, "{$permissionsTable}.ability_id", '=', "{$abilitiesTable}.id")
-            // Apply authority constraints
-            ->where(function ($query) use ($permissionsTable, $authorityMorph, $authorityKey) {
-                $query->where("{$permissionsTable}.entity_id", $authorityKey)->where("{$permissionsTable}.entity_type", $authorityMorph);
-            })
-            // Apply roles constraints
-            ->orWhere(function ($query) use ($permissionsTable, $authorityKey, $authorityMorph, $rolesMorph) {
-                $query->whereIn("{$permissionsTable}.entity_id", function ($query) use ($permissionsTable, $authorityKey, $authorityMorph) {
-                    $query
-                        ->select('role_id')
-                        ->from(Helper::assignedRolesTable())
-                        ->where('entity_id', $authorityKey)
-                        ->where('entity_type', $authorityMorph);
-                })->where("{$permissionsTable}.entity_type", $rolesMorph);
-            })->get(['abilities.*', "{$permissionsTable}.forbidden"]);
+    /**
+     * Get abilities assigned to authority.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param \Illuminate\Database\Eloquent\Collection|null $roles
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    protected function getAbilities(Model $authority, Collection $roles = null)
+    {
+        $roles = $roles ?: $this->getRoles($authority);
+        /** @var Ability $class */
+        $class = Helper::getAbilityModelClass();
+
+        return $class::getAbilities($authority, $roles);
     }
 
     /**
@@ -199,9 +246,36 @@ class Clipboard
     }
 
     /**
-     * Set whether the bastion is the exclusive authority on gate access.
+     * Get the cache instance.
      *
-     * @param bool $boolean
+     * @return \Illuminate\Contracts\Cache\Store
+     */
+    public function getCache()
+    {
+        return $this->cache;
+    }
+
+    /**
+     * Set the cache instance.
+     *
+     * @param \Illuminate\Contracts\Cache\Store $cache
+     * @return $this
+     */
+    public function setCache(CacheStore $cache)
+    {
+        if (method_exists($cache, 'tags')) {
+            $cache = $cache->tags($this->tag);
+        }
+
+        $this->cache = $cache;
+
+        return $this;
+    }
+
+    /**
+     * Set whether the bouncer is the exclusive authority on gate access.
+     *
+     * @param  bool $boolean
      * @return $this
      */
     public function setExclusivity($boolean)
@@ -219,25 +293,14 @@ class Clipboard
      */
     public function checkRole(Model $authority, $roles, $boolean = 'or')
     {
-        $available = $this->getRoles($authority)->intersect($roles);
+        $available = $this->getMap($authority)->getRoleNames()->intersect($roles);
 
         if ($boolean === 'or') {
             return $available->count() > 0;
         } elseif ($boolean === 'not') {
-            return $available->count() === 0;
+            return $available->isEmpty();
         }
 
         return $available->count() === count((array) $roles);
-    }
-
-    /**
-     * Get the given authority's roles.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return \Illuminate\Support\Collection
-     */
-    public function getRoles(Model $authority)
-    {
-        return $authority->roles()->pluck('name');
     }
 }

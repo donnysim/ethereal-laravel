@@ -2,21 +2,14 @@
 
 namespace Ethereal\Bastion;
 
-use Illuminate\Database\Eloquent\Model;
+use Ethereal\Bastion\Database\Ability;
+use Ethereal\Bastion\Database\AssignedRole;
+use Ethereal\Bastion\Database\Permission;
+use Ethereal\Bastion\Database\Role;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 class Helper
 {
-    /**
-     * Get assigned roles table.
-     *
-     * @return string
-     */
-    public static function assignedRolesTable()
-    {
-        return static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
-    }
-
     /**
      * Get application config.
      *
@@ -30,23 +23,13 @@ class Helper
     }
 
     /**
-     * Get abilities table.
-     *
-     * @return string
-     */
-    public static function abilitiesTable()
-    {
-        return static::getConfig('bastion.tables.abilities', 'abilities');
-    }
-
-    /**
      * Get ability model instance.
      *
      * @return \Illuminate\Database\Eloquent\Model
      */
-    public static function abilityModel()
+    public static function getAbilityModel()
     {
-        $class = static::abilityModelClass();
+        $class = static::getAbilityModelClass();
 
         return new $class;
     }
@@ -56,152 +39,131 @@ class Helper
      *
      * @return string
      */
-    public static function abilityModelClass()
+    public static function getAbilityModelClass()
     {
-        $class = static::getConfig('bastion.models.ability');
+        $class = static::getConfig('bastion.models.ability', Ability::class);
 
         return $class;
     }
 
     /**
-     * Get permissions table.
+     * Get abilities table.
      *
      * @return string
      */
-    public static function permissionsTable()
+    public static function getAbilityTable()
     {
-        return static::getConfig('bastion.tables.permissions', 'permissions');
+        $class = static::getConfig('bastion.tables.abilities', 'abilities');
+
+        return $class;
     }
 
     /**
-     * Get roles model instance.
+     * Get assigned role model instance.
      *
      * @return \Illuminate\Database\Eloquent\Model
      */
-    public static function rolesModel()
+    public static function getAssignedRoleModel()
     {
-        $class = static::rolesModelClass();
+        $class = static::getAssignedRoleModelClass();
 
         return new $class;
     }
 
     /**
-     * Get roles model class name.
+     * Get assigned role model class name.
      *
      * @return string
      */
-    public static function rolesModelClass()
+    public static function getAssignedRoleModelClass()
     {
-        $class = static::getConfig('bastion.models.role');
+        $class = static::getConfig('bastion.models.assigned_role', AssignedRole::class);
 
         return $class;
     }
 
     /**
-     * Get roles table.
+     * Get assigned role table.
      *
      * @return string
      */
-    public static function rolesTable()
+    public static function getAssignedRoleTable()
     {
-        return static::getConfig('bastion.tables.roles', 'roles');
+        $class = static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
+
+        return $class;
     }
 
     /**
-     * Get database manager.
+     * Get role model instance.
      *
-     * @return \Illuminate\Database\DatabaseManager|\Illuminate\Database\Connection
+     * @return \Illuminate\Database\Eloquent\Model
      */
-    public static function database()
+    public static function getRoleModel()
     {
-        return app('db');
+        $class = static::getRoleModelClass();
+
+        return new $class;
     }
 
     /**
-     * Get clipboard instance.
+     * Get role model class name.
      *
-     * @return \Ethereal\Bastion\Clipboard
+     * @return string
      */
-    public static function clipboard()
+    public static function getRoleModelClass()
     {
-        return app(Clipboard::class);
+        $class = static::getConfig('bastion.models.role', Role::class);
+
+        return $class;
     }
 
     /**
-     * Gather a collection of roles.
+     * Get role table.
      *
-     * @param string|int|array $roles
-     * @return \Illuminate\Support\Collection
+     * @return string
      */
-    public static function collectRoles($roles)
+    public static function getRoleTable()
     {
-        $rolesList = collect([]);
-        $rolesModelClass = Helper::rolesModelClass();
+        $class = static::getConfig('bastion.tables.roles', 'roles');
 
-        foreach ($roles as $role) {
-            if ($role instanceof Model) {
-                if (! $role->exists) {
-                    throw new \InvalidArgumentException('Provided role model does not existing. Did you forget to save it?');
-                }
-
-                $rolesList[] = $role;
-            } elseif (is_numeric($role)) {
-                $rolesList[] = $rolesModelClass::findOrFail($role);
-            } elseif (is_string($role)) {
-                $rolesList[] = $rolesModelClass::firstOrCreate([
-                    'name' => $role,
-                ]);
-            }
-        }
-
-        return $rolesList;
+        return $class;
     }
 
     /**
-     * Gather a collection of abilities.
+     * Get permission model instance.
      *
-     * @param $abilities
-     * @param null $model
-     * @param bool $create
-     * @return \Illuminate\Support\Collection
+     * @return \Illuminate\Database\Eloquent\Model
      */
-    public static function collectAbilities($abilities, $model = null, $create = true)
+    public static function getPermissionModel()
     {
-        $abilitiesList = collect([]);
-        $abilityModelClass = Helper::abilityModelClass();
+        $class = static::getPermissionModelClass();
 
-        foreach ($abilities as $ability) {
-            if ($ability instanceof Model) {
-                if (! $ability->exists) {
-                    throw new \InvalidArgumentException('Provided ability model does not existing. Did you forget to save it?');
-                }
+        return new $class;
+    }
 
-                $abilitiesList[] = $ability;
-            } elseif (is_numeric($ability)) {
-                $abilitiesList[] = $abilityModelClass::findOrFail($ability);
-            } elseif (is_string($ability)) {
-                $entityType = null;
-                if (is_string($model)) {
-                    $entityType = static::getMorphClassName($model);
-                } elseif ($model instanceof Model) {
-                    $entityType = $model->getMorphClass();
-                }
+    /**
+     * Get permission model class name.
+     *
+     * @return string
+     */
+    public static function getPermissionModelClass()
+    {
+        $class = static::getConfig('bastion.models.permission', Permission::class);
 
-                $instance = $abilityModelClass::query()
-                    ->where('name', $ability)
-                    ->where('entity_id', $model instanceof Model && $model->exists ? $model->getKey() : null)
-                    ->where('entity_type', $entityType)
-                    ->first();
+        return $class;
+    }
 
-                if ($instance) {
-                    $abilitiesList[] = $instance;
-                } elseif ($create) {
-                    $abilitiesList[] = static::createAbility($ability, $model);
-                }
-            }
-        }
+    /**
+     * Get permission table.
+     *
+     * @return string
+     */
+    public static function getPermissionTable()
+    {
+        $class = static::getConfig('bastion.tables.permissions', 'permissions');
 
-        return $abilitiesList;
+        return $class;
     }
 
     /**
@@ -221,46 +183,5 @@ class Helper
         }
 
         return $classPath;
-    }
-
-    /**
-     * Create a new ability.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @return mixed
-     */
-    public static function createAbility($ability, $model = null)
-    {
-        $abilityClass = static::abilityModelClass();
-
-        if ($model === null) {
-            return $abilityClass::forceCreate([
-                'name' => $ability,
-            ]);
-        }
-
-        if ($model === '*') {
-            return $abilityClass::forceCreate([
-                'name' => $ability,
-                'entity_type' => '*',
-            ]);
-        }
-
-        return $abilityClass::forceCreate([
-            'name' => $ability,
-            'entity_id' => $model instanceof Model && $model->exists ? $model->getKey() : null,
-            'entity_type' => is_string($model) ? static::getMorphClassName($model) : $model->getMorphClass(),
-        ]);
-    }
-
-    /**
-     * Get a list of authority classes.
-     *
-     * @return string[]
-     */
-    public static function authorities()
-    {
-        return static::getConfig('bastion.authorities', []);
     }
 }

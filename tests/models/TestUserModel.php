@@ -4,8 +4,6 @@ use Ethereal\Database\Ethereal;
 
 class TestUserModel extends Ethereal
 {
-    use \Ethereal\Bastion\Traits\HasAbilities, \Ethereal\Bastion\Traits\HasRoles;
-
     protected $table = 'users';
 
     protected $guarded = [];
@@ -17,7 +15,7 @@ class TestUserModel extends Ethereal
         $faker = \Faker\Factory::create();
 
         $instance = new static([
-            'email' => $faker->email,
+            'email' => $faker->unique()->email,
             'password' => $faker->password,
         ]);
 

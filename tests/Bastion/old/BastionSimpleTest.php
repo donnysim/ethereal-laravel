@@ -2,6 +2,10 @@
 
 class BastionSimpleTest extends BaseTestCase
 {
+
+
+
+
     public function test_bastion_can_give_and_remove_abilities()
     {
         $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
@@ -194,5 +198,34 @@ class BastionSimpleTest extends BaseTestCase
         });
         static::assertTrue($bastion->allows('edit', new TestProfileModel(['user_id' => $user->id])));
         static::assertFalse($bastion->allows('edit', new TestProfileModel(['user_id' => 99])));
+    }
+
+    public function test_perf_joins()
+    {
+        $bastion = $this->bastion();
+
+        for ($i = 0; $i < 1000; $i++) {
+            $user = TestUserModel::random();
+            $user->smartPush();
+
+            $bastion->assign('moderator')->to($user);
+            $bastion->allow('moderator')->to('*', '*');
+            $bastion->assign('tester')->to($user);
+            $bastion->allow('tester')->to('access-dashboard');
+            $bastion->assign('gangster')->to($user);
+            $bastion->allow('gangster')->to('break-dashboard');
+            $bastion->allow('gangster')->to('edit', $user);
+        }
+
+        $bastion = $this->bastion($user);
+
+        $this->app['db']->listen(function(\Illuminate\Database\Events\QueryExecuted $sql) {
+            echo 'Query: ' . $sql->sql . PHP_EOL;
+            echo 'Query Time: ' . $sql->time . PHP_EOL . PHP_EOL;
+        });
+
+        $abilities = $bastion->getClipboard()->getAbilities($user);
+        $abilities2 = $bastion->getClipboard()->getAuthorityMap($user);
+
     }
 }

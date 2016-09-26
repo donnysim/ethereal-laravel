@@ -13,9 +13,11 @@ class TestCreateBastionTables extends Migration
      */
     public function up()
     {
-        Schema::create(Helper::abilitiesTable(), function (Blueprint $table) {
+        Schema::create(Helper::getAbilityTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->increments('id');
-            $table->string('name');
+            $table->string('name', 100);
+            $table->string('title')->nullable();
             $table->integer('entity_id')->unsigned()->nullable();
             $table->string('entity_type')->nullable();
             $table->timestamps();
@@ -23,26 +25,33 @@ class TestCreateBastionTables extends Migration
             $table->unique(['name', 'entity_id', 'entity_type']);
         });
 
-        Schema::create(Helper::rolesTable(), function (Blueprint $table) {
+        Schema::create(Helper::getRoleTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->increments('id');
-            $table->string('name')->unique();
+            $table->string('name', 100)->unique();
+            $table->string('title')->nullable();
+            $table->boolean('system')->default(0)->comment('Is system role, should not be deleted.');
+            $table->boolean('private')->default(0)->comment('Is not visible for users or lower level roles.');
+            $table->integer('level')->unsigned()->default(1);
             $table->timestamps();
         });
 
-        Schema::create(Helper::assignedRolesTable(), function (Blueprint $table) {
+        Schema::create(Helper::getAssignedRoleTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->integer('role_id')->unsigned()->index();
             $table->morphs('entity');
 
-            $table->foreign('role_id')->references('id')->on(Helper::rolesTable())
+            $table->foreign('role_id')->references('id')->on(Helper::getRoleTable())
                 ->onUpdate('cascade')->onDelete('cascade');
         });
 
-        Schema::create(Helper::permissionsTable(), function (Blueprint $table) {
+        Schema::create(Helper::getPermissionTable(), function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->integer('ability_id')->unsigned()->index();
             $table->morphs('entity');
             $table->boolean('forbidden')->default(false);
 
-            $table->foreign('ability_id')->references('id')->on(Helper::abilitiesTable())->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('ability_id')->references('id')->on(Helper::getPermissionTable())->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
