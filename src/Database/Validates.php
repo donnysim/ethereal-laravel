@@ -20,7 +20,7 @@ trait Validates
     /**
      * Check if model is valid, otherwise throw an exception.
      *
-     * @return bool
+     * @return $this
      * @throws \Illuminate\Validation\ValidationException
      */
     public function validOrFail()
@@ -29,7 +29,7 @@ trait Validates
             $this->throwValidationException();
         }
 
-        return true;
+        return $this;
     }
 
     /**
@@ -102,7 +102,7 @@ trait Validates
     /**
      * Check if model is fully valid otherwise throw an exception.
      *
-     * @return bool
+     * @return $this
      * @throws \Illuminate\Validation\ValidationException
      */
     public function fullyValidOrFail()
@@ -111,7 +111,7 @@ trait Validates
             $this->throwValidationException();
         }
 
-        return true;
+        return $this;
     }
 
     /**
