@@ -4,7 +4,10 @@ use Ethereal\Bastion\Bastion;
 use Ethereal\Bastion\Clipboard;
 use Ethereal\Bastion\Helper;
 use Ethereal\Bastion\Sanitizer;
+use Ethereal\Bastion\Store\Store;
+use Ethereal\Database\Ethereal;
 use Illuminate\Auth\Access\Gate;
+use Illuminate\Container\Container;
 use Orchestra\Testbench\TestCase;
 
 class BaseTestCase extends TestCase
@@ -74,12 +77,21 @@ class BaseTestCase extends TestCase
         return new \Ethereal\Cache\GroupFileStore($this->app['files'], __DIR__ . '/cache');
     }
 
-//    protected function bastion($authority = null)
-//    {
-//        $bastion = new Bastion($this->gate($authority), Helper::clipboard(), new Sanitizer());
-//
-//        return $bastion;
-//    }
+    protected function gate(Ethereal $authority)
+    {
+        $gate = new Gate(new Container, function () use ($authority) {
+            return $authority;
+        });
+
+        return $gate;
+    }
+
+    protected function bastion(Ethereal $authority)
+    {
+        $bastion = new Bastion($this->gate($authority), new Store($this->cacheStore()));
+
+        return $bastion;
+    }
 //
 //    protected function gate($authority)
 //    {

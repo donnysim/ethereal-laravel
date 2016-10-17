@@ -12,7 +12,7 @@ class AssignedRole extends Ethereal
      *
      * @param array $attributes
      */
-    public function __construct(array $attributes)
+    public function __construct(array $attributes = [])
     {
         $this->table = Helper::getAssignedRoleTable();
 

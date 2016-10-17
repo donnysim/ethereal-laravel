@@ -35,6 +35,13 @@ class Store
     protected $cache;
 
     /**
+     * Use cache to store query results.
+     *
+     * @var bool
+     */
+    protected $useCache = true;
+
+    /**
      * Store constructor.
      * @param \Illuminate\Contracts\Cache\Store $cache
      */
@@ -147,6 +154,10 @@ class Store
      */
     protected function sear($key, callable $callback)
     {
+        if (! $this->useCache) {
+            return $callback();
+        }
+
         if (($value = $this->cache->get($key)) === null) {
             $this->cache->forever($key, $value = $callback());
         }
@@ -171,7 +182,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    protected function getRoles(Model $authority)
+    public function getRoles(Model $authority)
     {
         /** @var Role $class */
         $class = Helper::getRoleModelClass();
@@ -186,7 +197,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    protected function getAbilities(Model $authority, Collection $roles = null)
+    public function getAbilities(Model $authority, Collection $roles = null)
     {
         $roles = $roles ?: $this->getRoles($authority);
         /** @var Ability $class */
@@ -302,5 +313,21 @@ class Store
         }
 
         return $available->count() === count((array) $roles);
+    }
+
+    /**
+     * Enable cache.
+     */
+    public function enableCache()
+    {
+        $this->useCache = true;
+    }
+
+    /**
+     * Disable cache.
+     */
+    public function disableCache()
+    {
+        $this->useCache = false;
     }
 }
