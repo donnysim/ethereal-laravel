@@ -10,19 +10,10 @@ use InvalidArgumentException;
 trait IsRole
 {
     /**
-     * Get role level.
-     *
-     * @return int
-     */
-    public function getLevel()
-    {
-        return $this->attributes['level'];
-    }
-
-    /**
      * Get roles assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     * @return Collection
      */
     public static function getRoles(Model $authority)
     {
@@ -71,6 +62,16 @@ trait IsRole
         }
 
         return $rolesList->keyBy('id');
+    }
+
+    /**
+     * Get role level.
+     *
+     * @return int
+     */
+    public function getLevel()
+    {
+        return $this->attributes['level'];
     }
 
     /**

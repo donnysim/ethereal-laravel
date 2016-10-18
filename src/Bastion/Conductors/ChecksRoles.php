@@ -2,7 +2,6 @@
 
 namespace Ethereal\Bastion\Conductors;
 
-use Ethereal\Bastion\Helper;
 use Ethereal\Bastion\Store\Store;
 use Illuminate\Database\Eloquent\Model;
 
