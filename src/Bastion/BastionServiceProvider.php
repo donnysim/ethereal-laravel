@@ -19,14 +19,6 @@ class BastionServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register bastion at gate.
-     */
-    public function boot()
-    {
-        $this->registerAtGate();
-    }
-
-    /**
      * Register singleton Store instance.
      */
     protected function registerStore()
@@ -49,6 +41,14 @@ class BastionServiceProvider extends ServiceProvider
 
             return $bastion;
         });
+    }
+
+    /**
+     * Register bastion at gate.
+     */
+    public function boot()
+    {
+        $this->registerAtGate();
     }
 
     /**
