@@ -20,12 +20,4 @@ return [
         'permission' => \Ethereal\Bastion\Database\Permission::class,
         'role' => \Ethereal\Bastion\Database\Role::class,
     ],
-
-    /*
-     * A list of classes that have abilities and/or roles.
-     * This list is used to clear cached items.
-     */
-    'authorities' => [
-        App\User::class,
-    ],
 ];
