@@ -284,6 +284,16 @@ class Store
     }
 
     /**
+     * Clear authority cache.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     */
+    public function clearCacheFor(Model $authority)
+    {
+        $this->cache->forget($this->getCacheKey($authority));
+    }
+
+    /**
      * Set whether the bouncer is the exclusive authority on gate access.
      *
      * @param  bool $boolean

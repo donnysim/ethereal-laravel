@@ -5,7 +5,20 @@ use Illuminate\Database\Eloquent\Collection;
 
 class RolesTest extends BaseTestCase
 {
-    public function test_can_give_and_remove_roles()
+    public function test_can_assign_roles()
+    {
+        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
+
+        $bastion->assign('admin')->to($user);
+
+        static::assertTrue($bastion->is($user)->an('admin'));
+
+        $bastion->assign('user')->to($user);
+
+        static::assertTrue($bastion->is($user)->all('user', 'admin'));
+    }
+
+    public function test_can_remove_roles()
     {
         $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
         $bastion->disableCache();
@@ -39,5 +52,21 @@ class RolesTest extends BaseTestCase
 
         static::assertTrue($bastion->is($user)->all('user', 'admin'));
         static::assertFalse($bastion->is($user)->all('user', 'manager'));
+    }
+
+    public function test_fails_to_assign_on_non_existing_model()
+    {
+        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
+
+        $this->setExpectedException(InvalidArgumentException::class);
+        $bastion->assign('user', 'admin')->to(new TestUserModel());
+    }
+
+    public function test_fails_to_retract_from_non_existing_model()
+    {
+        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
+
+        $this->setExpectedException(InvalidArgumentException::class);
+        $bastion->retract('user')->from(new TestUserModel());
     }
 }

@@ -107,28 +107,6 @@ class Bastion
     }
 
     /**
-     * Start a chain, to assign the given role to a authority.
-     *
-     * @param $roles
-     * @return \Ethereal\Bastion\Conductors\AssignsRoles
-     */
-    public function assign($roles)
-    {
-        return new AssignsRoles(func_get_args());
-    }
-
-    /**
-     * Start a chain, to retract the given role from a authority.
-     *
-     * @param $roles
-     * @return \Ethereal\Bastion\Conductors\RemovesRoles
-     */
-    public function retract($roles)
-    {
-        return new RemovesRoles(func_get_args());
-    }
-
-    /**
      * Define a new ability using a callback.
      *
      * @param string $ability

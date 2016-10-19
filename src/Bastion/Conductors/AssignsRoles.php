@@ -18,13 +18,22 @@ class AssignsRoles
     protected $roles;
 
     /**
+     * Permission store.
+     *
+     * @var \Ethereal\Bastion\Store\Store
+     */
+    protected $store;
+
+    /**
      * AssignsRole constructor.
      *
+     * @param $store
      * @param string|int|array $roles
      */
-    public function __construct($roles)
+    public function __construct($store, $roles)
     {
-        $this->roles = is_array($roles) ? $roles : func_get_args();
+        $this->roles = $roles;
+        $this->store = $store;
     }
 
     /**
@@ -36,28 +45,30 @@ class AssignsRoles
     {
         $authorities = is_array($authority) ? $authority : func_get_args();
 
-        /** @var Role $roleClass */
+        /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
         $roles = $roleClass::collectRoles($this->roles);
 
-        /** @var AssignedRole $assignedRoleClass */
+        /** @var \Ethereal\Bastion\Database\AssignedRole $assignedRoleClass */
         $assignedRoleClass = Helper::getAssignedRoleModelClass();
 
-        foreach ($authorities as $authority) {
+        foreach ($authorities as $auth) {
             /** @var Model $authority */
-            if (! $authority->exists) {
+            if (! $auth->exists) {
                 throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 
-            $existingRoles = $roleClass::getRoles($authority);
+            $existingRoles = $roleClass::getRoles($auth);
             $missingRoles = $roles->keys()->diff($existingRoles->keys());
             $inserts = [];
 
             foreach ($missingRoles as $missingId) {
-                $inserts[] = $roles->get($missingId)->createAssignRecord($authority);
+                $inserts[] = $roles->get($missingId)->createAssignRecord($auth);
             }
 
             $assignedRoleClass::insert($inserts);
+
+            $this->store->clearCacheFor($auth);
         }
     }
 }

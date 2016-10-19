@@ -17,8 +17,7 @@ class GroupFileStore extends FileStore
         $group = explode('|', $key, 2);
         $prefix = '';
         if (count($group) === 2) {
-            $prefix = $group[0];
-            $key = $group[1];
+            list($prefix, $key) = $group;
         }
 
         $parts = array_slice(str_split($hash = sha1($key), 2), 0, 2);
