@@ -27,7 +27,7 @@ class ChecksRoles
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param \Ethereal\Bastion\Store\Store $store
      */
-    public function __construct(Model $authority, Store $store)
+    public function __construct(Store $store, Model $authority)
     {
         $this->authority = $authority;
         $this->store = $store;

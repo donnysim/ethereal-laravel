@@ -4,7 +4,9 @@ namespace Ethereal\Bastion;
 
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
+use Ethereal\Bastion\Conductors\DeniesAbilities;
 use Ethereal\Bastion\Conductors\GivesAbilities;
+use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Store\Store;
@@ -87,6 +89,28 @@ class Bastion
     }
 
     /**
+     * Start a chain, to forbid the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\DeniesAbilities
+     */
+    public function forbid($authorities)
+    {
+        return new DeniesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+    }
+
+    /**
+     * Start a chain, to forbid the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\PermitsAbilities
+     */
+    public function permit($authorities)
+    {
+        return new PermitsAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+    }
+
+    /**
      * Start a chain, to check if the given authority has a certain role.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -94,7 +118,7 @@ class Bastion
      */
     public function is(Model $authority)
     {
-        return new ChecksRoles($authority, $this->store);
+        return new ChecksRoles($this->getStore(), $authority);
     }
 
     /**
@@ -172,6 +196,14 @@ class Bastion
     public function refreshFor(Model $authority)
     {
         $this->getStore()->clearCacheFor($authority);
+    }
+
+    /**
+     * Clear cached data.
+     */
+    public function clearCache()
+    {
+        $this->getStore()->clearCache();
     }
 
     /**

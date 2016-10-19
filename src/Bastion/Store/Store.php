@@ -173,6 +173,8 @@ class Store
      */
     protected function getCacheKey(Model $authority)
     {
+        // TODO change how it groups
+
         return $this->tag . '/' . Str::slug($authority->getMorphClass()) . '|' . $authority->getKey();
     }
 
@@ -291,6 +293,16 @@ class Store
     public function clearCacheFor(Model $authority)
     {
         $this->cache->forget($this->getCacheKey($authority));
+    }
+
+    /**
+     * Clear authority cache.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     */
+    public function clearCache()
+    {
+        $this->cache->flush();
     }
 
     /**

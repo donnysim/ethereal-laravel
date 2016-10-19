@@ -14,14 +14,16 @@ trait IsPermission
      *
      * @param int $abilityId
      * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param bool $forbids
      * @return array
      */
-    public static function createPermissionRecord($abilityId, Model $authority)
+    public static function createPermissionRecord($abilityId, Model $authority, $forbids = false)
     {
         return [
             'ability_id' => $abilityId,
             'entity_id' => $authority->exists ? $authority->getKey() : null,
             'entity_type' => $authority->getMorphClass(),
+            'forbidden' => $forbids,
         ];
     }
 }

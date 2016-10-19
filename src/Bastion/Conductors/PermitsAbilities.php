@@ -3,8 +3,9 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
+use Illuminate\Database\Eloquent\Model;
 
-class GivesAbilities
+class PermitsAbilities
 {
     /**
      * List of authorities to give the abilities.
@@ -51,20 +52,20 @@ class GivesAbilities
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                // TODO move to role model?
-                $authority = $roleModelClass::firstOrCreate([
-                    'name' => $authority,
-                ]);
+                $authority = $roleModelClass::where('name', $authority)->first();
+
+                if (! $authority) {
+                    continue;
+                }
+            } elseif ($authority instanceof Model && $authority->exists) {
+                // TODO move to model?
+
+                $permissionModelClass::whereIn('ability_id', $abilityIds)
+                    ->where('entity_id', $authority->getKey())
+                    ->where('entity_type', $authority->getMorphClass())
+                    ->where('forbidden', true)
+                    ->delete();
             }
-
-            $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn('id', $abilityIds->all())->pluck('id'));
-            $inserts = [];
-
-            foreach ($missingAbilities as $abilityId) {
-                $inserts[] = $permissionModelClass::createPermissionRecord($abilityId, $authority);
-            }
-
-            $permissionModelClass::insert($inserts);
         }
 
         $this->store->clearCache();

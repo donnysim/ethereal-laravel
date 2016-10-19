@@ -61,8 +61,8 @@ class RemovesAbilities
             }
 
             $authority->abilities()->detach($abilityIds->all());
-
-            $this->store->clearCacheFor($authority);
         }
+
+        $this->store->clearCache();
     }
 }
