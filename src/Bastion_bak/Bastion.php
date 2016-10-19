@@ -166,16 +166,6 @@ class Bastion
     }
 
     /**
-     * Get clipboard instance.
-     *
-     * @return \Ethereal\Bastion\Clipboard
-     */
-    public function getClipboard()
-    {
-        return $this->clipboard;
-    }
-
-    /**
      * Set the bouncer to be the exclusive authority on gate access.
      *
      * @param bool $boolean
@@ -186,58 +176,5 @@ class Bastion
         $this->clipboard->setExclusivity($boolean);
 
         return $this;
-    }
-
-    /**
-     * Use the given cache instance.
-     *
-     * @param \Illuminate\Contracts\Cache\Store $cache
-     * @return $this
-     */
-    public function cache(Store $cache = null)
-    {
-        $cache = $cache ?: Helper::make(Repository::class)->getStore();
-
-        $this->clipboard->setCache($cache);
-
-        return $this;
-    }
-
-    /**
-     * Clear the cache.
-     *
-     * @param null|\Illuminate\Database\Eloquent\Model $authority
-     * @return $this
-     */
-    public function refresh(Model $authority = null)
-    {
-        $this->clipboard->refresh($authority);
-
-        return $this;
-    }
-
-    /**
-     * Clear the cache for the given authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return $this
-     */
-    public function refreshFor(Model $authority)
-    {
-        $this->clipboard->refreshFor($authority);
-
-        return $this;
-    }
-
-    /**
-     * Sanitize target model.
-     *
-     * @param mixed $target
-     * @param array $options
-     * @throws \InvalidArgumentException
-     */
-    public function sanitize(&$target, array $options = [])
-    {
-        $this->sanitizer->sanitize($target, $options);
     }
 }

@@ -58,6 +58,16 @@ class Bastion
     }
 
     /**
+     * Get roles and permissions store.
+     *
+     * @return \Ethereal\Bastion\Store\Store
+     */
+    public function getStore()
+    {
+        return $this->store;
+    }
+
+    /**
      * Start a chain, to check if the given authority has a certain role.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -96,12 +106,12 @@ class Bastion
     }
 
     /**
-     * Get roles and permissions store.
+     * Clear cached data for authority.
      *
-     * @return \Ethereal\Bastion\Store\Store
+     * @param \Illuminate\Database\Eloquent\Model $authority
      */
-    public function getStore()
+    public function refreshFor(Model $authority)
     {
-        return $this->store;
+        $this->getStore()->clearCacheFor($authority);
     }
 }
