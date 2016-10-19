@@ -173,9 +173,7 @@ class Store
      */
     protected function getCacheKey(Model $authority)
     {
-        // TODO change how it groups
-
-        return $this->tag . '/' . Str::slug($authority->getMorphClass()) . '|' . $authority->getKey();
+        return Str::slug($authority->getMorphClass()) . '|' . $authority->getKey();
     }
 
     /**
