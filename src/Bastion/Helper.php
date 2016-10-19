@@ -41,9 +41,7 @@ class Helper
      */
     public static function getAbilityModelClass()
     {
-        $class = static::getConfig('bastion.models.ability', Ability::class);
-
-        return $class;
+        return static::getConfig('bastion.models.ability', Ability::class);
     }
 
     /**
@@ -53,9 +51,7 @@ class Helper
      */
     public static function getAbilityTable()
     {
-        $class = static::getConfig('bastion.tables.abilities', 'abilities');
-
-        return $class;
+        return static::getConfig('bastion.tables.abilities', 'abilities');
     }
 
     /**
@@ -77,9 +73,7 @@ class Helper
      */
     public static function getAssignedRoleModelClass()
     {
-        $class = static::getConfig('bastion.models.assigned_role', AssignedRole::class);
-
-        return $class;
+        return static::getConfig('bastion.models.assigned_role', AssignedRole::class);
     }
 
     /**
@@ -89,9 +83,7 @@ class Helper
      */
     public static function getAssignedRoleTable()
     {
-        $class = static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
-
-        return $class;
+        return static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
     }
 
     /**
@@ -113,9 +105,7 @@ class Helper
      */
     public static function getRoleModelClass()
     {
-        $class = static::getConfig('bastion.models.role', Role::class);
-
-        return $class;
+        return static::getConfig('bastion.models.role', Role::class);
     }
 
     /**
@@ -125,9 +115,7 @@ class Helper
      */
     public static function getRoleTable()
     {
-        $class = static::getConfig('bastion.tables.roles', 'roles');
-
-        return $class;
+        return static::getConfig('bastion.tables.roles', 'roles');
     }
 
     /**
@@ -149,9 +137,7 @@ class Helper
      */
     public static function getPermissionModelClass()
     {
-        $class = static::getConfig('bastion.models.permission', Permission::class);
-
-        return $class;
+        return static::getConfig('bastion.models.permission', Permission::class);
     }
 
     /**
@@ -161,9 +147,7 @@ class Helper
      */
     public static function getPermissionTable()
     {
-        $class = static::getConfig('bastion.tables.permissions', 'permissions');
-
-        return $class;
+        return static::getConfig('bastion.tables.permissions', 'permissions');
     }
 
     /**
