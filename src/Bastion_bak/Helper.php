@@ -224,37 +224,6 @@ class Helper
     }
 
     /**
-     * Create a new ability.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @return mixed
-     */
-    public static function createAbility($ability, $model = null)
-    {
-        $abilityClass = static::abilityModelClass();
-
-        if ($model === null) {
-            return $abilityClass::forceCreate([
-                'name' => $ability,
-            ]);
-        }
-
-        if ($model === '*') {
-            return $abilityClass::forceCreate([
-                'name' => $ability,
-                'entity_type' => '*',
-            ]);
-        }
-
-        return $abilityClass::forceCreate([
-            'name' => $ability,
-            'entity_id' => $model instanceof Model && $model->exists ? $model->getKey() : null,
-            'entity_type' => is_string($model) ? static::getMorphClassName($model) : $model->getMorphClass(),
-        ]);
-    }
-
-    /**
      * Get a list of authority classes.
      *
      * @return string[]

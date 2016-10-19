@@ -25,6 +25,7 @@ class RemovesRoles
     /**
      * AssignsRole constructor.
      *
+     * @param \Ethereal\Bastion\Store\Store $store
      * @param string|int|array $roles
      */
     public function __construct($store, $roles)
