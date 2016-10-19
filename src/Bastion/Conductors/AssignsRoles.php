@@ -2,8 +2,6 @@
 
 namespace Ethereal\Bastion\Conductors;
 
-use Ethereal\Bastion\Database\AssignedRole;
-use Ethereal\Bastion\Database\Role;
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;

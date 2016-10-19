@@ -4,10 +4,10 @@ namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
 
-class GivesAbilities
+class RemovesAbilities
 {
     /**
-     * List of authorities to give the abilities.
+     * List of authorities to remove abilities from.
      *
      * @var array|string
      */
@@ -44,27 +44,23 @@ class GivesAbilities
         $abilityClass = Helper::getAbilityModelClass();
         /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
         $roleModelClass = Helper::getRoleModelClass();
-        /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
-        $permissionModelClass = Helper::getPermissionModelClass();
 
         $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
 
+        if ($abilityIds->isEmpty()) {
+            return;
+        }
+
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                // TODO move to role model?
-                $authority = $roleModelClass::firstOrCreate([
-                    'name' => $authority
-                ]);
+                $authority = $roleModelClass::where('name', $authority)->first();
+
+                if (! $authority) {
+                    continue;
+                }
             }
 
-            $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn('id', $abilityIds->all())->pluck('id'));
-            $inserts = [];
-
-            foreach ($missingAbilities as $abilityId) {
-                $inserts[] = $permissionModelClass::createPermissionRecord($abilityId, $authority);
-            }
-
-            $permissionModelClass::insert($inserts);
+            $authority->abilities()->detach($abilityIds->all());
 
             $this->store->clearCacheFor($authority);
         }

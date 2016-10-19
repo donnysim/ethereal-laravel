@@ -52,39 +52,6 @@ class Bastion
     }
 
     /**
-     * Start a chain, to check if the given authority has a certain role.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return \Ethereal\Bastion\Conductors\ChecksRoles
-     */
-    public function is(Model $authority)
-    {
-        return new ChecksRoles($authority, $this->clipboard);
-    }
-
-    /**
-     * Start a chain, to allow the given authority an ability.
-     *
-     * @param $authorities
-     * @return \Ethereal\Bastion\Conductors\GivesAbilities
-     */
-    public function allow($authorities)
-    {
-        return new GivesAbilities(func_get_args());
-    }
-
-    /**
-     * Start a chain, to disallow the given authority an ability.
-     *
-     * @param $authorities
-     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
-     */
-    public function disallow($authorities)
-    {
-        return new RemovesAbilities(func_get_args());
-    }
-
-    /**
      * Start a chain, to forbid the given authority an ability.
      *
      * @param $authorities
@@ -106,75 +73,4 @@ class Bastion
         return new PermitsAbilities(func_get_args());
     }
 
-    /**
-     * Define a new ability using a callback.
-     *
-     * @param string $ability
-     * @param callable|string $callback
-     * @return $this
-     * @throws \InvalidArgumentException
-     */
-    public function define($ability, $callback)
-    {
-        $this->getGate()->define($ability, $callback);
-
-        return $this;
-    }
-
-    /**
-     * Determine if the given ability should be granted for the current authority.
-     *
-     * @param string $ability
-     * @param array|mixed $arguments
-     * @return bool
-     */
-    public function allows($ability, $arguments = [])
-    {
-        return $this->getGate()->allows($ability, $arguments);
-    }
-
-    /**
-     * Get gate instance.
-     *
-     * @return \Illuminate\Contracts\Auth\Access\Gate|null
-     */
-    public function getGate()
-    {
-        return $this->gate;
-    }
-
-    /**
-     * Set gate instance.
-     *
-     * @param \Illuminate\Contracts\Auth\Access\Gate|null $gate
-     */
-    public function setGate($gate)
-    {
-        $this->gate = $gate;
-    }
-
-    /**
-     * Determine if the given ability should be denied for the current authority.
-     *
-     * @param string $ability
-     * @param array|mixed $arguments
-     * @return bool
-     */
-    public function denies($ability, $arguments = [])
-    {
-        return $this->getGate()->denies($ability, $arguments);
-    }
-
-    /**
-     * Set the bouncer to be the exclusive authority on gate access.
-     *
-     * @param bool $boolean
-     * @return $this
-     */
-    public function exclusive($boolean = true)
-    {
-        $this->clipboard->setExclusivity($boolean);
-
-        return $this;
-    }
 }

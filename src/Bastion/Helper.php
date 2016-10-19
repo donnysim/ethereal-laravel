@@ -151,6 +151,16 @@ class Helper
     }
 
     /**
+     * Get bastion.
+     *
+     * @return \Ethereal\Bastion\Bastion
+     */
+    public static function bastion()
+    {
+        return app('bastion');
+    }
+
+    /**
      * Find class morph name from class path.
      *
      * @param string $classPath

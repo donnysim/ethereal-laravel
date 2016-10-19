@@ -2,12 +2,13 @@
 
 namespace Ethereal\Bastion\Database;
 
+use Ethereal\Bastion\Database\Traits\HasAbilities;
 use Ethereal\Bastion\Database\Traits\IsRole;
 use Ethereal\Database\Ethereal;
 
 class Role extends Ethereal
 {
-    use IsRole;
+    use IsRole, HasAbilities;
 
     /**
      * The attributes that are mass assignable.

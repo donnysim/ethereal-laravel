@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
+/**
+ * @mixin \Ethereal\Database\Ethereal
+ */
 trait IsAbility
 {
     /**
@@ -36,10 +39,6 @@ trait IsAbility
             $slug .= "-{$this->attributes['entity_id']}";
         }
 
-        if ($this->attributes['only_owned']) {
-            $slug .= '-owned';
-        }
-
         return strtolower($slug);
     }
 
@@ -67,6 +66,7 @@ trait IsAbility
         }
 
         $ability = new static;
+        /** @var \Illuminate\Database\Query\Builder $query */
         $query = $ability->newQuery();
 
         $permissionTable = Helper::getPermissionTable();
@@ -76,6 +76,7 @@ trait IsAbility
             ->join($permissionTable, "{$permissionTable}.ability_id", '=', $ability->getQualifiedKeyName())
             // Apply authority constraints
             ->where(function ($query) use ($permissionTable, $authority) {
+                /** @var \Illuminate\Database\Query\Builder $query */
                 $query
                     ->where("{$permissionTable}.entity_id", $authority->getKey())
                     ->where("{$permissionTable}.entity_type", $authority->getMorphClass());
@@ -84,6 +85,7 @@ trait IsAbility
         // Apply roles constraints
         if ($roles !== null && ! $roles->isEmpty()) {
             $query->orWhere(function ($query) use ($permissionTable, $authority, $roles) {
+                /** @var \Illuminate\Database\Query\Builder $query */
                 $role = Helper::getRoleModel();
 
                 $query

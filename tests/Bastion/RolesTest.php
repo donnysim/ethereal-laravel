@@ -1,7 +1,6 @@
 <?php
 
-use Ethereal\Bastion\Store\Store;
-use Illuminate\Database\Eloquent\Collection;
+use Ethereal\Bastion\Helper;
 
 class RolesTest extends BaseTestCase
 {
@@ -27,7 +26,7 @@ class RolesTest extends BaseTestCase
 
         static::assertTrue($bastion->is($user)->an('admin'));
 
-        $bastion->assign('user')->to($user);
+        $bastion->retract('user')->from($user);
 
         static::assertTrue($bastion->is($user)->all('user', 'admin'));
     }
@@ -68,5 +67,22 @@ class RolesTest extends BaseTestCase
 
         $this->setExpectedException(InvalidArgumentException::class);
         $bastion->retract('user')->from(new TestUserModel());
+    }
+
+    public function test_bastion_can_ignore_duplicate_role_assignments()
+    {
+        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
+
+        $bastion->assign('admin')->to($user);
+
+        static::assertEquals(1,
+            $this->app['db']->table(Helper::getAssignedRoleTable())->where('entity_id', $user->getKey())->count()
+        );
+
+        $bastion->assign('admin')->to($user);
+
+        static::assertEquals(1,
+            $this->app['db']->table(Helper::getAssignedRoleTable())->where('entity_id', $user->getKey())->count()
+        );
     }
 }

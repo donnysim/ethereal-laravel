@@ -32,9 +32,12 @@ class Ability extends Ethereal
     }
 
     /**
+     * Collect abilities for authority.
+     *
      * @param $abilities
      * @param string|Model|null $model
      * @param bool $create
+     * @return \Illuminate\Support\Collection
      */
     public static function collectAbilities($abilities, $model = null, $create = true)
     {
@@ -70,6 +73,8 @@ class Ability extends Ethereal
                 }
             }
         }
+
+        return $abilitiesList;
     }
 
     /**

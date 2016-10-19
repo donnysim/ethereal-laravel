@@ -4,6 +4,8 @@ namespace Ethereal\Bastion;
 
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
+use Ethereal\Bastion\Conductors\GivesAbilities;
+use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Store\Store;
 use Illuminate\Contracts\Auth\Access\Gate;
@@ -41,9 +43,36 @@ class Bastion
         $store->registerAt($gate);
     }
 
+    /**
+     * Start a chain, to allow the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\GivesAbilities
+     */
     public function allow($authorities)
     {
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+    }
 
+    /**
+     * Get roles and permissions store.
+     *
+     * @return \Ethereal\Bastion\Store\Store
+     */
+    public function getStore()
+    {
+        return $this->store;
+    }
+
+    /**
+     * Start a chain, to disallow the given authority an ability.
+     *
+     * @param $authorities
+     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     */
+    public function disallow($authorities)
+    {
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
     }
 
     /**
@@ -55,16 +84,6 @@ class Bastion
     public function assign($roles)
     {
         return new AssignsRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
-    }
-
-    /**
-     * Get roles and permissions store.
-     *
-     * @return \Ethereal\Bastion\Store\Store
-     */
-    public function getStore()
-    {
-        return $this->store;
     }
 
     /**
@@ -87,6 +106,46 @@ class Bastion
     public function retract($roles)
     {
         return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
+    }
+
+    /**
+     * Determine if the given ability should be granted for the current authority.
+     *
+     * @param string $ability
+     * @param array|mixed $arguments
+     * @return bool
+     */
+    public function allows($ability, $arguments = [])
+    {
+        return $this->getGate()->allows($ability, $arguments);
+    }
+
+    /**
+     * @return \Illuminate\Contracts\Auth\Access\Gate
+     */
+    public function getGate()
+    {
+        return $this->gate;
+    }
+
+    /**
+     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     */
+    public function setGate($gate)
+    {
+        $this->gate = $gate;
+    }
+
+    /**
+     * Determine if the given ability should be denied for the current authority.
+     *
+     * @param string $ability
+     * @param array|mixed $arguments
+     * @return bool
+     */
+    public function denies($ability, $arguments = [])
+    {
+        return $this->getGate()->denies($ability, $arguments);
     }
 
     /**
@@ -113,5 +172,33 @@ class Bastion
     public function refreshFor(Model $authority)
     {
         $this->getStore()->clearCacheFor($authority);
+    }
+
+    /**
+     * Define a new ability using a callback.
+     *
+     * @param string $ability
+     * @param callable|string $callback
+     * @return $this
+     * @throws \InvalidArgumentException
+     */
+    public function define($ability, $callback)
+    {
+        $this->getGate()->define($ability, $callback);
+
+        return $this;
+    }
+
+    /**
+     * Set the bouncer to be the exclusive authority on gate access.
+     *
+     * @param bool $boolean
+     * @return $this
+     */
+    public function exclusive($boolean = true)
+    {
+        $this->store->setExclusivity($boolean);
+
+        return $this;
     }
 }
