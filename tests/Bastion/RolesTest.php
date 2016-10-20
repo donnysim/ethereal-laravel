@@ -28,7 +28,7 @@ class RolesTest extends BaseTestCase
 
         $bastion->retract('user')->from($user);
 
-        static::assertTrue($bastion->is($user)->all('user', 'admin'));
+        static::assertFalse($bastion->is($user)->all('user', 'admin'));
     }
 
     public function test_can_check_user_role()

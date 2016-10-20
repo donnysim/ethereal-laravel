@@ -1,10 +1,12 @@
 <?php
 
+use Ethereal\Bastion\Database\Traits\HasAbilities;
+use Ethereal\Bastion\Database\Traits\IsRole;
 use Ethereal\Database\Ethereal;
 
 class TestRoleModel extends Ethereal
 {
-    use \Ethereal\Bastion\Traits\Role, \Ethereal\Bastion\Traits\HasAbilities;
+    use IsRole, HasAbilities;
 
     protected $table = 'roles';
 
