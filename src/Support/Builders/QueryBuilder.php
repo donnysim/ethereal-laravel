@@ -126,12 +126,18 @@ class QueryBuilder
      * @param \Illuminate\Http\Request $request
      * @param $prefix
      * @param $rules
-     * @param null|array $tableMap
+     * @param null|array|bool $tableMap
+     * @param bool $useOr
      * @return $this
      */
-    public function filterByRequest($request, $prefix, $rules, $tableMap = null)
+    public function filterByRequest($request, $prefix, $rules, $tableMap = null, $useOr = false)
     {
         $input = $request->input();
+
+        if (is_bool($tableMap)) {
+            $useOr = $tableMap;
+            $tableMap = null;
+        }
 
         if (empty($input)) {
             return $this;
@@ -170,10 +176,18 @@ class QueryBuilder
                 if (Str::contains($type, ':value')) {
                     // if type contains :value, we assume it's LIKE, it allows specifying
                     // exact format like %:value%
-                    $this->query->where($column, 'LIKE', str_replace(':value', $value, $type));
+                    if ($useOr) {
+                        $this->query->orWhere($column, 'LIKE', str_replace(':value', $value, $type));
+                    } else {
+                        $this->query->where($column, 'LIKE', str_replace(':value', $value, $type));
+                    }
                 } else {
                     // if most likely an equation
-                    $this->query->where($column, $type, $value);
+                    if ($useOr) {
+                        $this->query->orWhere($column, $type, $value);
+                    } else {
+                        $this->query->where($column, $type, $value);
+                    }
                 }
             }
         }
