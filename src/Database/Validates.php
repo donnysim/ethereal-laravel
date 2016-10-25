@@ -2,6 +2,7 @@
 
 namespace Ethereal\Database;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 
@@ -39,13 +40,13 @@ trait Validates
      */
     public function invalid()
     {
-        return ! $this->valid();
+        return !$this->valid();
     }
 
     /**
      * Check if model is valid.
      *
-     * @return array
+     * @return bool
      */
     public function valid()
     {
@@ -59,6 +60,7 @@ trait Validates
      *
      * @param array $rules
      * @param bool $full
+     *
      * @return \Illuminate\Validation\Validator
      */
     protected function validator(array $rules = [], $full = false)
@@ -107,7 +109,7 @@ trait Validates
      */
     public function fullyValidOrFail()
     {
-        if (! $this->fullyValid()) {
+        if (!$this->fullyValid()) {
             $this->throwValidationException();
         }
 
@@ -117,7 +119,7 @@ trait Validates
     /**
      * Check if model and all of it's relations are valid. This does not include
      *
-     * @return array
+     * @return bool
      */
     public function fullyValid()
     {
@@ -132,7 +134,7 @@ trait Validates
                 foreach ($value->validationRules() as $field => $rule) {
                     $rules["$relation.$field"] = $rule;
                 }
-            } elseif ($value instanceof \Illuminate\Support\Collection && ! $value->isEmpty() && $value[0] instanceof Ethereal) {
+            } elseif ($value instanceof Collection && !$value->isEmpty() && $value[0] instanceof Ethereal) {
                 foreach ($value[0]->validationRules() as $field => $rule) {
                     $rules["$relation.*.$field"] = $rule;
                 }
@@ -166,6 +168,7 @@ trait Validates
      * Check if model is valid and save.
      *
      * @param array $options
+     *
      * @return bool
      */
     public function saveIfValid(array $options = [])
@@ -182,6 +185,7 @@ trait Validates
      * fails or save fails.
      *
      * @param array $options
+     *
      * @return bool
      * @throws \Throwable
      * @throws \Illuminate\Validation\ValidationException

@@ -21,10 +21,12 @@ class ValidatesTest extends TestCase
 
         $model = new ValidationBaseStub(['email' => 'myagi@check.yi']);
         static::assertTrue($model->valid());
-        static::assertTrue($model->validOrFail());
+        static::assertInstanceOf(ValidationBaseStub::class, $model->validOrFail());
         static::assertFalse($model->invalid());
 
         $model = new ValidationBaseStub(['email' => '']);
+        static::assertFalse($model->valid());
+        static::assertEquals('Ummm, no.', $model->validationErrors()->get('email')[0]);
         $model->validOrFail();
     }
 
@@ -57,6 +59,18 @@ class ValidationBaseStub extends Ethereal
     {
         return [
             'email' => ['required', 'email']
+        ];
+    }
+
+    /**
+     * Get custom validation messages.
+     *
+     * @return array
+     */
+    public function customValidationMessages()
+    {
+        return [
+            'email.required' => 'Ummm, no.'
         ];
     }
 
