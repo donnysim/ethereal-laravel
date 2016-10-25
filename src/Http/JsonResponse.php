@@ -11,8 +11,8 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 use InvalidArgumentException;
-use JsonSerializable;
 use Symfony\Component\HttpFoundation\Response;
+use UnexpectedValueException;
 
 class JsonResponse extends Response
 {
@@ -23,7 +23,7 @@ class JsonResponse extends Response
      *
      * @var mixed
      */
-    protected $data;
+    protected $data = [];
 
     /**
      * JSONP callback.
@@ -42,13 +42,6 @@ class JsonResponse extends Response
      * @var null|string
      */
     protected $message;
-
-    /**
-     * Attach custom data to the response.
-     *
-     * @var array
-     */
-    protected $attach = [];
 
     /**
      * Response error.
@@ -72,21 +65,6 @@ class JsonResponse extends Response
     protected $debug = false;
 
     /**
-     * Constructor.
-     *
-     * @param mixed $data The response data
-     * @param int $status The response status code
-     * @param array $headers An array of response headers
-     * @throws \InvalidArgumentException When the HTTP status code is not valid
-     */
-    public function __construct($data = null, $status = 200, $headers = [])
-    {
-        parent::__construct('', $status, $headers);
-
-        $this->setData($data);
-    }
-
-    /**
      * Create a new json response.
      *
      * @param mixed $data
@@ -94,20 +72,9 @@ class JsonResponse extends Response
      * @param array $headers
      * @return static
      */
-    public static function make($data = null, $status = 200, $headers = [])
+    public static function make($data = [], $status = 200, $headers = [])
     {
         return new static($data, $status, $headers);
-    }
-
-    /**
-     * Check if data is paginated.
-     *
-     * @param $data
-     * @return bool
-     */
-    public static function isPaginated($data)
-    {
-        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
     }
 
     /**
@@ -145,51 +112,37 @@ class JsonResponse extends Response
     }
 
     /**
-     * Get response data.
+     * Check if data is paginated.
      *
-     * @return array|mixed
+     * @param $data
+     * @return bool
      */
-    public function getData()
+    public static function isPaginated($data)
     {
-        if ($this->data instanceof Arrayable) {
-            return $this->data->toArray();
-        } elseif ($this->data instanceof JsonSerializable) {
-            return $this->data->jsonSerialize();
-        }
-
-        return $this->data;
+        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
     }
 
     /**
-     * Set response data.
+     * Sends HTTP headers.
      *
-     * @param mixed $data
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
      */
-    public function setData($data)
+    public function sendHeaders()
     {
-        if ($data === null) {
-            $data = new \ArrayObject();
+        if ($this->callback !== null) {
+            // Not using application/javascript for compatibility reasons with older browsers.
+            $this->headers->set('Content-Type', 'text/javascript');
         }
 
-        $this->data = $data;
+        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
+        // in order to not overwrite a custom definition.
+        elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
+            $this->headers->set('Content-Type', 'application/json');
+        } else {
+            $this->headers->set('Content-Type', 'application/json');
+        }
 
-        return $this;
-    }
-
-    /**
-     * Response error.
-     *
-     * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
-     * @param int|null $code
-     * @return $this
-     */
-    public function error($error, $code = null)
-    {
-        $this->error = $error;
-        $this->errorCode = $code;
-
-        return $this;
+        return parent::sendHeaders();
     }
 
     /**
@@ -206,39 +159,6 @@ class JsonResponse extends Response
     }
 
     /**
-     * Attach data to root of the response.
-     *
-     * @param array $data
-     * @param bool $overwrite
-     * @return $this
-     */
-    public function attach(array $data, $overwrite = false)
-    {
-        if ($overwrite) {
-            $this->attach = $data;
-        } else {
-            $this->attach = array_merge($this->attach, $data);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Attach data to response.
-     *
-     * @param array $data
-     * @return $this
-     */
-    public function attachData(array $data)
-    {
-        $this->attach = array_merge_recursive($this->attach, [
-            'data' => $data,
-        ]);
-
-        return $this;
-    }
-
-    /**
      * Set json response message.
      *
      * @param string $message
@@ -247,6 +167,21 @@ class JsonResponse extends Response
     public function message($message)
     {
         $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * Response error.
+     *
+     * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
+     * @param int|null $code
+     * @return $this
+     */
+    public function error($error, $code = null)
+    {
+        $this->error = $error;
+        $this->errorCode = $code;
 
         return $this;
     }
@@ -274,17 +209,14 @@ class JsonResponse extends Response
      */
     public function getContent()
     {
-        try {
-            $content = json_encode($this->getResponseData(), $this->encodingOptions);
-        } catch (\Exception $e) {
-            if ('Exception' === get_class($e) && 0 === strpos($e->getMessage(), 'Failed calling ')) {
-                throw $e->getPrevious() ?: $e;
-            }
-            throw $e;
+        $content = json_encode($this->getResponseData(), $this->encodingOptions);
+
+        if ($content === false) {
+            throw new UnexpectedValueException('Could not convert data to json.');
         }
 
-        if (JSON_ERROR_NONE !== json_last_error()) {
-            throw new InvalidArgumentException(json_last_error_msg());
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new UnexpectedValueException('Could not convert data to json.');
         }
 
         if ($this->callback !== null) {
@@ -296,6 +228,8 @@ class JsonResponse extends Response
 
     /**
      * Get structured response data.
+     *
+     * @return array
      */
     public function getResponseData()
     {
@@ -311,9 +245,7 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
-        if (count($this->attach) > 0) {
-            $responseData = array_merge_recursive($responseData, $this->attach);
-        }
+        $responseData = array_merge_recursive($responseData, $this->data);
 
         return $responseData;
     }
@@ -327,7 +259,7 @@ class JsonResponse extends Response
     {
         $error = [
             'message' => $this->error,
-            'code' => $this->getErrorCode(),
+            'code' => $this->errorCode,
         ];
 
         if ($this->debug && $this->error instanceof \Exception) {
@@ -344,39 +276,15 @@ class JsonResponse extends Response
             $error['message'] = $this->getErrorMessage($this->error);
         } elseif ($this->error instanceof Validator) {
             if ($this->error->fails()) {
-                $error['message'] = 'failed'; //$this->getErrorMessage(ExceptionCodes::DATA_VALIDATION_FAILED);
+                $error['message'] = 'failed';
                 $error['fields'] = static::flattenMessageBag($this->error->messages());
             }
         } elseif ($this->error instanceof MessageBag) {
-            $error['message'] = 'failed'; //$this->getErrorMessage(ExceptionCodes::DATA_VALIDATION_FAILED);
+            $error['message'] = 'failed';
             $error['fields'] = static::flattenMessageBag($this->error);
         }
 
         return $error;
-    }
-
-    /**
-     * Return error code.
-     *
-     * @return int
-     */
-    public function getErrorCode()
-    {
-        return 1;
-
-//        if (! $this->error) {
-//            return $this->errorCode ?: ExceptionCodes::UNKNOWN_EXCEPTION;
-//        } elseif ($this->errorCode) {
-//            return $this->errorCode;
-//        }
-//
-//        if ($this->error instanceof \Exception) {
-//            return ExceptionCodes::getCode($this->error);
-//        } else if ($this->error instanceof Validator || $this->error instanceof MessageBag) {
-//            return ExceptionCodes::DATA_VALIDATION_FAILED;
-//        }
-//
-//        return $this->errorCode ?: ExceptionCodes::UNKNOWN_EXCEPTION;
     }
 
     /**
@@ -390,10 +298,6 @@ class JsonResponse extends Response
         if (is_string($error)) {
             return $error;
         }
-
-//        if (! $this->translateException || (! $this->translateException && is_int($error))) {
-//            return ExceptionCodes::getTranslation($error);
-//        }
 
         return $error->getMessage();
     }
@@ -424,26 +328,107 @@ class JsonResponse extends Response
     }
 
     /**
-     * Sends HTTP headers.
+     * Set response data.
      *
-     * @return $this
+     * Valid types are array and objects that implement Arrayable.
+     *
+     * @param array|Arrayable $data Content that can be cast to array.
+     *
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function sendHeaders()
+    public function setData($data)
     {
-        if ($this->callback !== null) {
-            // Not using application/javascript for compatibility reasons with older browsers.
-            $this->headers->set('Content-Type', 'text/javascript');
+        $this->setContent($data);
+
+        return $this;
+    }
+
+    /**
+     * Sets the response content.
+     *
+     * Valid types are array and objects that implement Arrayable.
+     *
+     * @param array|Arrayable $content Content that can be cast to array.
+     *
+     * @return JsonResponse
+     *
+     * @throws \UnexpectedValueException
+     */
+    public function setContent($content)
+    {
+        if (! is_array($content) && ! ($content instanceof Arrayable)) {
+            throw new UnexpectedValueException(sprintf('The Response content must be an array or object implementing Arrayable, "%s" given.', gettype($content)));
         }
 
-        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
-        // in order to not overwrite a custom definition.
-        elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
-            $this->headers->set('Content-Type', 'application/json');
+        $this->data = $content;
+
+        return $this;
+    }
+
+    /**
+     * Add payload data to response.
+     *
+     * @param string|array $key
+     * @param mixed $value This value will be used only if key is a string.
+     * @return JsonResponse
+     */
+    public function payload($key, $value = null)
+    {
+        if (is_string($key)) {
+            $this->data[$key] = $value;
         } else {
-            $this->headers->set('Content-Type', 'application/json');
+            $this->data([
+                'data' => $key,
+            ]);
         }
 
-        return parent::sendHeaders();
+        return $this;
+    }
+
+    /**
+     * Add data to response.
+     *
+     * Valid types are array and objects that implement Arrayable.
+     *
+     * @param array|Arrayable $data
+     * @return \Ethereal\Http\JsonResponse
+     */
+    public function data($data)
+    {
+        $this->setContent(array_merge_recursive($this->content, $data));
+
+        return $this;
+    }
+
+    /**
+     * Add payload data to response.
+     *
+     * @param array $payload
+     * @return JsonResponse
+     */
+    public function setPayload($payload)
+    {
+        if (! is_array($payload) && ! ($payload instanceof Arrayable)) {
+            throw new UnexpectedValueException(sprintf('The Response payload must be an array or object implementing Arrayable, "%s" given.', gettype($payload)));
+        }
+
+        $this->data['data'] = $payload;
+
+        return $this;
+    }
+
+    /**
+     * Get response payload.
+     *
+     * @return array|null
+     */
+    public function getPayload()
+    {
+        if (! isset($this->data['data'])) {
+            return null;
+        }
+
+        return $this->data['data'];
     }
 
     /**
@@ -461,7 +446,7 @@ class JsonResponse extends Response
             $parts = explode('.', $callback);
             foreach ($parts as $part) {
                 if (! preg_match($pattern, $part)) {
-                    throw new \InvalidArgumentException('The callback name is not valid.');
+                    throw new InvalidArgumentException('The callback name is not valid.');
                 }
             }
         }
@@ -472,39 +457,15 @@ class JsonResponse extends Response
     }
 
     /**
-     * Returns options used while encoding data to JSON.
-     *
-     * @return int
-     */
-    public function encodingOptions()
-    {
-        return $this->encodingOptions;
-    }
-
-    /**
-     * Sets options used while encoding data to JSON.
-     *
-     * @param int $encodingOptions
-     * @return JsonResponse
-     */
-    public function setEncodingOptionsOrig($encodingOptions)
-    {
-        $this->encodingOptions = (int) $encodingOptions;
-
-        return $this;
-    }
-
-    /**
      * Set response status code.
      *
      * @param int $code
-     * @return $this
+     * @return JsonResponse
      */
-    public function status($code)
+    public function code($code)
     {
         $this->setStatusCode($code);
 
         return $this;
     }
-
 }
