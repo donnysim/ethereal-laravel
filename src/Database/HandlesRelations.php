@@ -28,11 +28,10 @@ trait HandlesRelations
     protected $removeRelationModelOnDelete = true;
 
     /**
-     * Register a saving model event with the dispatcher.
+     * Register a syncing model event with the dispatcher.
      *
-     * @param  \Closure|string $callback
-     * @param  int $priority
-     * @return void
+     * @param \Closure|string $callback
+     * @param int $priority
      */
     public static function syncing($callback, $priority = 0)
     {
@@ -44,12 +43,13 @@ trait HandlesRelations
      *
      * @param string $name
      * @param mixed $value
+     *
      * @return $this
      * @throws \InvalidArgumentException
      */
     public function setRelation($name, $value)
     {
-        if (! $this->useSmartRelations || $value === null) {
+        if (!$this->useSmartRelations || $value === null) {
             return $this->setRawRelation($name, $value);
         }
 
@@ -58,7 +58,7 @@ trait HandlesRelations
         if (method_exists($this, $name)) {
             $relation = $this->{$name}();
 
-            if (! $relation instanceof Relation) {
+            if (!$relation instanceof Relation) {
                 throw new \InvalidArgumentException("`{$name}` is not a valid relation.");
             }
 
@@ -79,6 +79,7 @@ trait HandlesRelations
      *
      * @param string $name
      * @param mixed $value
+     *
      * @return $this
      */
     public function setRawRelation($name, $value)
@@ -91,8 +92,9 @@ trait HandlesRelations
     /**
      * Handle dynamic method calls into the model.
      *
-     * @param  string $method
-     * @param  array $parameters
+     * @param string $method
+     * @param array $parameters
+     *
      * @return mixed
      */
     public function __call($method, $parameters)
@@ -102,9 +104,9 @@ trait HandlesRelations
 
             if (method_exists($this, $relation)) {
                 $parametersCount = count($parameters);
-                $autoload =  $parametersCount > 0 ? (bool) $parameters[0] : false;
+                $autoload = $parametersCount > 0 ? (bool)$parameters[0] : false;
 
-                if (! $this->relationLoaded($relation)) {
+                if (!$this->relationLoaded($relation)) {
                     if ($autoload) {
                         if ($parametersCount > 1) {
                             $this->load([$relation => $parameters[1]]);
@@ -127,11 +129,12 @@ trait HandlesRelations
      * Save all model relations.
      *
      * @param array $options
+     *
      * @return bool
      */
     protected function saveRelations(array $options = [])
     {
-        if (! isset($options['removeRelationModelOnDelete'])) {
+        if (!isset($options['removeRelationModelOnDelete'])) {
             $options['removeRelationModelOnDelete'] = $this->removeRelationModelOnDelete;
         }
 

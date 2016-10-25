@@ -54,7 +54,7 @@ class BelongsToHandler extends BaseRelationHandler
         }
 
         if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-            if ($this->data->exists && ! $this->data->delete()) {
+            if ($this->data->exists && !$this->data->delete()) {
                 return false;
             }
 
@@ -62,7 +62,7 @@ class BelongsToHandler extends BaseRelationHandler
                 $this->removeModelRelation();
             }
 
-            if (! RelationManager::isSoftDeleting($this->data)) {
+            if (!RelationManager::isSoftDeleting($this->data)) {
                 $this->parent[$this->relation->getForeignKey()] = null;
             }
         }

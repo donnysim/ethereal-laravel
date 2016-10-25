@@ -2,7 +2,6 @@
 
 namespace Ethereal\Database;
 
-use Ethereal\Bastion\Bastion;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,7 +27,8 @@ class Ethereal extends Model
      * Save a new model and return the instance.
      *
      * @param array $attributes
-     * @return static
+     *
+     * @return $this
      * @throws \InvalidArgumentException
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
@@ -44,6 +44,7 @@ class Ethereal extends Model
      * Fill attributes and relations.
      *
      * @param array $attributes
+     *
      * @return $this
      * @throws \InvalidArgumentException
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
@@ -73,12 +74,13 @@ class Ethereal extends Model
     /**
      * Get the fillable attributes of a given array.
      *
-     * @param  array $attributes
+     * @param array $attributes
+     *
      * @return array
      */
     protected function fillableFromArray(array $attributes)
     {
-        if (count($this->getFillable()) > 0 && ! static::$unguarded) {
+        if (count($this->getFillable()) > 0 && !static::$unguarded) {
             return array_intersect_key($attributes, array_flip(array_merge($this->getFillable(), $this->getFillableRelations())));
         }
 
@@ -99,6 +101,7 @@ class Ethereal extends Model
      * Determine if the given attribute may be mass assigned.
      *
      * @param string $key
+     *
      * @return bool
      */
     public function isFillable($key)
@@ -114,7 +117,8 @@ class Ethereal extends Model
      * Save a new model and return the instance.
      *
      * @param array $attributes
-     * @return static
+     *
+     * @return $this
      * @throws \InvalidArgumentException
      * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
@@ -131,6 +135,7 @@ class Ethereal extends Model
      * Save model and relations. When saving relations, they are linked to this model.
      *
      * @param array $options
+     *
      * @return bool|void
      */
     public function smartPush($options = [])
@@ -147,27 +152,5 @@ class Ethereal extends Model
     public function setRawAttribute($attribute, $value)
     {
         $this->attributes[$attribute] = $value;
-    }
-
-    /**
-     * Sanitize model.
-     *
-     * @return Ethereal
-     */
-    public function sanitize()
-    {
-        app(Bastion::class)->sanitize($this);
-
-        return $this;
-    }
-
-    /**
-     * Get sanitized model data as array.
-     *
-     * @return array
-     */
-    public function sanitizedArray()
-    {
-        return $this->replicate()->sanitize()->toArray();
     }
 }

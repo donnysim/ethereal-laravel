@@ -47,7 +47,7 @@ class HasOneHandler extends BaseRelationHandler
         }
 
         if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-            if ($this->data->exists && ! $this->data->delete()) {
+            if ($this->data->exists && !$this->data->delete()) {
                 return false;
             }
 
@@ -70,6 +70,6 @@ class HasOneHandler extends BaseRelationHandler
             return false;
         }
 
-        return ! $this->parent->exists;
+        return !$this->parent->exists;
     }
 }

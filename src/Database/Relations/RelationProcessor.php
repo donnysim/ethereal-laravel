@@ -48,9 +48,9 @@ class RelationProcessor
         $this->options = $options;
 
         // Make sure relations options is available and instance of collection
-        if (! $this->options->has('relations')) {
+        if (!$this->options->has('relations')) {
             $this->options->put('relations', new Collection);
-        } elseif (! $this->options->get('relations') instanceof Collection) {
+        } elseif (!$this->options->get('relations') instanceof Collection) {
             $this->options->put('relations', new Collection($this->options->get('relations')));
         }
 
@@ -60,7 +60,7 @@ class RelationProcessor
     /**
      * Build before and after event queues.
      *
-     * @param $data
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Support\Collection|array $data
      * @param string $optionsRoot
      */
     protected function buildQueue($data, $optionsRoot = '')
@@ -95,7 +95,7 @@ class RelationProcessor
             /** @var \Illuminate\Database\Eloquent\Relations\Relation $relation */
             $relation = $parent->{$relationName}();
 
-            if (! RelationManager::canHandle($relation)) {
+            if (!RelationManager::canHandle($relation)) {
                 continue;
             }
 
@@ -116,6 +116,7 @@ class RelationProcessor
      *
      * @param string $root
      * @param string $relation
+     *
      * @return string
      */
     protected function getRelationOptionsName($root, $relation)
@@ -131,11 +132,12 @@ class RelationProcessor
      * Get specific relation options.
      *
      * @param string $key
+     *
      * @return int
      */
     protected function getRelationOptions($key)
     {
-        if (! $this->options['relations']->has($key)) {
+        if (!$this->options['relations']->has($key)) {
             return RelationManager::getDefaultOptions();
         }
 

@@ -14,12 +14,12 @@ use InvalidArgumentException;
 abstract class BaseRelationHandler implements RelationHandler
 {
     /**
-     * @var Relation
+     * @var \Illuminate\Database\Eloquent\Relations\Relation
      */
     protected $relation;
 
     /**
-     * @var Model
+     * @var \Illuminate\Database\Eloquent\Model
      */
     protected $parent;
 
@@ -29,7 +29,7 @@ abstract class BaseRelationHandler implements RelationHandler
     protected $relationName;
 
     /**
-     * @var Model|EloquentCollection
+     * @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection|array
      */
     protected $data;
 
@@ -39,7 +39,7 @@ abstract class BaseRelationHandler implements RelationHandler
     protected $relationOptions;
 
     /**
-     * @var Collection
+     * @var \Illuminate\Support\Collection
      */
     protected $options;
 
@@ -58,12 +58,12 @@ abstract class BaseRelationHandler implements RelationHandler
     /**
      * BaseRelationHandler constructor.
      *
-     * @param Relation $relation
+     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
      * @param string $relationName
-     * @param Model $parent
-     * @param EloquentCollection|Model $data
+     * @param \Illuminate\Database\Eloquent\Model $parent
+     * @param \Illuminate\Database\Eloquent\Collection|\Illuminate\Database\Eloquent\Model $data
      * @param int $relationOptions
-     * @param Collection $options
+     * @param \Illuminate\Support\Collection $options
      * @param string $optionName
      */
     public function __construct(Relation $relation, $relationName, Model $parent, $data, $relationOptions, Collection $options, $optionName)
@@ -110,7 +110,8 @@ abstract class BaseRelationHandler implements RelationHandler
     /**
      * Create model from given data.
      *
-     * @param array|\Illuminate\Database\Eloquent\Model|null $data
+     * @param array|\Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection|null $data
+     *
      * @return $this
      * @throws \InvalidArgumentException
      */
@@ -124,7 +125,7 @@ abstract class BaseRelationHandler implements RelationHandler
             return $this;
         }
 
-        if ((! $data instanceof Model && ! is_array($data)) || (is_array($data) && ! Arr::isAssoc($data))) {
+        if ((!$data instanceof Model && !is_array($data)) || (is_array($data) && !Arr::isAssoc($data))) {
             throw new InvalidArgumentException("`{$this->relationName}` relation only accepts associative array and model as value.");
         }
 
@@ -138,6 +139,7 @@ abstract class BaseRelationHandler implements RelationHandler
      *
      * @param string|\Illuminate\Database\Eloquent\Model $relatedModel
      * @param array|\Illuminate\Database\Eloquent\Model $data
+     *
      * @return \Illuminate\Database\Eloquent\Model
      */
     public static function createRelationModel($relatedModel, $data)
@@ -146,11 +148,11 @@ abstract class BaseRelationHandler implements RelationHandler
             return $data;
         }
 
-        if (! is_string($relatedModel)) {
+        if (!is_string($relatedModel)) {
             $relatedModel = get_class($relatedModel);
         }
 
-        /** @var Model $model */
+        /** @var \Illuminate\Database\Eloquent\Model $model */
         $model = new $relatedModel($data);
         $keyName = $model->getKeyName();
         if (isset($data[$keyName])) {
@@ -171,14 +173,14 @@ abstract class BaseRelationHandler implements RelationHandler
     {
         $collection = EloquentCollection::make();
 
-        if (! is_array($this->data) && ! $this->data instanceof Collection) {
+        if (!is_array($this->data) && !$this->data instanceof Collection) {
             throw new InvalidArgumentException("`{$this->relationName}` relation only accepts array or collection.");
         }
 
         foreach ($this->data as $item) {
             if ($item instanceof Model) {
                 $collection->add($item);
-            } elseif (! is_array($item) || ! Arr::isAssoc($item)) {
+            } elseif (!is_array($item) || !Arr::isAssoc($item)) {
                 throw new InvalidArgumentException("`{$this->relationName}` relation should contain valid model entries.");
             } else {
                 if (empty($item)) {
@@ -224,6 +226,7 @@ abstract class BaseRelationHandler implements RelationHandler
      * Validate model class.
      *
      * @param \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Model $model
+     *
      * @throws \InvalidArgumentException
      */
     protected function validateClass($model)
@@ -256,6 +259,7 @@ abstract class BaseRelationHandler implements RelationHandler
      * @param string $event
      * @param array $payload
      * @param bool $halt
+     *
      * @return bool
      */
     protected function fireModelEvent($event, array $payload = [], $halt = true)

@@ -4,7 +4,6 @@ namespace Ethereal\Database\Relations\Handlers;
 
 use Ethereal\Database\Ethereal;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 class HasManyHandler extends BaseRelationHandler
 {
@@ -16,7 +15,7 @@ class HasManyHandler extends BaseRelationHandler
     /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return Model|\Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
     public function build()
@@ -45,7 +44,7 @@ class HasManyHandler extends BaseRelationHandler
     public function save()
     {
         foreach ($this->data as $item) {
-            if (! $this->process($item)) {
+            if (!$this->process($item)) {
                 return false;
             }
         }
@@ -61,6 +60,7 @@ class HasManyHandler extends BaseRelationHandler
      * Process single item.
      *
      * @param \Illuminate\Database\Eloquent\Model $item
+     *
      * @return bool
      * @throws \Exception
      */
@@ -71,7 +71,7 @@ class HasManyHandler extends BaseRelationHandler
         }
 
         if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-            if ($item->exists && ! $item->delete()) {
+            if ($item->exists && !$item->delete()) {
                 return false;
             }
 
@@ -124,6 +124,6 @@ class HasManyHandler extends BaseRelationHandler
             return false;
         }
 
-        return ! $this->parent->exists;
+        return !$this->parent->exists;
     }
 }

@@ -15,6 +15,11 @@ class BelongsToManyHandler extends BaseRelationHandler
     const NORMAL = 1;
     const SYNC = 2;
 
+    /**
+     * Collection type.
+     *
+     * @var int
+     */
     protected $type;
 
     /**
@@ -25,7 +30,7 @@ class BelongsToManyHandler extends BaseRelationHandler
     /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return Model|EloquentCollection
+     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
     public function build()
@@ -47,6 +52,7 @@ class BelongsToManyHandler extends BaseRelationHandler
      * Check if the list is a normal relations array.
      *
      * @param \Illuminate\Support\Collection|array $list
+     *
      * @return bool
      */
     public static function getArrayType($list)
@@ -60,11 +66,11 @@ class BelongsToManyHandler extends BaseRelationHandler
         $allArrays = true;
 
         foreach ($list as $item) {
-            if ($allArrays && ! is_array($item)) {
+            if ($allArrays && !is_array($item)) {
                 $allArrays = false;
             }
 
-            if (is_numeric($item) || ($isAssoc && is_array($item) && ! $allArrays)) {
+            if (is_numeric($item) || ($isAssoc && is_array($item) && !$allArrays)) {
                 return static::SYNC;
             }
         }
@@ -94,11 +100,11 @@ class BelongsToManyHandler extends BaseRelationHandler
             }
 
             foreach ($this->data as $key => $item) {
-                if (! is_numeric($key)) {
+                if (!is_numeric($key)) {
                     throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode key can only be numeric.");
                 }
 
-                if (! is_numeric($item) && ! is_array($item)) {
+                if (!is_numeric($item) && !is_array($item)) {
                     throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode can only consist of int and array.");
                 }
             }
@@ -117,7 +123,7 @@ class BelongsToManyHandler extends BaseRelationHandler
 
         if ($type === static::NORMAL) {
             foreach ($this->data as $item) {
-                /** @var Model $item */
+                /** @var \Illuminate\Database\Eloquent\Model $item */
 
                 if ($this->relationOptions & Ethereal::OPTION_SAVE) {
                     $this->relation->save($item);
@@ -132,11 +138,11 @@ class BelongsToManyHandler extends BaseRelationHandler
                 }
 
                 if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-                    if ($item->exists && ! $item->delete()) {
+                    if ($item->exists && !$item->delete()) {
                         return false;
                     }
 
-                    if (! ($this->relationOptions & Ethereal::OPTION_DETACH) && ! RelationManager::isSoftDeleting($item)) {
+                    if (!($this->relationOptions & Ethereal::OPTION_DETACH) && !RelationManager::isSoftDeleting($item)) {
                         $this->relation->detach($item);
                     }
 
@@ -150,7 +156,7 @@ class BelongsToManyHandler extends BaseRelationHandler
                 $sync = [];
 
                 foreach ($this->data as $item) {
-                    /** @var Model $item */
+                    /** @var \Illuminate\Database\Eloquent\Model $item */
 
                     $sync[$item->getKey()] = $this->getPivotAttributes($item);
                 }
@@ -170,6 +176,7 @@ class BelongsToManyHandler extends BaseRelationHandler
      * Get model pivot keys.
      *
      * @param \Illuminate\Database\Eloquent\Model $item
+     *
      * @return array
      */
     protected function getPivotAttributes(Model $item)
@@ -202,6 +209,6 @@ class BelongsToManyHandler extends BaseRelationHandler
      */
     public function isWaitingForParent()
     {
-        return ! $this->parent->exists;
+        return !$this->parent->exists;
     }
 }

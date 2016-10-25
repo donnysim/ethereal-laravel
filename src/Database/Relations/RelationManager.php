@@ -25,18 +25,19 @@ class RelationManager
      * Make relation handler.
      *
      * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
-     * @param $relationName
+     * @param string $relationName
      * @param \Illuminate\Database\Eloquent\Model $parent
-     * @param $data
+     * @param mixed $data
      * @param \Ethereal\Database\Relations\RelationProcessor|null $processor
      * @param int|null $relationOptions
      * @param \Illuminate\Support\Collection|array|null $options
      * @param string $optionName
+     *
      * @return \Ethereal\Contracts\Database\RelationHandler|null
      */
     public static function makeHandler(Relation $relation, $relationName, Model $parent, $data, RelationProcessor $processor = null, $relationOptions = null, $options = null, $optionName = '')
     {
-        if (! static::canHandle($relation)) {
+        if (!static::canHandle($relation)) {
             return null;
         }
 
@@ -63,6 +64,7 @@ class RelationManager
      * Check if a handler is available for relation.
      *
      * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
+     *
      * @return bool
      */
     public static function canHandle(Relation $relation)
@@ -87,6 +89,7 @@ class RelationManager
      * @param \Illuminate\Database\Eloquent\Model $parent
      * @param \Illuminate\Support\Collection|\Illuminate\Database\Eloquent\Model $data
      * @param int $options
+     *
      * @return bool
      */
     public static function relationShouldBeSkipped($relationName, Model $parent, $data, $options)
@@ -97,7 +100,7 @@ class RelationManager
         }
 
         // Skip invalid types
-        if ($data === null || (! $data instanceof EloquentCollection && ! $data instanceof Model)) {
+        if ($data === null || (!$data instanceof EloquentCollection && !$data instanceof Model)) {
             return true;
         }
 
@@ -107,7 +110,7 @@ class RelationManager
         }
 
         // Check if relation function exists
-        if (! method_exists($parent, $relationName)) {
+        if (!method_exists($parent, $relationName)) {
             return true;
         }
 
@@ -117,12 +120,13 @@ class RelationManager
     /**
      * Check if model is soft deleting.
      *
-     * @param Model $model
+     * @param \Illuminate\Database\Eloquent\Model $model
+     *
      * @return bool
      */
     public static function isSoftDeleting($model)
     {
-        if (! $model instanceof Model) {
+        if (!$model instanceof Model) {
             return false;
         }
 
