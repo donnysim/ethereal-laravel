@@ -4,6 +4,7 @@ namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class RemovesRoles
 {
@@ -15,13 +16,22 @@ class RemovesRoles
     protected $roles;
 
     /**
-     * RemovesRoles constructor.
+     * Permission store.
      *
+     * @var \Ethereal\Bastion\Store\Store
+     */
+    protected $store;
+
+    /**
+     * AssignsRole constructor.
+     *
+     * @param \Ethereal\Bastion\Store\Store $store
      * @param string|int|array $roles
      */
-    public function __construct($roles)
+    public function __construct($store, $roles)
     {
-        $this->roles = is_array($roles) ? $roles : func_get_args();
+        $this->roles = $roles;
+        $this->store = $store;
     }
 
     /**
@@ -32,25 +42,33 @@ class RemovesRoles
     public function from($authority)
     {
         $authorities = is_array($authority) ? $authority : func_get_args();
-        $roles = Helper::collectRoles($this->roles)->pluck('id')->all();
 
-        $assignedRolesTable = Helper::assignedRolesTable();
-        $query = Helper::database()->table($assignedRolesTable);
+        /** @var \Ethereal\Bastion\Database\Role $roleClass */
+        $roleClass = Helper::getRoleModelClass();
+        $roles = $roleClass::collectRoles($this->roles)->keys()->all();
+
+        $assignedModel = Helper::getAssignedRoleModel();
+        $query = $assignedModel->newQuery();
 
         foreach ($authorities as $auth) {
+            /** @var \Illuminate\Database\Eloquent\Model $auth */
             if (! $auth instanceof Model || ! $auth->exists) {
-                throw new \InvalidArgumentException('Provided authority must be an existing model.');
+                throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 
-            $query->orWhere(function ($query) use ($assignedRolesTable, $auth, $roles) {
+            $query->orWhere(function ($query) use ($assignedModel, $auth, $roles) {
                 /** @var \Illuminate\Database\Query\Builder $query */
+                // TODO move to model?
                 $query
-                    ->whereIn("{$assignedRolesTable}.role_id", $roles)
-                    ->where("{$assignedRolesTable}.entity_id", $auth->getKey())
-                    ->where("{$assignedRolesTable}.entity_type", $auth->getMorphClass());
+                    ->whereIn("{$assignedModel->getTable()}.role_id", $roles)
+                    ->where("{$assignedModel->getTable()}.entity_id", $auth->getKey())
+                    ->where("{$assignedModel->getTable()}.entity_type", $auth->getMorphClass());
             });
+
+            $this->store->clearCacheFor($auth);
         }
 
+        // TODO what if too many auth users?
         $query->delete();
     }
 }

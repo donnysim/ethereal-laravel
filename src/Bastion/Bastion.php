@@ -9,56 +9,40 @@ use Ethereal\Bastion\Conductors\GivesAbilities;
 use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
+use Ethereal\Bastion\Store\Store;
 use Illuminate\Contracts\Auth\Access\Gate;
-use Illuminate\Contracts\Cache\Store;
 use Illuminate\Database\Eloquent\Model;
 
 class Bastion
 {
+    // TODO use full qualified class names in comments
+
     /**
      * The bouncer clipboard instance.
      *
-     * @var Clipboard
+     * @var Store
      */
-    protected $clipboard;
+    protected $store;
 
     /**
      * The access gate instance.
      *
-     * @var \Illuminate\Contracts\Auth\Access\Gate|null
+     * @var \Illuminate\Contracts\Auth\Access\Gate
      */
     protected $gate;
 
     /**
-     * Object sanitizer.
-     *
-     * @var \Ethereal\Bastion\Sanitizer
-     */
-    private $sanitizer;
-
-    /**
      * Bastion constructor.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate|null $gate
-     * @param \Ethereal\Bastion\Clipboard $clipboard
-     * @param \Ethereal\Bastion\Sanitizer $sanitizer
+     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Ethereal\Bastion\Store\Store $store
      */
-    public function __construct(Gate $gate, Clipboard $clipboard, Sanitizer $sanitizer)
+    public function __construct(Gate $gate, Store $store)
     {
         $this->gate = $gate;
-        $this->clipboard = $clipboard;
-        $this->sanitizer = $sanitizer;
-    }
+        $this->store = $store;
 
-    /**
-     * Start a chain, to check if the given authority has a certain role.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return \Ethereal\Bastion\Conductors\ChecksRoles
-     */
-    public function is(Model $authority)
-    {
-        return new ChecksRoles($authority, $this->clipboard);
+        $store->registerAt($gate);
     }
 
     /**
@@ -69,7 +53,17 @@ class Bastion
      */
     public function allow($authorities)
     {
-        return new GivesAbilities(func_get_args());
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+    }
+
+    /**
+     * Get roles and permissions store.
+     *
+     * @return \Ethereal\Bastion\Store\Store
+     */
+    public function getStore()
+    {
+        return $this->store;
     }
 
     /**
@@ -80,7 +74,18 @@ class Bastion
      */
     public function disallow($authorities)
     {
-        return new RemovesAbilities(func_get_args());
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+    }
+
+    /**
+     * Start a chain, to assign the given role to a authority.
+     *
+     * @param mixed $roles
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     */
+    public function assign($roles)
+    {
+        return new AssignsRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
     }
 
     /**
@@ -91,7 +96,7 @@ class Bastion
      */
     public function forbid($authorities)
     {
-        return new DeniesAbilities(func_get_args());
+        return new DeniesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
     }
 
     /**
@@ -102,43 +107,29 @@ class Bastion
      */
     public function permit($authorities)
     {
-        return new PermitsAbilities(func_get_args());
+        return new PermitsAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
     }
 
     /**
-     * Start a chain, to assign the given role to a authority.
+     * Start a chain, to check if the given authority has a certain role.
      *
-     * @param $roles
-     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @return \Ethereal\Bastion\Conductors\ChecksRoles
      */
-    public function assign($roles)
+    public function is(Model $authority)
     {
-        return new AssignsRoles(func_get_args());
+        return new ChecksRoles($this->getStore(), $authority);
     }
 
     /**
      * Start a chain, to retract the given role from a authority.
      *
-     * @param $roles
+     * @param mixed $roles
      * @return \Ethereal\Bastion\Conductors\RemovesRoles
      */
     public function retract($roles)
     {
-        return new RemovesRoles(func_get_args());
-    }
-
-    /** Define a new ability using a callback.
-     *
-     * @param string $ability
-     * @param callable|string $callback
-     * @return $this
-     * @throws \InvalidArgumentException
-     */
-    public function define($ability, $callback)
-    {
-        $this->getGate()->define($ability, $callback);
-
-        return $this;
+        return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
     }
 
     /**
@@ -154,9 +145,7 @@ class Bastion
     }
 
     /**
-     * Get gate instance.
-     *
-     * @return \Illuminate\Contracts\Auth\Access\Gate|null
+     * @return \Illuminate\Contracts\Auth\Access\Gate
      */
     public function getGate()
     {
@@ -164,9 +153,7 @@ class Bastion
     }
 
     /**
-     * Set gate instance.
-     *
-     * @param \Illuminate\Contracts\Auth\Access\Gate|null $gate
+     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
      */
     public function setGate($gate)
     {
@@ -186,13 +173,52 @@ class Bastion
     }
 
     /**
-     * Get clipboard instance.
-     *
-     * @return \Ethereal\Bastion\Clipboard
+     * Enable cache.
      */
-    public function getClipboard()
+    public function enableCache()
     {
-        return $this->clipboard;
+        $this->store->enableCache();
+    }
+
+    /**
+     * Disable cache.
+     */
+    public function disableCache()
+    {
+        $this->store->disableCache();
+    }
+
+    /**
+     * Clear cached data for authority.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     */
+    public function refreshFor(Model $authority)
+    {
+        $this->getStore()->clearCacheFor($authority);
+    }
+
+    /**
+     * Clear cached data.
+     */
+    public function clearCache()
+    {
+        $this->getStore()->clearCache();
+    }
+
+    /**
+     * Define a new ability using a callback.
+     *
+     * @param string $ability
+     * @param callable|string $callback
+     * @return $this
+     * @throws \InvalidArgumentException
+     */
+    public function define($ability, $callback)
+    {
+        $this->getGate()->define($ability, $callback);
+
+        return $this;
     }
 
     /**
@@ -203,61 +229,8 @@ class Bastion
      */
     public function exclusive($boolean = true)
     {
-        $this->clipboard->setExclusivity($boolean);
+        $this->store->setExclusivity($boolean);
 
         return $this;
-    }
-
-    /**
-     * Use the given cache instance.
-     *
-     * @param \Illuminate\Contracts\Cache\Store $cache
-     * @return $this
-     */
-    public function cache(Store $cache = null)
-    {
-        $cache = $cache ?: $this->make(CacheRepository::class)->getStore();
-
-        $this->clipboard->setCache($cache);
-
-        return $this;
-    }
-
-    /**
-     * Clear the cache.
-     *
-     * @param null|\Illuminate\Database\Eloquent\Model $authority
-     * @return $this
-     */
-    public function refresh(Model $authority = null)
-    {
-        $this->clipboard->refresh($authority);
-
-        return $this;
-    }
-
-    /**
-     * Clear the cache for the given authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return $this
-     */
-    public function refreshFor(Model $authority)
-    {
-        $this->clipboard->refreshFor($authority);
-
-        return $this;
-    }
-
-    /**
-     * Sanitize target model.
-     *
-     * @param mixed $target
-     * @param array $options
-     * @throws \InvalidArgumentException
-     */
-    public function sanitize(&$target, array $options = [])
-    {
-        $this->sanitizer->sanitize($target, $options);
     }
 }

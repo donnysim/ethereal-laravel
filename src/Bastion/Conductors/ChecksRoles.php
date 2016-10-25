@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion\Conductors;
 
-use Ethereal\Bastion\Helper;
+use Ethereal\Bastion\Store\Store;
 use Illuminate\Database\Eloquent\Model;
 
 class ChecksRoles
@@ -15,13 +15,22 @@ class ChecksRoles
     protected $authority;
 
     /**
+     * Bastion store.
+     *
+     * @var \Ethereal\Bastion\Store\Store
+     */
+    protected $store;
+
+    /**
      * Constructor.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param \Ethereal\Bastion\Store\Store $store
      */
-    public function __construct(Model $authority)
+    public function __construct(Store $store, Model $authority)
     {
         $this->authority = $authority;
+        $this->store = $store;
     }
 
     /**
@@ -34,7 +43,7 @@ class ChecksRoles
     {
         $roles = func_get_args();
 
-        return Helper::clipboard()->checkRole($this->authority, $roles, 'or');
+        return $this->store->checkRole($this->authority, $roles, 'or');
     }
 
     /**
@@ -47,7 +56,7 @@ class ChecksRoles
     {
         $roles = func_get_args();
 
-        return Helper::clipboard()->checkRole($this->authority, $roles, 'not');
+        return $this->store->checkRole($this->authority, $roles, 'not');
     }
 
     /**
@@ -60,7 +69,7 @@ class ChecksRoles
     {
         $roles = func_get_args();
 
-        return Helper::clipboard()->checkRole($this->authority, $roles, 'or');
+        return $this->store->checkRole($this->authority, $roles, 'or');
     }
 
     /**
@@ -73,7 +82,7 @@ class ChecksRoles
     {
         $roles = func_get_args();
 
-        return Helper::clipboard()->checkRole($this->authority, $roles, 'not');
+        return $this->store->checkRole($this->authority, $roles, 'not');
     }
 
     /**
@@ -86,6 +95,6 @@ class ChecksRoles
     {
         $roles = func_get_args();
 
-        return Helper::clipboard()->checkRole($this->authority, $roles, 'and');
+        return $this->store->checkRole($this->authority, $roles, 'and');
     }
 }

@@ -1,21 +1,22 @@
 <?php
 
-namespace Ethereal\Bastion\Traits;
+namespace Ethereal\Bastion\Database\Traits;
 
-use Ethereal\Bastion\Conductors\AssignsRoles;
-use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Helper;
 
+/**
+ * @mixin \Ethereal\Database\Ethereal
+ */
 trait HasRoles
 {
     /**
      * The roles relationship.
      *
-     * @return mixed
+     * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
      */
     public function roles()
     {
-        return $this->morphToMany(Helper::rolesModelClass(), 'entity', Helper::assignedRolesTable(), 'entity_id', 'role_id');
+        return $this->morphToMany(Helper::getRoleModelClass(), 'entity', Helper::getRoleTable(), 'entity_id', 'role_id');
     }
 
     /**
@@ -26,7 +27,7 @@ trait HasRoles
      */
     public function assign($roles)
     {
-        (new AssignsRoles($roles))->to($this);
+        Helper::bastion()->assign($roles)->to($this);
 
         return $this;
     }
@@ -39,7 +40,7 @@ trait HasRoles
      */
     public function retract($roles)
     {
-        (new RemovesRoles($roles))->from($this);
+        Helper::bastion()->retract($roles)->from($this);
 
         return $this;
     }
@@ -47,40 +48,23 @@ trait HasRoles
     /**
      * Check if the model has any of the given roles.
      *
-     * @param string $role
+     * @param string|array $role
      * @return bool
      */
-    public function isA($role)
+    public function is($role)
     {
-        $roles = func_get_args();
-        $clipboard = Helper::clipboard();
-
-        return $clipboard->checkRole($this, $roles, 'or');
-    }
-
-    /**
-     * Check if the model has any of the given roles.
-     *
-     * @param string $role
-     * @return bool
-     */
-    public function isAn($role)
-    {
-        return call_user_func_array([$this, 'isA'], func_get_args());
+        return Helper::bastion()->is($this)->a(is_array($role) ? $role : func_get_args());
     }
 
     /**
      * Check if the model has none of the given roles.
      *
-     * @param string $role
+     * @param string|array $role
      * @return bool
      */
     public function isNot($role)
     {
-        $roles = func_get_args();
-        $clipboard = Helper::clipboard();
-
-        return $clipboard->checkRole($this, $roles, 'not');
+        return Helper::bastion()->is($this)->notA(is_array($role) ? $role : func_get_args());
     }
 
     /**
@@ -91,16 +75,13 @@ trait HasRoles
      */
     public function isAll($role)
     {
-        $roles = func_get_args();
-        $clipboard = Helper::clipboard();
-
-        return $clipboard->checkRole($this, $roles, 'and');
+        return Helper::bastion()->is($this)->all(is_array($role) ? $role : func_get_args());
     }
 
     /**
      * Constrain the given query by the provided roles.
      *
-     * @param $query
+     * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
      * @return mixed
      */
@@ -110,19 +91,19 @@ trait HasRoles
 
         $this->scopeJoinRoles($query);
 
-        return $query->whereIn(Helper::rolesTable() . '.name', $roles);
+        return $query->whereIn(Helper::getRoleTable() . '.name', $roles);
     }
 
     /**
      * Join roles to the query.
      *
-     * @param $query
+     * @param \Illuminate\Database\Query\Builder $query
      * @return mixed
      */
     public function scopeJoinRoles($query)
     {
-        $assignedRolesTable = Helper::assignedRolesTable();
-        $rolesTable = Helper::rolesTable();
+        $assignedRolesTable = Helper::getAssignedRoleTable();
+        $rolesTable = Helper::getRoleTable();
 
         return $query
             ->leftJoin($assignedRolesTable, "{$assignedRolesTable}.entity_id", '=', "{$this->getTable()}.{$this->getKeyName()}")
@@ -134,7 +115,7 @@ trait HasRoles
     /**
      * Constrain the given query by the provided roles.
      *
-     * @param $query
+     * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
      * @return mixed
      */
@@ -143,7 +124,7 @@ trait HasRoles
         $roles = is_array($role) ? $role : array_slice(func_get_args(), 1);
 
         $this->scopeJoinRoles($query);
-        $rolesTable = Helper::rolesTable();
+        $rolesTable = Helper::getRoleTable();
 
         foreach ($roles as $name) {
             $query->where("{$rolesTable}.name", $name);
@@ -155,7 +136,7 @@ trait HasRoles
     /**
      * Constrain the given query by the provided roles.
      *
-     * @param $query
+     * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
      * @return mixed
      */
@@ -164,12 +145,10 @@ trait HasRoles
         $roles = is_array($role) ? $role : array_slice(func_get_args(), 1);
 
         $this->scopeJoinRoles($query);
-        $rolesTable = Helper::rolesTable();
+        $rolesTable = Helper::getRoleTable();
 
         return $query
             ->whereNotIn("{$rolesTable}.name", $roles)
             ->orWhereNull("{$rolesTable}.name"); // includes models that have no roles
     }
-
-
 }

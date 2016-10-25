@@ -1,10 +1,11 @@
 <?php
 
+use Ethereal\Bastion\Database\Traits\IsAbility;
 use Ethereal\Database\Ethereal;
 
 class TestAbilityModel extends Ethereal
 {
-    use \Ethereal\Bastion\Traits\Ability;
+    use IsAbility;
 
     protected $table = 'abilities';
 

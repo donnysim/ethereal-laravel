@@ -3,53 +3,71 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
+use Illuminate\Database\Eloquent\Model;
 
 class PermitsAbilities
 {
     /**
-     * The model to permit abilities.
+     * List of authorities to give the abilities.
      *
-     * @var array
+     * @var array|string
      */
     protected $authorities;
 
     /**
-     * PermitsAbilities constructor.
+     * Permission store.
      *
-     * @param \Illuminate\Database\Eloquent\Model|string $authorities
+     * @var \Ethereal\Bastion\Store\Store
      */
-    public function __construct($authorities)
+    protected $store;
+
+    /**
+     * AssignsRole constructor.
+     *
+     * @param \Ethereal\Bastion\Store\Store $store
+     * @param string|int|array $authorities
+     */
+    public function __construct($store, $authorities)
     {
-        $this->authorities = is_array($authorities) ? $authorities : func_get_args();
+        $this->authorities = $authorities;
+        $this->store = $store;
     }
 
     /**
-     * Lift forbidden permission.
+     * Give abilities to authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @throws \InvalidArgumentException
      */
     public function to($abilities, $model = null)
     {
-        $abilityIds = Helper::collectAbilities((array) $abilities, $model, false)->pluck('id');
-        $roleClass = Helper::rolesModelClass();
+        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
+        $abilityClass = Helper::getAbilityModelClass();
+        /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
+        $roleModelClass = Helper::getRoleModelClass();
+        /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
+        $permissionModelClass = Helper::getPermissionModelClass();
+
+        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                $authority = $roleClass::where('name', $authority)->first();
+                $authority = $roleModelClass::where('name', $authority)->first();
 
                 if (! $authority) {
                     continue;
                 }
-            } elseif ($authority instanceof \Illuminate\Database\Eloquent\Model && $authority->exists) {
-                Helper::database()->table(Helper::permissionsTable())
-                    ->whereIn('ability_id', $abilityIds)
+            } elseif ($authority instanceof Model && $authority->exists) {
+                // TODO move to model?
+
+                $permissionModelClass::whereIn('ability_id', $abilityIds)
                     ->where('entity_id', $authority->getKey())
                     ->where('entity_type', $authority->getMorphClass())
                     ->where('forbidden', true)
                     ->delete();
             }
         }
+
+        $this->store->clearCache();
     }
 }

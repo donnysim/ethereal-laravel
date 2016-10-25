@@ -7,36 +7,51 @@ use Ethereal\Bastion\Helper;
 class DeniesAbilities
 {
     /**
-     * The models to deny abilities from.
+     * List of authorities to give the abilities.
      *
-     * @var \Illuminate\Database\Eloquent\Model[]
+     * @var array|string
      */
     protected $authorities;
 
     /**
-     * DeniesAbilities constructor.
+     * Permission store.
      *
-     * @param $authorities
+     * @var \Ethereal\Bastion\Store\Store
      */
-    public function __construct($authorities)
+    protected $store;
+
+    /**
+     * AssignsRole constructor.
+     *
+     * @param \Ethereal\Bastion\Store\Store $store
+     * @param string|int|array $authorities
+     */
+    public function __construct($store, $authorities)
     {
-        $this->authorities = is_array($authorities) ? $authorities : func_get_args();
+        $this->authorities = $authorities;
+        $this->store = $store;
     }
 
     /**
-     * Deny abilities to authorities.
+     * Give abilities to authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
      */
     public function to($abilities, $model = null)
     {
-        $abilityIds = Helper::collectAbilities((array) $abilities, $model)->pluck('id');
-        $rolesModelClass = Helper::rolesModelClass();
+        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
+        $abilityClass = Helper::getAbilityModelClass();
+        /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
+        $roleModelClass = Helper::getRoleModelClass();
+        /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
+        $permissionModelClass = Helper::getPermissionModelClass();
+
+        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                $authority = $rolesModelClass::firstOrCreate([
+                $authority = $roleModelClass::firstOrCreate([
                     'name' => $authority,
                 ]);
             }
@@ -46,15 +61,12 @@ class DeniesAbilities
             $inserts = [];
 
             foreach ($missingAbilities as $abilityId) {
-                $inserts[] = [
-                    'ability_id' => $abilityId,
-                    'entity_id' => $authority->exists ? $authority->getKey() : null,
-                    'entity_type' => $authority->getMorphClass(),
-                    'forbidden' => true,
-                ];
+                $inserts[] = $permissionModelClass::createPermissionRecord($abilityId, $authority, true);
             }
 
-            Helper::database()->table(Helper::permissionsTable())->insert($inserts);
+            $permissionModelClass::insert($inserts);
         }
+
+        $this->store->clearCache();
     }
 }

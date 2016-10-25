@@ -1,10 +1,11 @@
 <?php
 
+use Ethereal\Bastion\Database\Traits\Authority;
 use Ethereal\Database\Ethereal;
 
 class TestUserModel extends Ethereal
 {
-    use \Ethereal\Bastion\Traits\HasAbilities, \Ethereal\Bastion\Traits\HasRoles;
+    use Authority;
 
     protected $table = 'users';
 
@@ -17,7 +18,7 @@ class TestUserModel extends Ethereal
         $faker = \Faker\Factory::create();
 
         $instance = new static([
-            'email' => $faker->email,
+            'email' => $faker->unique()->email,
             'password' => $faker->password,
         ]);
 

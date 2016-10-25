@@ -5,24 +5,19 @@ return [
      * Bastion specific tables.
      */
     'tables' => [
-        'assigned_roles' => 'assigned_roles',
         'abilities' => 'abilities',
+        'assigned_roles' => 'assigned_roles',
         'permissions' => 'permissions',
+        'roles' => 'roles',
     ],
 
     /*
      * Application models.
      */
     'models' => [
-        'ability' => '',
-        'role' => '',
-    ],
-
-    /*
-     * A list of classes that have abilities and/or roles.
-     * This list is used to clear cached items.
-     */
-    'authorities' => [
-        App\User::class,
+        'ability' => \Ethereal\Bastion\Database\Ability::class,
+        'assigned_role' => \Ethereal\Bastion\Database\AssignedRole::class,
+        'permission' => \Ethereal\Bastion\Database\Permission::class,
+        'role' => \Ethereal\Bastion\Database\Role::class,
     ],
 ];

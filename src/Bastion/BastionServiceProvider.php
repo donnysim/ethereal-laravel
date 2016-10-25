@@ -2,55 +2,61 @@
 
 namespace Ethereal\Bastion;
 
-use Illuminate\Cache\ArrayStore;
+use Ethereal\Bastion\Store\Store;
+use Ethereal\Cache\GroupFileStore;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
 {
+    /**
+     * Register the service provider.
+     */
     public function register()
     {
-        $this->registerClipboard();
+        $this->registerStore();
         $this->registerBastion();
-        $this->registerSanitizer();
     }
 
-    public function boot()
+    /**
+     * Register singleton Store instance.
+     */
+    protected function registerStore()
     {
-        $this->registerAtGate();
-    }
-
-    protected function registerClipboard()
-    {
-        $this->app->singleton(Clipboard::class, function () {
-            return new CachedClipboard(new ArrayStore);
+        $this->app->singleton(Store::class, function () {
+            return new Store(new GroupFileStore($this->app['files'], storage_path('cache/bastion')));
         });
     }
 
+    /**
+     * Register bastion instance.
+     */
     protected function registerBastion()
     {
         $this->app->singleton(Bastion::class, function () {
             $bastion = new Bastion(
                 $this->app->make(Gate::class),
-                $this->app->make(Clipboard::class),
-                $this->app->make(Sanitizer::class)
+                $this->app->make(Store::class)
             );
 
             return $bastion;
         });
     }
 
-    protected function registerAtGate()
+    /**
+     * Register bastion at gate.
+     */
+    public function boot()
     {
-        $gate = $this->app->make(Gate::class);
-        $clipboard = $this->app->make(Clipboard::class);
-        $clipboard->registerAt($gate);
+        $this->registerAtGate();
     }
 
-    protected function registerSanitizer()
+    /**
+     * Register bastion at gate.
+     */
+    protected function registerAtGate()
     {
-        $this->app->singleton(Sanitizer::class, function () {
-            return new Sanitizer();
-        });
+        $store = $this->app->make(Store::class);
+        $store->registerAt($this->app->make(Gate::class));
     }
 }

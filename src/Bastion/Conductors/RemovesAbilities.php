@@ -7,40 +7,53 @@ use Ethereal\Bastion\Helper;
 class RemovesAbilities
 {
     /**
-     * The model to remove abilities from.
+     * List of authorities to remove abilities from.
      *
-     * @var array
+     * @var array|string
      */
     protected $authorities;
 
     /**
-     * RemovesAbilities constructor.
+     * Permission store.
      *
-     * @param \Illuminate\Database\Eloquent\Model|string $authorities
+     * @var \Ethereal\Bastion\Store\Store
      */
-    public function __construct($authorities)
+    protected $store;
+
+    /**
+     * AssignsRole constructor.
+     *
+     * @param \Ethereal\Bastion\Store\Store $store
+     * @param string|int|array $authorities
+     */
+    public function __construct($store, $authorities)
     {
-        $this->authorities = is_array($authorities) ? $authorities : func_get_args();
+        $this->authorities = $authorities;
+        $this->store = $store;
     }
 
     /**
-     * Remove abilities from authorities.
+     * Give abilities to authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
      */
     public function to($abilities, $model = null)
     {
-        $abilityIds = Helper::collectAbilities((array) $abilities, $model, false)->pluck('id');
-        $rolesModelClass = Helper::rolesModelClass();
+        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
+        $abilityClass = Helper::getAbilityModelClass();
+        /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
+        $roleModelClass = Helper::getRoleModelClass();
 
-        if (empty($abilityIds)) {
+        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
+
+        if ($abilityIds->isEmpty()) {
             return;
         }
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                $authority = $rolesModelClass::where('name', $authority)->first();
+                $authority = $roleModelClass::where('name', $authority)->first();
 
                 if (! $authority) {
                     continue;
@@ -49,5 +62,7 @@ class RemovesAbilities
 
             $authority->abilities()->detach($abilityIds->all());
         }
+
+        $this->store->clearCache();
     }
 }

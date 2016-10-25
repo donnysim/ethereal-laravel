@@ -16,77 +16,57 @@ class AssignsRoles
     protected $roles;
 
     /**
+     * Permission store.
+     *
+     * @var \Ethereal\Bastion\Store\Store
+     */
+    protected $store;
+
+    /**
      * AssignsRole constructor.
      *
+     * @param $store
      * @param string|int|array $roles
      */
-    public function __construct($roles)
+    public function __construct($store, $roles)
     {
-        $this->roles = is_array($roles) ? $roles : func_get_args();
+        $this->roles = $roles;
+        $this->store = $store;
     }
 
     /**
      * Assign roles to authorities.
      *
-     * @param \Illuminate\Database\Eloquent\Model|array $authority
-     * @throws \InvalidArgumentException
+     * @param Model|Model[] $authority
      */
     public function to($authority)
     {
         $authorities = is_array($authority) ? $authority : func_get_args();
-        $roles = Helper::collectRoles($this->roles)->keyBy('id');
+
+        /** @var \Ethereal\Bastion\Database\Role $roleClass */
+        $roleClass = Helper::getRoleModelClass();
+        $roles = $roleClass::collectRoles($this->roles);
+
+        /** @var \Ethereal\Bastion\Database\AssignedRole $assignedRoleClass */
+        $assignedRoleClass = Helper::getAssignedRoleModelClass();
 
         foreach ($authorities as $auth) {
-            if (! $authority->exists) {
-                throw new InvalidArgumentException('Cannot assign roles [' . implode(', ', $this->roles) . '] for authority that does not exist.');
+            /** @var Model $authority */
+            if (! $auth->exists) {
+                throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 
-            $existingRoles = $this->getExistingRoles($auth)->keyBy('id');
+            $existingRoles = $roleClass::getRoles($auth);
             $missingRoles = $roles->keys()->diff($existingRoles->keys());
             $inserts = [];
 
-            foreach ($missingRoles as $missingRoleId) {
-                $inserts[] = [
-                    'role_id' => $missingRoleId,
-                    'entity_id' => $auth->getKey(),
-                    'entity_type' => $auth->getMorphClass(),
-                ];
+            foreach ($missingRoles as $missingId) {
+                $inserts[] = $roles->get($missingId)->createAssignRecord($auth);
             }
 
-            $this->executeInserts($inserts);
+            $assignedRoleClass::insert($inserts);
+
+            $this->store->clearCacheFor($auth);
         }
-    }
-
-    /**
-     * Get assigned roles for authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    protected function getExistingRoles(Model $authority)
-    {
-        $rolesModel = Helper::rolesModel();
-        $assignedRolesTable = Helper::assignedRolesTable();
-
-        return collect(
-            Helper::database()
-                ->table(Helper::rolesTable())
-                ->join($assignedRolesTable, "{$assignedRolesTable}.role_id", '=', "{$rolesModel->getTable()}.{$rolesModel->getKeyName()}")
-                ->where("{$assignedRolesTable}.entity_id", $authority->getKey())
-                ->where("{$assignedRolesTable}.entity_type", $authority->getMorphClass())
-                ->get(["{$rolesModel->getTable()}.*"])
-        );
-    }
-
-    /**
-     * Execute roles insert query.
-     *
-     * @param $inserts
-     */
-    protected function executeInserts($inserts)
-    {
-        Helper::database()
-            ->table(Helper::assignedRolesTable())
-            ->insert($inserts);
     }
 }
