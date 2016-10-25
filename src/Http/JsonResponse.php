@@ -70,7 +70,7 @@ class JsonResponse extends Response
      * @param int $status
      * @param array $headers
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \InvalidArgumentException
      */
     public static function make($data = [], $status = 200, $headers = [])
@@ -154,7 +154,7 @@ class JsonResponse extends Response
      *
      * @param boolean $value
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      */
     public function debug($value)
     {
@@ -168,7 +168,7 @@ class JsonResponse extends Response
      *
      * @param string $message
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      */
     public function message($message)
     {
@@ -183,7 +183,7 @@ class JsonResponse extends Response
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
      * @param int|null $code
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      */
     public function error($error, $code = null)
     {
@@ -340,7 +340,7 @@ class JsonResponse extends Response
      *
      * @param array|\Illuminate\Contracts\Support\Arrayable $data Content that can be cast to array.
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \UnexpectedValueException
      */
     public function setData($data)
@@ -356,7 +356,7 @@ class JsonResponse extends Response
      *
      * @param array|Arrayable $content Content that can be cast to array.
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \UnexpectedValueException
      */
     public function setContent($content)
@@ -376,7 +376,7 @@ class JsonResponse extends Response
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \UnexpectedValueException
      */
     public function payload($key, $value = null)
@@ -398,7 +398,7 @@ class JsonResponse extends Response
      *
      * @param array|\Illuminate\Contracts\Support\Arrayable $data
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \UnexpectedValueException
      */
     public function data($data)
@@ -413,7 +413,7 @@ class JsonResponse extends Response
      *
      * @param array $payload
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \UnexpectedValueException
      */
     public function setPayload($payload)
@@ -446,7 +446,7 @@ class JsonResponse extends Response
      *
      * @param string|null $callback The JSONP callback or null to use none
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \InvalidArgumentException When the callback name is not valid
      */
     public function callback($callback = null)
@@ -472,7 +472,7 @@ class JsonResponse extends Response
      *
      * @param int $code
      *
-     * @return \Ethereal\Http\JsonResponse
+     * @return $this
      * @throws \InvalidArgumentException
      */
     public function code($code)
