@@ -20,6 +20,7 @@ interface RelationHandler
 
     /**
      * Validate relation data.
+     *
      * @throws \InvalidArgumentException
      */
     public function validate();
