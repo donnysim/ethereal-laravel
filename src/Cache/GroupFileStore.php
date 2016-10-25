@@ -9,7 +9,8 @@ class GroupFileStore extends FileStore
     /**
      * Get the full path for the given cache key.
      *
-     * @param  string $key
+     * @param string $key
+     *
      * @return string
      */
     protected function path($key)
