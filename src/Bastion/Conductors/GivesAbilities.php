@@ -37,6 +37,8 @@ class GivesAbilities
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @throws \InvalidArgumentException
      */
     public function to($abilities, $model = null)
     {
@@ -47,7 +49,7 @@ class GivesAbilities
         /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
         $permissionModelClass = Helper::getPermissionModelClass();
 
-        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
+        $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {

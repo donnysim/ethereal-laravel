@@ -53,8 +53,9 @@ class StoreMap
 
     /**
      * StoreMap constructor.
-     * @param $roles
-     * @param $abilities
+     *
+     * @param \Illuminate\Database\Eloquent\Collection $roles
+     * @param \Illuminate\Database\Eloquent\Collection $abilities
      */
     public function __construct(Collection $roles, Collection $abilities)
     {
@@ -82,7 +83,7 @@ class StoreMap
 
         $this->allowedAbilities = $this->abilities->filter(function ($item) {
             /** @var Ability $item */
-            return ! $item->isForbidden();
+            return !$item->isForbidden();
         })->keyBy('identifier');
 
         $this->forbiddenAbilities = $this->abilities->filter(function ($item) {
@@ -125,6 +126,7 @@ class StoreMap
      * Check if ability is forbidden.
      *
      * @param string $ability
+     *
      * @return boolean
      */
     public function forbidden($ability)
@@ -136,6 +138,7 @@ class StoreMap
      * CHeck if ability is granted.
      *
      * @param string $ability
+     *
      * @return bool
      */
     public function granted($ability)
@@ -147,6 +150,7 @@ class StoreMap
      * Return deserialized store map.
      *
      * @param array $data
+     *
      * @return static
      */
     public static function deserialize(array $data)

@@ -23,6 +23,7 @@ trait HasRoles
      * Assign the given roles to the model.
      *
      * @param string|int|array $roles
+     *
      * @return $this
      */
     public function assign($roles)
@@ -36,6 +37,7 @@ trait HasRoles
      * Retract the given role from the model.
      *
      * @param string|int|array $roles
+     *
      * @return $this
      */
     public function retract($roles)
@@ -49,6 +51,7 @@ trait HasRoles
      * Check if the model has any of the given roles.
      *
      * @param string|array $role
+     *
      * @return bool
      */
     public function is($role)
@@ -60,6 +63,7 @@ trait HasRoles
      * Check if the model has none of the given roles.
      *
      * @param string|array $role
+     *
      * @return bool
      */
     public function isNot($role)
@@ -70,7 +74,8 @@ trait HasRoles
     /**
      * Check if the model has all of the given roles.
      *
-     * @param string $role
+     * @param string|array $role
+     *
      * @return bool
      */
     public function isAll($role)
@@ -83,7 +88,9 @@ trait HasRoles
      *
      * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
+     *
      * @return mixed
+     * @throws \InvalidArgumentException
      */
     public function scopeWhereIs($query, $role)
     {
@@ -98,7 +105,9 @@ trait HasRoles
      * Join roles to the query.
      *
      * @param \Illuminate\Database\Query\Builder $query
+     *
      * @return mixed
+     * @throws \InvalidArgumentException
      */
     public function scopeJoinRoles($query)
     {
@@ -117,7 +126,9 @@ trait HasRoles
      *
      * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
+     *
      * @return mixed
+     * @throws \InvalidArgumentException
      */
     public function scopeWhereIsAll($query, $role)
     {
@@ -138,7 +149,9 @@ trait HasRoles
      *
      * @param \Illuminate\Database\Query\Builder $query
      * @param string|string[] $role
+     *
      * @return mixed
+     * @throws \InvalidArgumentException
      */
     public function scopeWhereIsNot($query, $role)
     {

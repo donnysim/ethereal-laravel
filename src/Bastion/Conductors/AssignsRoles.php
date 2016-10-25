@@ -3,7 +3,6 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
-use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 class AssignsRoles
@@ -25,7 +24,7 @@ class AssignsRoles
     /**
      * AssignsRole constructor.
      *
-     * @param $store
+     * @param \Ethereal\Bastion\Store\Store $store
      * @param string|int|array $roles
      */
     public function __construct($store, $roles)
@@ -37,7 +36,9 @@ class AssignsRoles
     /**
      * Assign roles to authorities.
      *
-     * @param Model|Model[] $authority
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
+     *
+     * @throws \InvalidArgumentException
      */
     public function to($authority)
     {
@@ -51,8 +52,8 @@ class AssignsRoles
         $assignedRoleClass = Helper::getAssignedRoleModelClass();
 
         foreach ($authorities as $auth) {
-            /** @var Model $authority */
-            if (! $auth->exists) {
+            /** @var \Illuminate\Database\Eloquent\Model $authority */
+            if (!$auth->exists) {
                 throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 

@@ -3,8 +3,8 @@
 namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 /**
@@ -13,55 +13,17 @@ use InvalidArgumentException;
 trait IsAbility
 {
     /**
-     * Get status if the ability forbids permission.
-     *
-     * @return bool
-     */
-    public function isForbidden()
-    {
-        return (bool) $this->attributes['forbidden'];
-    }
-
-    /**
-     * Get the identifier for this ability.
-     *
-     * @return string
-     */
-    final public function getIdentifierAttribute()
-    {
-        $slug = $this->attributes['name'];
-
-        if ($this->attributes['entity_type']) {
-            $slug .= "-{$this->attributes['entity_type']}";
-        }
-
-        if ($this->attributes['entity_id']) {
-            $slug .= "-{$this->attributes['entity_id']}";
-        }
-
-        return strtolower($slug);
-    }
-
-    /**
-     * Get the ability's "slug" attribute.
-     *
-     * @return string
-     */
-    public function getSlugAttribute()
-    {
-        return $this->getIdentifierAttribute();
-    }
-
-    /**
      * Get abilities assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
-     * @return \Illuminate\Database\Eloquent\Collection
+     *
+     * @return array|\Illuminate\Database\Eloquent\Collection|static[]
+     * @throws \InvalidArgumentException
      */
     public static function getAbilities(Model $authority, Collection $roles = null)
     {
-        if (! $authority->exists) {
+        if (!$authority->exists) {
             throw new InvalidArgumentException('Authority must exist to retrieve abilities.');
         }
 
@@ -83,7 +45,7 @@ trait IsAbility
             });
 
         // Apply roles constraints
-        if ($roles !== null && ! $roles->isEmpty()) {
+        if ($roles !== null && !$roles->isEmpty()) {
             $query->orWhere(function ($query) use ($permissionTable, $authority, $roles) {
                 /** @var \Illuminate\Database\Query\Builder $query */
                 $role = Helper::getRoleModel();
@@ -95,5 +57,123 @@ trait IsAbility
         }
 
         return $query->get(['abilities.*', "{$permissionTable}.forbidden"]);
+    }
+
+    /**
+     * Collect abilities for authority.
+     *
+     * @param $abilities
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param bool $create
+     *
+     * @return \Illuminate\Support\Collection
+     * @throws \InvalidArgumentException
+     */
+    public static function collectAbilities($abilities, $model = null, $create = true)
+    {
+        $abilitiesList = collect([]);
+
+        foreach ($abilities as $ability) {
+            if ($ability instanceof Model) {
+                if (!$ability->exists) {
+                    throw new InvalidArgumentException('Provided ability model does not existing. Did you forget to save it?');
+                }
+
+                $abilitiesList->push($ability);
+            } elseif (is_numeric($ability)) {
+                $abilitiesList->push(static::findOrFail($ability));
+            } elseif (is_string($ability)) {
+                $entityType = null;
+                if (is_string($model)) {
+                    $entityType = Helper::getMorphClassName($model);
+                } elseif ($model instanceof Model) {
+                    $entityType = $model->getMorphClass();
+                }
+
+                $instance = static::query()
+                    ->where('name', $ability)
+                    ->where('entity_id', $model instanceof Model && $model->exists ? $model->getKey() : null)
+                    ->where('entity_type', $entityType)
+                    ->first();
+
+                if ($instance) {
+                    $abilitiesList[] = $instance;
+                } elseif ($create) {
+                    $abilitiesList[] = static::createAbility($ability, $model);
+                }
+            }
+        }
+
+        return $abilitiesList;
+    }
+
+    /**
+     * Create a new ability.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return mixed
+     */
+    public static function createAbility($ability, $model = null)
+    {
+        if ($model === null) {
+            return static::forceCreate([
+                'name' => $ability,
+            ]);
+        }
+
+        if ($model === '*') {
+            return static::forceCreate([
+                'name' => $ability,
+                'entity_type' => '*',
+            ]);
+        }
+
+        return static::forceCreate([
+            'name' => $ability,
+            'entity_id' => $model instanceof Model && $model->exists ? $model->getKey() : null,
+            'entity_type' => is_string($model) ? Helper::getMorphClassName($model) : $model->getMorphClass(),
+        ]);
+    }
+
+    /**
+     * Get status if the ability forbids permission.
+     *
+     * @return bool
+     */
+    public function isForbidden()
+    {
+        return (bool)$this->attributes['forbidden'];
+    }
+
+    /**
+     * Get the ability's "slug" attribute.
+     *
+     * @return string
+     */
+    public function getSlugAttribute()
+    {
+        return $this->getIdentifierAttribute();
+    }
+
+    /**
+     * Get the identifier for this ability.
+     *
+     * @return string
+     */
+    final public function getIdentifierAttribute()
+    {
+        $slug = $this->attributes['name'];
+
+        if ($this->attributes['entity_type']) {
+            $slug .= "-{$this->attributes['entity_type']}";
+        }
+
+        if ($this->attributes['entity_id']) {
+            $slug .= "-{$this->attributes['entity_id']}";
+        }
+
+        return strtolower($slug);
     }
 }

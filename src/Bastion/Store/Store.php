@@ -43,6 +43,7 @@ class Store
 
     /**
      * Store constructor.
+     *
      * @param \Illuminate\Contracts\Cache\Store $cache
      */
     public function __construct(CacheStore $cache)
@@ -65,7 +66,7 @@ class Store
                 return null;
             }
 
-            if (! $gate->has($ability) && $this->check($authority, $ability, $model)) {
+            if (!$gate->has($ability) && $this->check($authority, $ability, $model)) {
                 return true;
             }
 
@@ -80,8 +81,9 @@ class Store
     /**
      * Parse the arguments we got from the gate.
      *
-     * @param  mixed $arguments
-     * @param  mixed $additional
+     * @param mixed $arguments
+     * @param mixed $additional
+     *
      * @return array
      */
     protected function parseGateArguments($arguments, $additional)
@@ -89,7 +91,7 @@ class Store
         // The way arguments are passed into the gate's before callback has changed in Laravel
         // in the middle of the 5.2 release. Before, arguments were spread out. Now they're
         // all supplied in a single array instead. We will normalize it into two values.
-        if (! is_null($additional)) {
+        if (!is_null($additional)) {
             return [$arguments, $additional];
         }
 
@@ -109,6 +111,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
      * @return bool
      */
     public function check(Model $authority, $ability, $model = null)
@@ -121,7 +124,7 @@ class Store
         foreach ($requested as $identifier) {
             if ($map->forbidden($identifier)) {
                 return false;
-            } elseif (! $allows && $map->granted($identifier)) {
+            } elseif (!$allows && $map->granted($identifier)) {
                 $allows = true;
             }
         }
@@ -133,6 +136,7 @@ class Store
      * Get authority roles and abilities map.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     *
      * @return \Ethereal\Bastion\Store\StoreMap
      */
     public function getMap(Model $authority)
@@ -150,11 +154,12 @@ class Store
      *
      * @param string $key
      * @param callable $callback
+     *
      * @return \Ethereal\Bastion\Store\StoreMap
      */
     protected function sear($key, callable $callback)
     {
-        if (! $this->useCache) {
+        if (!$this->useCache) {
             return $callback();
         }
 
@@ -169,6 +174,7 @@ class Store
      * Get the cache key for the given model's cache type.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     *
      * @return string
      */
     protected function getCacheKey(Model $authority)
@@ -180,6 +186,7 @@ class Store
      * Get roles assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getRoles(Model $authority)
@@ -195,6 +202,7 @@ class Store
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAbilities(Model $authority, Collection $roles = null)
@@ -211,6 +219,7 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
+     *
      * @return array
      */
     protected function compileAbilityIdentifiers($ability, $model)
@@ -229,6 +238,7 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
+     *
      * @return array
      */
     protected function compileModelAbilityIdentifiers($ability, $model)
@@ -270,6 +280,7 @@ class Store
      * Set the cache instance.
      *
      * @param \Illuminate\Contracts\Cache\Store $cache
+     *
      * @return $this
      */
     public function setCache(CacheStore $cache)
@@ -295,8 +306,6 @@ class Store
 
     /**
      * Clear authority cache.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
      */
     public function clearCache()
     {
@@ -306,7 +315,8 @@ class Store
     /**
      * Set whether the bouncer is the exclusive authority on gate access.
      *
-     * @param  bool $boolean
+     * @param bool $boolean
+     *
      * @return $this
      */
     public function setExclusivity($boolean)
@@ -320,6 +330,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param array|string $roles
      * @param string $boolean
+     *
      * @return bool
      */
     public function checkRole(Model $authority, $roles, $boolean = 'or')
@@ -332,7 +343,7 @@ class Store
             return $available->isEmpty();
         }
 
-        return $available->count() === count((array) $roles);
+        return $available->count() === count((array)$roles);
     }
 
     /**

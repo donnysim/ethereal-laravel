@@ -22,8 +22,9 @@ trait HasAbilities
     /**
      * Give abilities to the model.
      *
-     * @param $ability
-     * @param null $model
+     * @param string $ability
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     *
      * @return $this
      */
     public function allow($ability, $model = null)
@@ -36,8 +37,9 @@ trait HasAbilities
     /**
      * Removes abilities from the model.
      *
-     * @param $ability
-     * @param null $model
+     * @param string $ability
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     *
      * @return $this
      */
     public function disallow($ability, $model = null)

@@ -48,13 +48,13 @@ class PermitsAbilities
         /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
         $permissionModelClass = Helper::getPermissionModelClass();
 
-        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
+        $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
                 $authority = $roleModelClass::where('name', $authority)->first();
 
-                if (! $authority) {
+                if (!$authority) {
                     continue;
                 }
             } elseif ($authority instanceof Model && $authority->exists) {

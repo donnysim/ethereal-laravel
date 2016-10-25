@@ -15,6 +15,7 @@ trait IsPermission
      * @param int $abilityId
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param bool $forbids
+     *
      * @return array
      */
     public static function createPermissionRecord($abilityId, Model $authority, $forbids = false)

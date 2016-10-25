@@ -11,18 +11,6 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 class Helper
 {
     /**
-     * Get application config.
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return \Illuminate\Config\Repository
-     */
-    protected static function getConfig($key, $default = null)
-    {
-        return app('config')->get($key, $default);
-    }
-
-    /**
      * Get ability model instance.
      *
      * @return \Illuminate\Database\Eloquent\Model
@@ -42,6 +30,19 @@ class Helper
     public static function getAbilityModelClass()
     {
         return static::getConfig('bastion.models.ability', Ability::class);
+    }
+
+    /**
+     * Get application config.
+     *
+     * @param string $key
+     * @param mixed $default
+     *
+     * @return \Illuminate\Config\Repository
+     */
+    protected static function getConfig($key, $default = null)
+    {
+        return app('config')->get($key, $default);
     }
 
     /**
@@ -164,6 +165,7 @@ class Helper
      * Find class morph name from class path.
      *
      * @param string $classPath
+     *
      * @return string
      */
     public static function getMorphClassName($classPath)

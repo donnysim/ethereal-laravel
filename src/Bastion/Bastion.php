@@ -15,12 +15,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bastion
 {
-    // TODO use full qualified class names in comments
-
     /**
      * The bouncer clipboard instance.
      *
-     * @var Store
+     * @var \Ethereal\Bastion\Store\Store
      */
     protected $store;
 
@@ -48,7 +46,8 @@ class Bastion
     /**
      * Start a chain, to allow the given authority an ability.
      *
-     * @param $authorities
+     * @param mixed $authorities
+     *
      * @return \Ethereal\Bastion\Conductors\GivesAbilities
      */
     public function allow($authorities)
@@ -69,7 +68,8 @@ class Bastion
     /**
      * Start a chain, to disallow the given authority an ability.
      *
-     * @param $authorities
+     * @param mixed $authorities
+     *
      * @return \Ethereal\Bastion\Conductors\RemovesAbilities
      */
     public function disallow($authorities)
@@ -81,6 +81,7 @@ class Bastion
      * Start a chain, to assign the given role to a authority.
      *
      * @param mixed $roles
+     *
      * @return \Ethereal\Bastion\Conductors\AssignsRoles
      */
     public function assign($roles)
@@ -91,7 +92,8 @@ class Bastion
     /**
      * Start a chain, to forbid the given authority an ability.
      *
-     * @param $authorities
+     * @param mixed $authorities
+     *
      * @return \Ethereal\Bastion\Conductors\DeniesAbilities
      */
     public function forbid($authorities)
@@ -102,7 +104,8 @@ class Bastion
     /**
      * Start a chain, to forbid the given authority an ability.
      *
-     * @param $authorities
+     * @param mixed $authorities
+     *
      * @return \Ethereal\Bastion\Conductors\PermitsAbilities
      */
     public function permit($authorities)
@@ -114,6 +117,7 @@ class Bastion
      * Start a chain, to check if the given authority has a certain role.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     *
      * @return \Ethereal\Bastion\Conductors\ChecksRoles
      */
     public function is(Model $authority)
@@ -125,6 +129,7 @@ class Bastion
      * Start a chain, to retract the given role from a authority.
      *
      * @param mixed $roles
+     *
      * @return \Ethereal\Bastion\Conductors\RemovesRoles
      */
     public function retract($roles)
@@ -137,6 +142,7 @@ class Bastion
      *
      * @param string $ability
      * @param array|mixed $arguments
+     *
      * @return bool
      */
     public function allows($ability, $arguments = [])
@@ -145,6 +151,8 @@ class Bastion
     }
 
     /**
+     * Get gate instance.
+     *
      * @return \Illuminate\Contracts\Auth\Access\Gate
      */
     public function getGate()
@@ -153,6 +161,8 @@ class Bastion
     }
 
     /**
+     * Set gate instance.
+     *
      * @param \Illuminate\Contracts\Auth\Access\Gate $gate
      */
     public function setGate($gate)
@@ -165,6 +175,7 @@ class Bastion
      *
      * @param string $ability
      * @param array|mixed $arguments
+     *
      * @return bool
      */
     public function denies($ability, $arguments = [])
@@ -211,6 +222,7 @@ class Bastion
      *
      * @param string $ability
      * @param callable|string $callback
+     *
      * @return $this
      * @throws \InvalidArgumentException
      */
@@ -225,6 +237,7 @@ class Bastion
      * Set the bouncer to be the exclusive authority on gate access.
      *
      * @param bool $boolean
+     *
      * @return $this
      */
     public function exclusive($boolean = true)

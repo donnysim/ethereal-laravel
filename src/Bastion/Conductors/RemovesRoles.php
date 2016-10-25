@@ -38,6 +38,8 @@ class RemovesRoles
      * Remove roles from provided authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
+     *
+     * @throws \InvalidArgumentException
      */
     public function from($authority)
     {
@@ -52,7 +54,7 @@ class RemovesRoles
 
         foreach ($authorities as $auth) {
             /** @var \Illuminate\Database\Eloquent\Model $auth */
-            if (! $auth instanceof Model || ! $auth->exists) {
+            if (!$auth instanceof Model || !$auth->exists) {
                 throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 

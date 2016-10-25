@@ -16,11 +16,13 @@ trait IsRole
      * Get roles assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @return Collection
+     *
+     * @return \Illuminate\Support\Collection
+     * @throws \InvalidArgumentException
      */
     public static function getRoles(Model $authority)
     {
-        if (! $authority->exists) {
+        if (!$authority->exists) {
             throw new InvalidArgumentException('Authority must exist to retrieve assigned roles.');
         }
 
@@ -40,7 +42,9 @@ trait IsRole
      * Get or create roles based on provided list.
      *
      * @param array $roles
+     *
      * @return Collection
+     * @throws \InvalidArgumentException
      */
     public static function collectRoles($roles)
     {
@@ -48,7 +52,7 @@ trait IsRole
 
         foreach ($roles as $role) {
             if ($role instanceof Model) {
-                if (! $role->exists) {
+                if (!$role->exists) {
                     throw new InvalidArgumentException('Provided role model does not existing. Did you forget to save it?');
                 }
 
@@ -57,7 +61,7 @@ trait IsRole
                 $rolesList->push(static::findOrFail($role));
             } elseif (is_string($role)) {
                 $rolesList->push(static::firstOrCreate([
-                    'name' => $role
+                    'name' => $role,
                 ]));
             } elseif (is_array($role)) {
                 $rolesList->push(static::forceCreate($role));
@@ -81,6 +85,7 @@ trait IsRole
      * Create assign role record.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     *
      * @return array
      */
     public function createAssignRecord(Model $authority)

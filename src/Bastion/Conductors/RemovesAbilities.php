@@ -37,6 +37,8 @@ class RemovesAbilities
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @throws \InvalidArgumentException
      */
     public function to($abilities, $model = null)
     {
@@ -45,7 +47,7 @@ class RemovesAbilities
         /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
         $roleModelClass = Helper::getRoleModelClass();
 
-        $abilityIds = $abilityClass::collectAbilities((array) $abilities, $model)->pluck('id');
+        $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         if ($abilityIds->isEmpty()) {
             return;
@@ -55,7 +57,7 @@ class RemovesAbilities
             if (is_string($authority)) {
                 $authority = $roleModelClass::where('name', $authority)->first();
 
-                if (! $authority) {
+                if (!$authority) {
                     continue;
                 }
             }

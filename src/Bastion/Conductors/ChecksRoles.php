@@ -24,8 +24,8 @@ class ChecksRoles
     /**
      * Constructor.
      *
-     * @param \Illuminate\Database\Eloquent\Model $authority
      * @param \Ethereal\Bastion\Store\Store $store
+     * @param \Illuminate\Database\Eloquent\Model $authority
      */
     public function __construct(Store $store, Model $authority)
     {
@@ -37,6 +37,7 @@ class ChecksRoles
      * Check if the authority has any of the given roles.
      *
      * @param string $role
+     *
      * @return bool
      */
     public function a($role)
@@ -50,6 +51,7 @@ class ChecksRoles
      * Check if the authority doesn't have any of the given roles.
      *
      * @param string $role
+     *
      * @return bool
      */
     public function notA($role)
@@ -63,6 +65,7 @@ class ChecksRoles
      * Alias to the "a" method.
      *
      * @param string $role
+     *
      * @return bool
      */
     public function an($role)
@@ -76,6 +79,7 @@ class ChecksRoles
      * Alias to the "notA" method.
      *
      * @param string $role
+     *
      * @return bool
      */
     public function notAn($role)
@@ -89,6 +93,7 @@ class ChecksRoles
      * Check if the authority has all of the given roles.
      *
      * @param string $role
+     *
      * @return bool
      */
     public function all($role)
