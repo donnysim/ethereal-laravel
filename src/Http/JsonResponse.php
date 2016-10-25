@@ -2,7 +2,6 @@
 
 namespace Ethereal\Http;
 
-use Exception;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Pagination\AbstractPaginator;
@@ -21,7 +20,7 @@ class JsonResponse extends Response
     /**
      * Response data.
      *
-     * @var mixed
+     * @var array
      */
     protected $data = [];
 
@@ -46,7 +45,7 @@ class JsonResponse extends Response
     /**
      * Response error.
      *
-     * @var Exception|\Illuminate\Validation\ValidationException|string
+     * @var \Exception|\Illuminate\Validation\ValidationException|string
      */
     protected $error;
 
@@ -70,7 +69,9 @@ class JsonResponse extends Response
      * @param mixed $data
      * @param int $status
      * @param array $headers
-     * @return static
+     *
+     * @return \Ethereal\Http\JsonResponse
+     * @throws \InvalidArgumentException
      */
     public static function make($data = [], $status = 200, $headers = [])
     {
@@ -81,7 +82,8 @@ class JsonResponse extends Response
      * Get pagination data without details.
      *
      * @param $data
-     * @return mixed
+     *
+     * @return array
      */
     public static function getPaginationData($data)
     {
@@ -98,6 +100,7 @@ class JsonResponse extends Response
      * Get pagination details without data.
      *
      * @param array|\Illuminate\Contracts\Support\Arrayable|\Illuminate\Pagination\AbstractPaginator $data
+     *
      * @return array
      */
     public static function getPagination($data)
@@ -115,6 +118,7 @@ class JsonResponse extends Response
      * Check if data is paginated.
      *
      * @param $data
+     *
      * @return bool
      */
     public static function isPaginated($data)
@@ -136,7 +140,7 @@ class JsonResponse extends Response
 
         // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
         // in order to not overwrite a custom definition.
-        elseif (! $this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
+        elseif (!$this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
             $this->headers->set('Content-Type', 'application/json');
         } else {
             $this->headers->set('Content-Type', 'application/json');
@@ -149,7 +153,8 @@ class JsonResponse extends Response
      * Enable or disable debug mode.
      *
      * @param boolean $value
-     * @return $this
+     *
+     * @return \Ethereal\Http\JsonResponse
      */
     public function debug($value)
     {
@@ -162,7 +167,8 @@ class JsonResponse extends Response
      * Set json response message.
      *
      * @param string $message
-     * @return $this
+     *
+     * @return \Ethereal\Http\JsonResponse
      */
     public function message($message)
     {
@@ -176,7 +182,8 @@ class JsonResponse extends Response
      *
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
      * @param int|null $code
-     * @return $this
+     *
+     * @return \Ethereal\Http\JsonResponse
      */
     public function error($error, $code = null)
     {
@@ -189,7 +196,8 @@ class JsonResponse extends Response
     /**
      * Sends content for the current web response.
      *
-     * @return Response
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \UnexpectedValueException
      * @throws \Exception
      * @throws \InvalidArgumentException
      */
@@ -204,6 +212,7 @@ class JsonResponse extends Response
      * Get data as string.
      *
      * @return string
+     * @throws \UnexpectedValueException
      * @throws \Exception
      * @throws \InvalidArgumentException
      */
@@ -211,11 +220,7 @@ class JsonResponse extends Response
     {
         $content = json_encode($this->getResponseData(), $this->encodingOptions);
 
-        if ($content === false) {
-            throw new UnexpectedValueException('Could not convert data to json.');
-        }
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        if ($content === false || json_last_error() !== JSON_ERROR_NONE) {
             throw new UnexpectedValueException('Could not convert data to json.');
         }
 
@@ -237,7 +242,7 @@ class JsonResponse extends Response
             'success' => $this->isSuccessful(),
         ];
 
-        if ($this->error && (! $this->isSuccessful())) {
+        if ($this->error && (!$this->isSuccessful())) {
             $responseData['error'] = $this->getErrorData();
         }
 
@@ -291,7 +296,8 @@ class JsonResponse extends Response
      * Get exception message.
      *
      * @param \Exception|int|string $error
-     * @return mixed
+     *
+     * @return string
      */
     protected function getErrorMessage($error)
     {
@@ -305,7 +311,8 @@ class JsonResponse extends Response
     /**
      * Flatten validator messages.
      *
-     * @param MessageBag|array $messages
+     * @param \Illuminate\Support\MessageBag|array $messages
+     *
      * @return array
      */
     public static function flattenMessageBag($messages)
@@ -329,12 +336,12 @@ class JsonResponse extends Response
 
     /**
      * Set response data.
-     *
      * Valid types are array and objects that implement Arrayable.
      *
-     * @param array|Arrayable $data Content that can be cast to array.
+     * @param array|\Illuminate\Contracts\Support\Arrayable $data Content that can be cast to array.
      *
      * @return \Ethereal\Http\JsonResponse
+     * @throws \UnexpectedValueException
      */
     public function setData($data)
     {
@@ -345,18 +352,16 @@ class JsonResponse extends Response
 
     /**
      * Sets the response content.
-     *
      * Valid types are array and objects that implement Arrayable.
      *
      * @param array|Arrayable $content Content that can be cast to array.
      *
-     * @return JsonResponse
-     *
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      */
     public function setContent($content)
     {
-        if (! is_array($content) && ! ($content instanceof Arrayable)) {
+        if (!is_array($content) && !($content instanceof Arrayable)) {
             throw new UnexpectedValueException(sprintf('The Response content must be an array or object implementing Arrayable, "%s" given.', gettype($content)));
         }
 
@@ -370,7 +375,9 @@ class JsonResponse extends Response
      *
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
-     * @return JsonResponse
+     *
+     * @return \Ethereal\Http\JsonResponse
+     * @throws \UnexpectedValueException
      */
     public function payload($key, $value = null)
     {
@@ -387,11 +394,12 @@ class JsonResponse extends Response
 
     /**
      * Add data to response.
-     *
      * Valid types are array and objects that implement Arrayable.
      *
-     * @param array|Arrayable $data
+     * @param array|\Illuminate\Contracts\Support\Arrayable $data
+     *
      * @return \Ethereal\Http\JsonResponse
+     * @throws \UnexpectedValueException
      */
     public function data($data)
     {
@@ -404,11 +412,13 @@ class JsonResponse extends Response
      * Add payload data to response.
      *
      * @param array $payload
-     * @return JsonResponse
+     *
+     * @return \Ethereal\Http\JsonResponse
+     * @throws \UnexpectedValueException
      */
     public function setPayload($payload)
     {
-        if (! is_array($payload) && ! ($payload instanceof Arrayable)) {
+        if (!is_array($payload) && !($payload instanceof Arrayable)) {
             throw new UnexpectedValueException(sprintf('The Response payload must be an array or object implementing Arrayable, "%s" given.', gettype($payload)));
         }
 
@@ -424,7 +434,7 @@ class JsonResponse extends Response
      */
     public function getPayload()
     {
-        if (! isset($this->data['data'])) {
+        if (!isset($this->data['data'])) {
             return null;
         }
 
@@ -435,7 +445,8 @@ class JsonResponse extends Response
      * Sets the JSONP callback.
      *
      * @param string|null $callback The JSONP callback or null to use none
-     * @return JsonResponse
+     *
+     * @return \Ethereal\Http\JsonResponse
      * @throws \InvalidArgumentException When the callback name is not valid
      */
     public function callback($callback = null)
@@ -445,7 +456,7 @@ class JsonResponse extends Response
             $pattern = '/^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\x{200C}\x{200D}]*+$/u';
             $parts = explode('.', $callback);
             foreach ($parts as $part) {
-                if (! preg_match($pattern, $part)) {
+                if (!preg_match($pattern, $part)) {
                     throw new InvalidArgumentException('The callback name is not valid.');
                 }
             }
@@ -460,7 +471,9 @@ class JsonResponse extends Response
      * Set response status code.
      *
      * @param int $code
-     * @return JsonResponse
+     *
+     * @return \Ethereal\Http\JsonResponse
+     * @throws \InvalidArgumentException
      */
     public function code($code)
     {
