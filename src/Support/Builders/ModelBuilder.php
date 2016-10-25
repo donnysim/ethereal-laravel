@@ -38,6 +38,7 @@ class ModelBuilder
      *
      * @param $name string
      * @param $arguments array
+     *
      * @return mixed
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.methods
      */

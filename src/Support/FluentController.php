@@ -36,7 +36,7 @@ abstract class FluentController extends Controller implements ArrayAccess
     /**
      * Dependency container.
      *
-     * @var Container
+     * @var \Illuminate\Contracts\Container\Container
      */
     protected $container;
 
@@ -63,6 +63,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      * is utilized for reading data from inaccessible members.
      *
      * @param $name string
+     *
      * @return mixed
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.members
      */
@@ -83,6 +84,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      *
      * @param $name string
      * @param $value mixed
+     *
      * @return void
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.members
      */
@@ -100,6 +102,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      * is triggered by calling isset() or empty() on inaccessible members.
      *
      * @param $name string
+     *
      * @return bool
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.members
      */
@@ -112,6 +115,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      * is invoked when unset() is used on inaccessible members.
      *
      * @param $name string
+     *
      * @return void
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.members
      */
@@ -124,9 +128,11 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Whether a offset exists
      *
      * @link http://php.net/manual/en/arrayaccess.offsetexists.php
+     *
      * @param mixed $offset <p>
      * An offset to check for.
      * </p>
+     *
      * @return boolean true on success or false on failure.
      * </p>
      * <p>
@@ -142,15 +148,17 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Offset to retrieve
      *
      * @link http://php.net/manual/en/arrayaccess.offsetget.php
+     *
      * @param mixed $offset <p>
      * The offset to retrieve.
      * </p>
+     *
      * @return mixed Can return all value types.
      * @since 5.0.0
      */
     public function offsetGet($offset)
     {
-        if (! array_key_exists($offset, $this->properties)) {
+        if (!array_key_exists($offset, $this->properties)) {
             $methodName = 'get' . Str::studly($offset) . 'Property';
             if (method_exists($this, $methodName)) {
                 return $this->{$methodName}();
@@ -164,12 +172,14 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Offset to set
      *
      * @link http://php.net/manual/en/arrayaccess.offsetset.php
+     *
      * @param mixed $offset <p>
      * The offset to assign the value to.
      * </p>
      * @param mixed $value <p>
      * The value to set.
      * </p>
+     *
      * @return void
      * @since 5.0.0
      */
@@ -187,9 +197,11 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Offset to unset
      *
      * @link http://php.net/manual/en/arrayaccess.offsetunset.php
+     *
      * @param mixed $offset <p>
      * The offset to unset.
      * </p>
+     *
      * @return void
      * @since 5.0.0
      */
@@ -199,8 +211,9 @@ abstract class FluentController extends Controller implements ArrayAccess
     }
 
     /**
-     * @param Model|\Illuminate\Database\Query\Builder $class
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Query\Builder $class
      * @param \Closure $callback
+     *
      * @return $this
      */
     protected function query($class, Closure $callback)
@@ -219,9 +232,10 @@ abstract class FluentController extends Controller implements ArrayAccess
     }
 
     /**
-     * @param Model $class
+     * @param \Illuminate\Database\Eloquent\Model|string $class
      * @param null|int $id
      * @param \Closure $callback
+     *
      * @return $this
      */
     protected function model($class, $id = null, Closure $callback = null)
@@ -252,6 +266,7 @@ abstract class FluentController extends Controller implements ArrayAccess
      * @param string $key Cache key.
      * @param \DateTime|int $duration Duration to remember. -1 means forever.
      * @param \Closure $callback
+     *
      * @return $this
      */
     protected function cacheAs($name, $key, $duration, Closure $callback)
@@ -271,19 +286,19 @@ abstract class FluentController extends Controller implements ArrayAccess
     /**
      * Build a json response.
      *
-     * @param array|Closure|null $payload
+     * @param array|\Closure|null $payload
+     *
      * @return \Ethereal\Http\JsonResponse
+     * @throws \UnexpectedValueException
      */
     protected function json($payload = null)
     {
         if (is_array($payload)) {
-            $this->json->attachData($payload);
+            $this->json->payload($payload);
         } elseif ($payload instanceof Closure) {
             $payload($this->json);
-        } elseif ($payload instanceof Model) {
-            $this->json->attachData($payload->toArray());
-        } elseif ($payload instanceof Collection) {
-            $this->json->attachData($payload->toArray());
+        } elseif ($payload instanceof Model || $payload instanceof Collection) {
+            $this->json->payload($payload->toArray());
         }
 
         return $this->json;
@@ -295,7 +310,9 @@ abstract class FluentController extends Controller implements ArrayAccess
      * @param array $rules
      * @param array $messages
      * @param array $customAttributes
+     *
      * @return \Ethereal\Support\FluentController
+     * @throws \Illuminate\Validation\ValidationException
      */
     protected function validateRequest(array $rules = [], array $messages = [], array $customAttributes = [])
     {
@@ -309,7 +326,9 @@ abstract class FluentController extends Controller implements ArrayAccess
      * @param array $rules
      * @param array $messages
      * @param array $customAttributes
+     *
      * @return $this
+     * @throws \Illuminate\Validation\ValidationException
      */
     protected function validate(array $data = [], array $rules = [], array $messages = [], array $customAttributes = [])
     {
@@ -325,7 +344,7 @@ abstract class FluentController extends Controller implements ArrayAccess
     /**
      * Get validation factory.
      *
-     * @return Factory
+     * @return \Illuminate\Contracts\Validation\Factory
      */
     protected function validationFactory()
     {
@@ -336,11 +355,13 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Throw validation exception.
      *
      * @param \Illuminate\Validation\Validator $validator
+     *
      * @throws \Illuminate\Validation\ValidationException
+     * @throws \InvalidArgumentException
      */
     protected function throwValidationException($validator)
     {
-        if (($this->request->ajax() && ! $this->request->pjax()) || $this->request->wantsJson()) {
+        if (($this->request->ajax() && !$this->request->pjax()) || $this->request->wantsJson()) {
             $response = JsonResponse::make(null, 422)->error($validator);
         } else {
             $response = redirect()->back()->withInput($this->request->input())->withErrors($validator->messages());
@@ -353,9 +374,10 @@ abstract class FluentController extends Controller implements ArrayAccess
      * Get json response object.
      *
      * @return \Ethereal\Http\JsonResponse
+     * @throws \InvalidArgumentException
      */
     private function getJsonProperty()
     {
-        return $this->properties['json'] = new JsonResponse();
+        return $this->properties['json'] = JsonResponse::make();
     }
 }

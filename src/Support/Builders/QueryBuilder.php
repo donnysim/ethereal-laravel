@@ -39,6 +39,7 @@ class QueryBuilder
      * Store first result into controller.
      *
      * @param string $name
+     *
      * @return $this
      */
     public function firstAs($name)
@@ -53,6 +54,7 @@ class QueryBuilder
      *
      * @param string $name
      * @param array $attributes
+     *
      * @return $this
      */
     public function firstOrCreateAs($name, array $attributes)
@@ -67,6 +69,7 @@ class QueryBuilder
      *
      * @param string $name
      * @param array $attributes
+     *
      * @return $this
      */
     public function firstOrNewAs($name, array $attributes)
@@ -81,6 +84,7 @@ class QueryBuilder
      *
      * @param string $name
      * @param array $columns
+     *
      * @return $this
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
@@ -96,6 +100,7 @@ class QueryBuilder
      *
      * @param string $name
      * @param array $columns
+     *
      * @return $this
      */
     public function getAs($name, array $columns = ['*'])
@@ -113,6 +118,7 @@ class QueryBuilder
      * @param array $columns
      * @param string $pageName
      * @param null|int $page
+     *
      * @return $this
      */
     public function paginateAs($name, $perPage = null, array $columns = ['*'], $pageName = 'page', $page = null)
@@ -128,6 +134,7 @@ class QueryBuilder
      * @param $rules
      * @param null|array|bool $tableMap
      * @param bool $useOr
+     *
      * @return $this
      */
     public function filterByRequest($request, $prefix, $rules, $tableMap = null, $useOr = false)
@@ -202,6 +209,7 @@ class QueryBuilder
      * @param string $field
      * @param null|array $tableMap
      * @param bool|array $onlyFields
+     *
      * @return $this
      */
     public function orderByRequest($request, $field, $tableMap = null, $onlyFields = false)
@@ -230,6 +238,7 @@ class QueryBuilder
      *
      * @param null|array $map
      * @param string $column
+     *
      * @return string
      */
     private function getFullColumn($map, $column)
@@ -252,6 +261,7 @@ class QueryBuilder
     /**
      * @param $key
      * @param $value
+     *
      * @return array
      */
     private function getColumnAndOrder($key, $value)
@@ -276,6 +286,7 @@ class QueryBuilder
      *
      * @param $name string
      * @param $arguments array
+     *
      * @return mixed
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.methods
      */
