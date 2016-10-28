@@ -158,7 +158,7 @@ class Helper
      */
     public static function bastion()
     {
-        return app('bastion');
+        return app(Bastion::class);
     }
 
     /**
