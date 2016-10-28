@@ -54,6 +54,18 @@ trait HasRoles
      *
      * @return bool
      */
+    public function isAn($role)
+    {
+        return Helper::bastion()->is($this)->an(is_array($role) ? $role : func_get_args());
+    }
+
+    /**
+     * Check if the model has any of the given roles.
+     *
+     * @param string|array $role
+     *
+     * @return bool
+     */
     public function isA($role)
     {
         return Helper::bastion()->is($this)->a(is_array($role) ? $role : func_get_args());
