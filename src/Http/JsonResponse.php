@@ -6,6 +6,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
@@ -20,9 +21,9 @@ class JsonResponse extends Response
     /**
      * Response data.
      *
-     * @var array
+     * @var \Illuminate\Support\Collection
      */
-    protected $data = [];
+    protected $data;
 
     /**
      * JSONP callback.
@@ -73,8 +74,14 @@ class JsonResponse extends Response
      * @return $this
      * @throws \InvalidArgumentException
      */
-    public static function make($data = [], $status = 200, $headers = [])
+    public static function make($data = null, $status = 200, $headers = [])
     {
+        if ($data === null) {
+            $data = new Collection();
+        } else {
+            $data = Collection::make($data);
+        }
+
         return new static($data, $status, $headers);
     }
 
@@ -250,7 +257,7 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
-        $responseData = array_merge_recursive($responseData, $this->data);
+        $responseData = array_merge_recursive($responseData, $this->data->all());
 
         return $responseData;
     }
@@ -361,11 +368,7 @@ class JsonResponse extends Response
      */
     public function setContent($content)
     {
-        if (!is_array($content) && !($content instanceof Arrayable)) {
-            throw new UnexpectedValueException(sprintf('The Response content must be an array or object implementing Arrayable, "%s" given.', gettype($content)));
-        }
-
-        $this->data = $content;
+        $this->data = new Collection($content);
 
         return $this;
     }
@@ -403,7 +406,7 @@ class JsonResponse extends Response
      */
     public function data($data)
     {
-        $this->setContent(array_merge_recursive($this->content, $data));
+        $this->setContent($this->data->merge($data));
 
         return $this;
     }
@@ -418,10 +421,6 @@ class JsonResponse extends Response
      */
     public function setPayload($payload)
     {
-        if (!is_array($payload) && !($payload instanceof Arrayable)) {
-            throw new UnexpectedValueException(sprintf('The Response payload must be an array or object implementing Arrayable, "%s" given.', gettype($payload)));
-        }
-
         $this->data['data'] = $payload;
 
         return $this;
