@@ -103,6 +103,26 @@ class StoreMap
     }
 
     /**
+     * Get allowed abilities list.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllowedAbilities()
+    {
+        return $this->allowedAbilities;
+    }
+
+    /**
+     * Get forbidden abilities list.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getForbiddenAbilities()
+    {
+        return $this->forbiddenAbilities;
+    }
+
+    /**
      * Get roles.
      *
      * @return \Illuminate\Database\Eloquent\Collection
