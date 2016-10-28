@@ -176,7 +176,7 @@ class QueryBuilder
             $type = $rules[$column];
 
             if (is_array($type)) {
-                call_user_func($type, $value);
+                call_user_func_array($type, [$this->query, $value, $column]);
             } else {
                 $type = mb_strtolower($type);
 
