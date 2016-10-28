@@ -24,7 +24,7 @@ trait Authority
     /**
      * Get authority map.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Ethereal\Bastion\Store\StoreMap
      */
     public function getAuthorityMap()
     {
