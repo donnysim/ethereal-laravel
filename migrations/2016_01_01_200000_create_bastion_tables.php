@@ -41,8 +41,7 @@ class CreateBastionTables extends Migration
             $table->integer('role_id')->unsigned()->index();
             $table->morphs('entity');
 
-            $table->foreign('role_id')->references('id')->on(Helper::getRoleTable())
-                ->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('role_id')->references('id')->on(Helper::getRoleTable())->onUpdate('cascade')->onDelete('cascade');
         });
 
         Schema::create(Helper::getPermissionTable(), function (Blueprint $table) {
@@ -51,7 +50,7 @@ class CreateBastionTables extends Migration
             $table->morphs('entity');
             $table->boolean('forbidden')->default(false);
 
-            $table->foreign('ability_id')->references('id')->on(Helper::getPermissionTable())->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('ability_id')->references('id')->on(Helper::getAbilityTable())->onUpdate('cascade')->onDelete('cascade');
         });
     }
 

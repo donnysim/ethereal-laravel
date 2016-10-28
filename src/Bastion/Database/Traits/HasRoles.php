@@ -16,7 +16,7 @@ trait HasRoles
      */
     public function roles()
     {
-        return $this->morphToMany(Helper::getRoleModelClass(), 'entity', Helper::getRoleTable(), 'entity_id', 'role_id');
+        return $this->morphToMany(Helper::getRoleModelClass(), 'entity', Helper::getAssignedRoleTable(), 'entity_id', 'role_id');
     }
 
     /**
