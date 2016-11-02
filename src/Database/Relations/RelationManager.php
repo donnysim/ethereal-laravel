@@ -104,11 +104,6 @@ class RelationManager
             return true;
         }
 
-        // Skip empty collections
-        if ($data instanceof EloquentCollection && $data->isEmpty()) {
-            return true;
-        }
-
         // Check if relation function exists
         if (!method_exists($parent, $relationName)) {
             return true;

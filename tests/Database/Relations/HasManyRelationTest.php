@@ -125,6 +125,12 @@ class HasManyRelationTest extends BaseTestCase
 
         unset($user['comments']);
         static::assertEquals(2, $user->comments->count());
+
+        // Should remove all items if syncing empty list
+        $user->setRelation('comments', []);
+        $user->smartPush(['relations' => [
+            'comments' => Ethereal::OPTION_SYNC
+        ]]);
     }
 
     public function test_does_not_call_event_with_no_dispatcher()

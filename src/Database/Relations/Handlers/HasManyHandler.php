@@ -103,7 +103,7 @@ class HasManyHandler extends BaseRelationHandler
         }
 
         if ($this->data->isEmpty()) {
-            $query->delete();
+            $this->relation->delete();
         } else {
             $modelKeyName = $this->data->first()->getKeyName();
             $keys = $this->data->pluck($modelKeyName)->toArray();
