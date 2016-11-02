@@ -62,12 +62,12 @@ class Store
 
             list($model, $additional) = $this->parseGateArguments($arguments, $additional);
 
-            if ($additional !== null) {
-                return null;
-            }
-
             if (!$gate->has($ability) && $this->check($authority, $ability, $model)) {
                 return true;
+            }
+
+            if ($additional !== null) {
+                return null;
             }
 
             if ($this->exclusive) {
@@ -91,7 +91,7 @@ class Store
         // The way arguments are passed into the gate's before callback has changed in Laravel
         // in the middle of the 5.2 release. Before, arguments were spread out. Now they're
         // all supplied in a single array instead. We will normalize it into two values.
-        if (!is_null($additional)) {
+        if ($additional !== null) {
             return [$arguments, $additional];
         }
 
