@@ -38,6 +38,7 @@ class GivesAbilities
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
+     * @return $this
      * @throws \InvalidArgumentException
      */
     public function to($abilities, $model = null)
@@ -70,5 +71,7 @@ class GivesAbilities
         }
 
         $this->store->clearCache();
+
+        return $this;
     }
 }
