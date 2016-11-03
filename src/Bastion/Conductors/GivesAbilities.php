@@ -50,6 +50,7 @@ class GivesAbilities
         /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
         $permissionModelClass = Helper::getPermissionModelClass();
 
+        $clearAll = false;
         $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
@@ -58,6 +59,8 @@ class GivesAbilities
                 $authority = $roleModelClass::firstOrCreate([
                     'name' => $authority,
                 ]);
+
+                $clearAll = true;
             }
 
             $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn('id', $abilityIds->all())->pluck('id'));
@@ -70,7 +73,15 @@ class GivesAbilities
             $permissionModelClass::insert($inserts);
         }
 
-        $this->store->clearCache();
+        if ($clearAll) {
+            $this->store->clearCache();
+        } else {
+            foreach ($this->authorities as $authority) {
+                if (!is_string($authority)) {
+                    $this->store->clearCacheFor($authority);
+                }
+            }
+        }
 
         return $this;
     }
