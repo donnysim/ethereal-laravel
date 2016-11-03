@@ -15,6 +15,7 @@ class BastionServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerStore();
+        $this->registerAccessGate();
         $this->registerBastion();
     }
 
