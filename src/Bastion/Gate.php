@@ -432,7 +432,11 @@ class Gate implements GateContract
      */
     public function hasPolicyCheck($ability, array $arguments)
     {
-        $instance = $this->getPolicyFor($arguments[0]);
+        $instance = $this->getPolicyFor($arguments[0], false);
+
+        if ($instance === null) {
+            return false;
+        }
 
         if (strpos($ability, '-') !== false) {
             $ability = Str::camel($ability);
@@ -449,18 +453,23 @@ class Gate implements GateContract
      * Get a policy instance for a given class.
      *
      * @param object|string $class
+     * @param bool $throw
      *
      * @return mixed
      * @throws \InvalidArgumentException
      */
-    public function getPolicyFor($class)
+    public function getPolicyFor($class, $throw = true)
     {
         if (is_object($class)) {
             $class = get_class($class);
         }
 
         if (!isset($this->policies[$class])) {
-            throw new InvalidArgumentException("Policy not defined for [{$class}].");
+            if ($throw) {
+                throw new InvalidArgumentException("Policy not defined for [{$class}].");
+            }
+
+            return null;
         }
 
         return $this->resolvePolicy($this->policies[$class]);
