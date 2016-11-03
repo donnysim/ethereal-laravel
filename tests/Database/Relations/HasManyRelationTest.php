@@ -131,6 +131,9 @@ class HasManyRelationTest extends BaseTestCase
         $user->smartPush(['relations' => [
             'comments' => Ethereal::OPTION_SYNC
         ]]);
+
+        unset($user['comments']);
+        static::assertEquals(0, $user->comments->count());
     }
 
     public function test_does_not_call_event_with_no_dispatcher()
