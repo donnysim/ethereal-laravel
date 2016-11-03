@@ -10,7 +10,7 @@ use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Store\Store;
-use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Database\Eloquent\Model;
 
 class Bastion
@@ -35,7 +35,7 @@ class Bastion
      * @param \Illuminate\Contracts\Auth\Access\Gate $gate
      * @param \Ethereal\Bastion\Store\Store $store
      */
-    public function __construct(Gate $gate, Store $store)
+    public function __construct(GateContract $gate, Store $store)
     {
         $this->gate = $gate;
         $this->store = $store;
