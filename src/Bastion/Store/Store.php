@@ -54,55 +54,31 @@ class Store
     /**
      * Register the clipboard at the given gate.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Illuminate\Contracts\Auth\Access\Gate|\Ethereal\Bastion\Gate $gate
+     *
+     * @throws \InvalidArgumentException
      */
     public function registerAt(Gate $gate)
     {
-        $gate->before(function ($authority, $ability, $arguments = [], $additional = null) use ($gate) {
+        $gate->before(function ($authority, $ability, $arguments = []) use ($gate) {
+            $model = is_array($arguments) ? $arguments[0] : $arguments;
 
-            list($model, $additional) = $this->parseGateArguments($arguments, $additional);
-
-            if (!$gate->has($ability) && $this->check($authority, $ability, $model)) {
+            // Check if user has all permissions, if so we can allow all access
+            // if not, we will check permission and policy
+            if ($this->check($authority, '*', '*', true)) {
                 return true;
             }
 
-            if ($additional !== null) {
-                return null;
-            }
-
-            if ($this->exclusive) {
+            if (!$this->check($authority, $ability, $model, true)) {
                 return false;
+            } else {
+                if (!$gate->hasPolicyCheck($ability, $arguments)) {
+                    return true;
+                }
             }
 
             return null;
         });
-    }
-
-    /**
-     * Parse the arguments we got from the gate.
-     *
-     * @param mixed $arguments
-     * @param mixed $additional
-     *
-     * @return array
-     */
-    protected function parseGateArguments($arguments, $additional)
-    {
-        // The way arguments are passed into the gate's before callback has changed in Laravel
-        // in the middle of the 5.2 release. Before, arguments were spread out. Now they're
-        // all supplied in a single array instead. We will normalize it into two values.
-        if ($additional !== null) {
-            return [$arguments, $additional];
-        }
-
-        if (is_array($arguments)) {
-            return [
-                isset($arguments[0]) ? $arguments[0] : null,
-                isset($arguments[1]) ? $arguments[1] : null,
-            ];
-        }
-
-        return [$arguments, null];
     }
 
     /**
@@ -111,13 +87,14 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return bool
      */
-    public function check(Model $authority, $ability, $model = null)
+    public function check(Model $authority, $ability, $model = null, $strict = false)
     {
         $map = $this->getMap($authority);
-        $requested = $this->compileAbilityIdentifiers($ability, $model);
+        $requested = $this->compileAbilityIdentifiers($ability, $model, $strict);
 
         $allows = false;
 
@@ -219,18 +196,23 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
+     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return array
      */
-    protected function compileAbilityIdentifiers($ability, $model)
+    protected function compileAbilityIdentifiers($ability, $model, $strict = false)
     {
         $ability = strtolower($ability);
 
         if ($model === null) {
+            if ($strict) {
+                return [$ability];
+            }
+
             return [$ability, '*-*', '*'];
         }
 
-        return $this->compileModelAbilityIdentifiers($ability, $model);
+        return $this->compileModelAbilityIdentifiers($ability, $model, $strict);
     }
 
     /**
@@ -238,12 +220,17 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
+     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return array
      */
-    protected function compileModelAbilityIdentifiers($ability, $model)
+    protected function compileModelAbilityIdentifiers($ability, $model, $strict = false)
     {
         if ($model === '*') {
+            if ($strict) {
+                return ["{$ability}-*"];
+            }
+
             return ["{$ability}-*", '*-*'];
         }
 
@@ -255,8 +242,11 @@ class Store
             "{$ability}-{$type}",
             "{$ability}-*",
             "*-{$type}",
-            '*-*',
         ];
+
+        if (!$strict) {
+            $abilities[] = '*-*';
+        }
 
         if ($model->exists) {
             $abilities[] = "{$ability}-{$type}-{$model->getKey()}";

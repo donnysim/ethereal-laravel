@@ -4,7 +4,7 @@ namespace Ethereal\Bastion;
 
 use Ethereal\Bastion\Store\Store;
 use Ethereal\Cache\GroupFileStore;
-use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
@@ -35,7 +35,7 @@ class BastionServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Bastion::class, function () {
             $bastion = new Bastion(
-                $this->app->make(Gate::class),
+                $this->app->make(GateContract::class),
                 $this->app->make(Store::class)
             );
 
@@ -57,6 +57,20 @@ class BastionServiceProvider extends ServiceProvider
     protected function registerAtGate()
     {
         $store = $this->app->make(Store::class);
-        $store->registerAt($this->app->make(Gate::class));
+        $store->registerAt($this->app->make(GateContract::class));
+    }
+
+    /**
+     * Register the access gate service.
+     *
+     * @return void
+     */
+    protected function registerAccessGate()
+    {
+        $this->app->singleton(GateContract::class, function ($app) {
+            return new Gate($app, function () use ($app) {
+                return call_user_func($app['auth']->userResolver());
+            });
+        });
     }
 }
