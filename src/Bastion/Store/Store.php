@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion\Store;
 
+use Ethereal\Bastion\RuckArgs;
 use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Database\Ability;
 use Ethereal\Bastion\Database\Role;
@@ -53,19 +54,11 @@ class Store
      */
     public function registerAt(Rucks $rucks)
     {
-        $rucks->before(function ($authority, $ability, $arguments = []) use ($rucks) {
-            $model = is_array($arguments) ? $arguments[0] : $arguments;
-
-            // Check if user has all permissions, if so we can allow all access
-            // if not, we will check permission and policy
-            if ($this->check($authority, '*', '*', true)) {
-                return true;
-            }
-
-            if (!$this->check($authority, $ability, $model, true)) {
+        $rucks->before(function ($authority, RuckArgs $args) use ($rucks) {
+            if (!$this->check($authority, $args->getAbility(), $args->getModel(), true)) {
                 return false;
             } else {
-                if (!$rucks->hasPolicyCheck($ability, $arguments)) {
+                if (!$rucks->hasPolicyCheck($args->getAbility(), $args->getModel())) {
                     return true;
                 }
             }

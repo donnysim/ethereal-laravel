@@ -18,10 +18,6 @@ class BaseTestCase extends TestCase
             '--database' => 'ethereal',
             '--realpath' => __DIR__ . '/migrations',
         ]);
-//
-//        $this->app->singleton(Clipboard::class, function () {
-//            return new Clipboard();
-//        });
     }
 
     /**
