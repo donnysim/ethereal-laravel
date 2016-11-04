@@ -2,20 +2,22 @@
 
 namespace Ethereal\Bastion;
 
+use Bastion\Rucks;
 use Ethereal\Bastion\Store\Store;
 use Ethereal\Cache\GroupFileStore;
-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
 {
     /**
      * Register the service provider.
+     *
+     * @throws \InvalidArgumentException
      */
     public function register()
     {
         $this->registerStore();
-        $this->registerAccessGate();
+        $this->registerRucksInstance();
         $this->registerBastion();
     }
 
@@ -31,12 +33,14 @@ class BastionServiceProvider extends ServiceProvider
 
     /**
      * Register bastion instance.
+     *
+     * @throws \InvalidArgumentException
      */
     protected function registerBastion()
     {
         $this->app->singleton(Bastion::class, function () {
             $bastion = new Bastion(
-                $this->app->make(GateContract::class),
+                $this->app->make(Rucks::class),
                 $this->app->make(Store::class)
             );
 
@@ -45,31 +49,29 @@ class BastionServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register bastion at gate.
+     * Register bastion at rucks.
      */
     public function boot()
     {
-        $this->registerAtGate();
+        $this->registerAtRucks();
     }
 
     /**
-     * Register bastion at gate.
+     * Register bastion at rucks.
      */
-    protected function registerAtGate()
+    protected function registerAtRucks()
     {
         $store = $this->app->make(Store::class);
-        $store->registerAt($this->app->make(GateContract::class));
+        $store->registerAt($this->app->make(Rucks::class));
     }
 
     /**
-     * Register the access gate service.
-     *
-     * @return void
+     * Register the access rucks service.
      */
-    protected function registerAccessGate()
+    protected function registerRucksInstance()
     {
-        $this->app->singleton(GateContract::class, function ($app) {
-            return new Gate($app, function () use ($app) {
+        $this->app->singleton(Rucks::class, function ($app) {
+            return new Rucks($app, function () use ($app) {
                 return call_user_func($app['auth']->userResolver());
             });
         });

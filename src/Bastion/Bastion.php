@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion;
 
+use Bastion\Rucks;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
 use Ethereal\Bastion\Conductors\DeniesAbilities;
@@ -10,7 +11,6 @@ use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Store\Store;
-use Illuminate\Contracts\Auth\Access\Gate as GateContract;
 use Illuminate\Database\Eloquent\Model;
 
 class Bastion
@@ -23,24 +23,26 @@ class Bastion
     protected $store;
 
     /**
-     * The access gate instance.
+     * The access at rucks instance.
      *
-     * @var \Illuminate\Contracts\Auth\Access\Gate
+     * @var \Bastion\Rucks
      */
-    protected $gate;
+    protected $rucks;
 
     /**
      * Bastion constructor.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Bastion\Rucks $rucks
      * @param \Ethereal\Bastion\Store\Store $store
+     *
+     * @throws \InvalidArgumentException
      */
-    public function __construct(GateContract $gate, Store $store)
+    public function __construct(Rucks $rucks, Store $store)
     {
-        $this->gate = $gate;
+        $this->rucks = $rucks;
         $this->store = $store;
 
-        $store->registerAt($gate);
+        $store->registerAt($rucks);
     }
 
     /**
@@ -144,30 +146,31 @@ class Bastion
      * @param array|mixed $arguments
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function allows($ability, $arguments = [])
     {
-        return $this->getGate()->allows($ability, $arguments);
+        return $this->getRucks()->allows($ability, $arguments);
     }
 
     /**
-     * Get gate instance.
+     * Get rucks instance.
      *
-     * @return \Illuminate\Contracts\Auth\Access\Gate
+     * @return \Bastion\Rucks
      */
-    public function getGate()
+    public function getRucks()
     {
-        return $this->gate;
+        return $this->rucks;
     }
 
     /**
-     * Set gate instance.
+     * Set rucks instance.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Bastion\Rucks $rucks
      */
-    public function setGate($gate)
+    public function setRucks($rucks)
     {
-        $this->gate = $gate;
+        $this->rucks = $rucks;
     }
 
     /**
@@ -177,10 +180,11 @@ class Bastion
      * @param array|mixed $arguments
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function denies($ability, $arguments = [])
     {
-        return $this->getGate()->denies($ability, $arguments);
+        return $this->getRucks()->denies($ability, $arguments);
     }
 
     /**
@@ -228,21 +232,7 @@ class Bastion
      */
     public function define($ability, $callback)
     {
-        $this->getGate()->define($ability, $callback);
-
-        return $this;
-    }
-
-    /**
-     * Set the bouncer to be the exclusive authority on gate access.
-     *
-     * @param bool $boolean
-     *
-     * @return $this
-     */
-    public function exclusive($boolean = true)
-    {
-        $this->store->setExclusivity($boolean);
+        $this->getRucks()->define($ability, $callback);
 
         return $this;
     }

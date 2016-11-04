@@ -2,21 +2,6 @@
 
 class AbilitiesTest extends BaseTestCase
 {
-    public function test_bastion_can_deny_access_if_set_to_work_exclusively()
-    {
-        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
-
-        $bastion->getGate()->define('access-dashboard', function () {
-            return true;
-        });
-
-        static::assertTrue($bastion->allows('access-dashboard'));
-
-        $bastion->exclusive();
-
-        static::assertTrue($bastion->denies('access-dashboard'));
-    }
-
     public function test_can_give_and_remove_abilities()
     {
         $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));

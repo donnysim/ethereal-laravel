@@ -2,7 +2,7 @@
 
 namespace Bastion;
 
-use Ethereal\Bastion\Helper;
+use Ethereal\Bastion\RuckArgs;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -52,13 +52,11 @@ class Rucks
     protected $afterCallbacks = [];
 
     /**
-     * Create a new gate instance.
+     * Create a new rucks instance.
      *
      * @param \Illuminate\Contracts\Container\Container $container
      * @param callable $userResolver
-     * @param callable $guestResolver
      * @param array $abilities
-     * @param array $guestAbilities
      * @param array $policies
      * @param array $beforeCallbacks
      * @param array $afterCallbacks
@@ -92,7 +90,7 @@ class Rucks
     }
 
     /**
-     * Register a callback to run before all Gate checks.
+     * Register a callback to run before all checks.
      *
      * @param callable $callback
      *
@@ -106,7 +104,7 @@ class Rucks
     }
 
     /**
-     * Register a callback to run after all Gate checks.
+     * Register a callback to run after all checks.
      *
      * @param callable $callback
      *
@@ -130,11 +128,9 @@ class Rucks
      */
     public function define($ability, $callback)
     {
-        if (is_callable($callback)) {
-            // Already a callable
-        } elseif (is_string($callback) && Str::contains($callback, '@')) {
+        if (is_string($callback) && Str::contains($callback, '@')) {
             $callback = $this->buildAbilityCallback($callback);
-        } else {
+        } elseif (!is_callable($callback)) {
             throw new InvalidArgumentException("Callback must be a callable or a 'Class@method' string.");
         }
 
@@ -178,48 +174,161 @@ class Rucks
      * Determine if the given ability should be granted for the current user.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function allows($ability, $arguments = [])
+    public function allows($ability, $model = null, $payload = [])
     {
-        return $this->check($ability, $arguments);
+        return $this->check($ability, $model, $payload);
     }
 
     /**
      * Determine if the given ability should be denied for the current user.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function denies($ability, $arguments = [])
+    public function denies($ability, $model = null, $payload = [])
     {
-        return !$this->allows($ability, $arguments);
+        return !$this->allows($ability, $model, $payload);
     }
 
     /**
      * Determine if the given ability should be granted for the current user.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function check($ability, $arguments = [])
+    public function check($ability, $model = null, $payload = [])
     {
-        $isGuest = false;
         $user = $this->resolveUser();
 
-        if ($user === null) {
-            $isGuest = true;
-            $user = $this->resolveGuest();
+        if (!$user) {
+            return false;
         }
+
+        $args = $this->resolveArgs($ability, $model, $payload);
+
+        $result = $this->callCallbacks($this->beforeCallbacks, $user, $args);
+        if ($result === null) {
+            $result = $this->callAuthCallback($user, $args);
+        }
+
+        $this->callCallbacks($this->afterCallbacks, $user, $args, [$result]);
+
+        return $result;
+    }
+
+    /**
+     * Call all of the before callbacks and return if result is given.
+     *
+     * @param array $callbacks
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\RuckArgs $args
+     * @param array $payload
+     *
+     * @return mixed|null
+     */
+    protected function callCallbacks(array $callbacks, $user, RuckArgs $args, $payload = [])
+    {
+        foreach ($callbacks as $callback) {
+            $result = call_user_func_array($callback, array_merge([$user, $args], $payload));
+
+            if ($result !== null) {
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Call auth user callback.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\RuckArgs $args
+     *
+     * @return mixed
+     * @throws \InvalidArgumentException
+     */
+    protected function callAuthCallback($user, RuckArgs $args)
+    {
+        $callback = null;
+
+        if ($this->correspondsToPolicy($args)) {
+            $callback = $this->resolvePolicyCallback($user, $args);
+        } elseif (isset($this->abilities[$args->getAbility()])) {
+            $callback = $this->abilities[$args->getAbility()];
+        } else {
+            $callback = function () {
+                return false;
+            };
+        }
+
+        return call_user_func_array($callback, $args->getArguments($user));
+    }
+
+    /**
+     * Resolve the callback for a policy check.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\RuckArgs $args
+     *
+     * @return \Closure
+     * @throws \InvalidArgumentException
+     */
+    protected function resolvePolicyCallback($user, RuckArgs $args)
+    {
+        return function () use ($user, $args) {
+            $instance = $this->getPolicyFor($args->getClass());
+
+            if (method_exists($instance, 'before')) {
+                $result = call_user_func_array([$instance, 'before'], [$user, $args]);
+
+                if ($result !== null) {
+                    return $result;
+                }
+            }
+
+            if (!is_callable([$instance, $args->getMethod()])) {
+                return false;
+            }
+
+            $result = call_user_func_array([$instance, $args->getMethod()], array_merge([$user], $args->getArguments($user)));
+
+            if (method_exists($instance, 'after')) {
+                call_user_func_array([$instance, 'after'], [$user, $args, $result]);
+            }
+
+            return $result;
+        };
+    }
+
+    /**
+     * Determine if arguments correspond to a policy.
+     *
+     * @param \Ethereal\Bastion\RuckArgs $args
+     *
+     * @return bool
+     */
+    protected function correspondsToPolicy(RuckArgs $args)
+    {
+        if ($args->getClass() === null) {
+            return false;
+        }
+
+        return isset($this->policies[$args->getClass()]);
     }
 
     /**
@@ -233,21 +342,14 @@ class Rucks
      */
     public function hasPolicyCheck($ability, $model)
     {
-        list($method) = $this->resolveParams($ability, $model, null);
-
-        $class = $model;
-
-        if (is_object($class)) {
-            $class = get_class($class);
-        }
-
-        $instance = $this->getPolicyFor($class, false);
+        $args = $this->resolveArgs($ability, $model, null);
+        $instance = $this->getPolicyFor($args->getClass(), false);
 
         if ($instance === null) {
             return false;
         }
 
-        if (method_exists($instance, $method)) {
+        if (method_exists($instance, $args->getMethod())) {
             return true;
         }
 
@@ -325,26 +427,13 @@ class Rucks
      * Resolve request params.
      *
      * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string $model
-     * @param int|null $key
+     * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
+     * @param array $payload
      *
-     * @return array
+     * @return \Ethereal\Bastion\RuckArgs
      */
-    protected function resolveParams($ability, $model, $key)
+    protected function resolveArgs($ability, $model, $payload = [])
     {
-        $modelKey = $key;
-
-        if (strpos($ability, '-') !== false) {
-            $ability = Str::camel($ability);
-        }
-
-        if (is_string($model)) {
-            $modelName = Helper::getMorphClassName($model);
-        } else {
-            $modelName = $model->getMorphClass();
-            $modelKey = $model->getKey();
-        }
-
-        return [$ability, $modelName, $modelKey];
+        return new RuckArgs($ability, $model, $payload);
     }
 }

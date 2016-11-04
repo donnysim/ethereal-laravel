@@ -2,10 +2,10 @@
 
 namespace Ethereal\Bastion\Store;
 
+use Bastion\Rucks;
 use Ethereal\Bastion\Database\Ability;
 use Ethereal\Bastion\Database\Role;
 use Ethereal\Bastion\Helper;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Cache\Store as CacheStore;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -19,13 +19,6 @@ class Store
      * @var string
      */
     protected $tag = 'donnysim-bastion';
-
-    /**
-     * Whether the bastion is the exclusive authority on gate access.
-     *
-     * @var bool
-     */
-    protected $exclusive = false;
 
     /**
      * The cache store.
@@ -52,15 +45,15 @@ class Store
     }
 
     /**
-     * Register the clipboard at the given gate.
+     * Register the store at given rucks instance.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate|\Ethereal\Bastion\Gate $gate
+     * @param \Bastion\Rucks $rucks
      *
      * @throws \InvalidArgumentException
      */
-    public function registerAt(Gate $gate)
+    public function registerAt(Rucks $rucks)
     {
-        $gate->before(function ($authority, $ability, $arguments = []) use ($gate) {
+        $rucks->before(function ($authority, $ability, $arguments = []) use ($rucks) {
             $model = is_array($arguments) ? $arguments[0] : $arguments;
 
             // Check if user has all permissions, if so we can allow all access
@@ -72,7 +65,7 @@ class Store
             if (!$this->check($authority, $ability, $model, true)) {
                 return false;
             } else {
-                if (!$gate->hasPolicyCheck($ability, $arguments)) {
+                if (!$rucks->hasPolicyCheck($ability, $arguments)) {
                     return true;
                 }
             }
@@ -90,6 +83,7 @@ class Store
      * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function check(Model $authority, $ability, $model = null, $strict = false)
     {
@@ -115,6 +109,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
      * @return \Ethereal\Bastion\Store\StoreMap
+     * @throws \InvalidArgumentException
      */
     public function getMap(Model $authority)
     {
@@ -140,8 +135,11 @@ class Store
             return $callback();
         }
 
-        if (($value = $this->cache->get($key)) === null) {
-            $this->cache->forever($key, $value = $callback());
+        $value = $this->cache->get($key);
+
+        if ($value === null) {
+            $value = $callback();
+            $this->cache->forever($key, $value);
         }
 
         return $value;
@@ -165,6 +163,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
      * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
      */
     public function getRoles(Model $authority)
     {
@@ -181,6 +180,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
      *
      * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
      */
     public function getAbilities(Model $authority, Collection $roles = null)
     {
@@ -303,18 +303,6 @@ class Store
     }
 
     /**
-     * Set whether the bouncer is the exclusive authority on gate access.
-     *
-     * @param bool $boolean
-     *
-     * @return $this
-     */
-    public function setExclusivity($boolean)
-    {
-        $this->exclusive = $boolean;
-    }
-
-    /**
      * Check if an authority has the given roles.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -322,6 +310,7 @@ class Store
      * @param string $boolean
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function checkRole(Model $authority, $roles, $boolean = 'or')
     {
