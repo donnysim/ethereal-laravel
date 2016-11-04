@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion;
 
-use Bastion\Rucks;
+use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
 use Ethereal\Bastion\Conductors\DeniesAbilities;
@@ -25,14 +25,14 @@ class Bastion
     /**
      * The access at rucks instance.
      *
-     * @var \Bastion\Rucks
+     * @var \Ethereal\Bastion\Rucks
      */
     protected $rucks;
 
     /**
      * Bastion constructor.
      *
-     * @param \Bastion\Rucks $rucks
+     * @param \Ethereal\Bastion\Rucks $rucks
      * @param \Ethereal\Bastion\Store\Store $store
      *
      * @throws \InvalidArgumentException
@@ -156,7 +156,7 @@ class Bastion
     /**
      * Get rucks instance.
      *
-     * @return \Bastion\Rucks
+     * @return \Ethereal\Bastion\Rucks
      */
     public function getRucks()
     {
@@ -166,7 +166,7 @@ class Bastion
     /**
      * Set rucks instance.
      *
-     * @param \Bastion\Rucks $rucks
+     * @param \Ethereal\Bastion\Rucks $rucks
      */
     public function setRucks($rucks)
     {

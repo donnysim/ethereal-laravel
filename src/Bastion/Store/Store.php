@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion\Store;
 
-use Bastion\Rucks;
+use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Database\Ability;
 use Ethereal\Bastion\Database\Role;
 use Ethereal\Bastion\Helper;
@@ -47,7 +47,7 @@ class Store
     /**
      * Register the store at given rucks instance.
      *
-     * @param \Bastion\Rucks $rucks
+     * @param \Ethereal\Bastion\Rucks $rucks
      *
      * @throws \InvalidArgumentException
      */

@@ -1,6 +1,6 @@
 <?php
 
-namespace Bastion;
+namespace Ethereal\Bastion;
 
 use Ethereal\Bastion\RuckArgs;
 use Illuminate\Contracts\Container\Container;

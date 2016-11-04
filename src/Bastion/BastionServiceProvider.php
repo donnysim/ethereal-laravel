@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion;
 
-use Bastion\Rucks;
+use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Store\Store;
 use Ethereal\Cache\GroupFileStore;
 use Illuminate\Support\ServiceProvider;
