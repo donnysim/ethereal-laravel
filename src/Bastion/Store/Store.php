@@ -55,12 +55,20 @@ class Store
     public function registerAt(Rucks $rucks)
     {
         $rucks->before(function ($authority, RuckArgs $args) use ($rucks) {
-            if (!$this->check($authority, $args->getAbility(), $args->getModel(), true)) {
+
+            // If ability is defined, we let the user handle the rest
+            if ($rucks->has($args->getAbility())) {
+                return null;
+            }
+
+            $modelArg = $args->getModel() ?: $args->getClass();
+
+            // Check if the use has a given ability
+            if (!$this->check($authority, $args->getAbility(), $modelArg, true)) {
                 return false;
-            } else {
-                if (!$rucks->hasPolicyCheck($args->getAbility(), $args->getModel())) {
-                    return true;
-                }
+            } elseif (!$rucks->hasPolicyCheck($args->getAbility(), $modelArg)) {
+                // A policy is not defined so we should allow access
+                return true;
             }
 
             return null;
@@ -198,10 +206,6 @@ class Store
         $ability = strtolower($ability);
 
         if ($model === null) {
-            if ($strict) {
-                return [$ability];
-            }
-
             return [$ability, '*-*', '*'];
         }
 

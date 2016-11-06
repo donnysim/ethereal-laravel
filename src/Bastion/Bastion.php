@@ -2,7 +2,6 @@
 
 namespace Ethereal\Bastion;
 
-use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
 use Ethereal\Bastion\Conductors\DeniesAbilities;
@@ -16,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class Bastion
 {
     /**
-     * The bouncer clipboard instance.
+     * The store instance.
      *
      * @var \Ethereal\Bastion\Store\Store
      */
@@ -65,6 +64,19 @@ class Bastion
     public function getStore()
     {
         return $this->store;
+    }
+
+    /**
+     * Get ability and role map.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Store\StoreMap
+     * @throws \InvalidArgumentException
+     */
+    public function getMap(Model $authority)
+    {
+        return $this->getStore()->getMap($authority);
     }
 
     /**
