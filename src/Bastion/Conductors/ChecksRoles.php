@@ -39,6 +39,7 @@ class ChecksRoles
      * @param string $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function a($role)
     {
@@ -53,6 +54,7 @@ class ChecksRoles
      * @param string $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function notA($role)
     {
@@ -67,6 +69,7 @@ class ChecksRoles
      * @param string $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function an($role)
     {
@@ -81,6 +84,7 @@ class ChecksRoles
      * @param string $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function notAn($role)
     {
@@ -95,6 +99,7 @@ class ChecksRoles
      * @param string $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function all($role)
     {

@@ -2,10 +2,13 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Helper;
 
 class GivesAbilities
 {
+    use Traits\ClearsCache;
+
     /**
      * List of authorities to give the abilities.
      *
@@ -59,7 +62,9 @@ class GivesAbilities
                 $authority = $roleModelClass::firstOrCreate([
                     'name' => $authority,
                 ]);
+            }
 
+            if ($authority instanceof RoleContract) {
                 $clearAll = true;
             }
 
@@ -73,15 +78,7 @@ class GivesAbilities
             $permissionModelClass::insert($inserts);
         }
 
-        if ($clearAll) {
-            $this->store->clearCache();
-        } else {
-            foreach ($this->authorities as $authority) {
-                if (!is_string($authority)) {
-                    $this->store->clearCacheFor($authority);
-                }
-            }
-        }
+        $this->clearCache($this->store, $clearAll, $this->authorities);
 
         return $this;
     }

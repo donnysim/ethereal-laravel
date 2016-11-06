@@ -2,11 +2,12 @@
 
 namespace Ethereal\Bastion\Database;
 
+use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Database\Traits\HasAbilities;
 use Ethereal\Bastion\Database\Traits\IsRole;
 use Ethereal\Database\Ethereal;
 
-class Role extends Ethereal
+class Role extends Ethereal implements RoleContract
 {
     use IsRole, HasAbilities;
 

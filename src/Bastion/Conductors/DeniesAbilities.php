@@ -2,10 +2,13 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Helper;
 
 class DeniesAbilities
 {
+    use Traits\ClearsCache;
+
     /**
      * List of authorities to give the abilities.
      *
@@ -49,6 +52,7 @@ class DeniesAbilities
         /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
         $permissionModelClass = Helper::getPermissionModelClass();
 
+        $clearAll = false;
         $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
@@ -56,6 +60,10 @@ class DeniesAbilities
                 $authority = $roleModelClass::firstOrCreate([
                     'name' => $authority,
                 ]);
+            }
+
+            if ($authority instanceof RoleContract) {
+                $clearAll = true;
             }
 
             /** @var \Illuminate\Support\Collection $missingAbilities */
@@ -69,6 +77,6 @@ class DeniesAbilities
             $permissionModelClass::insert($inserts);
         }
 
-        $this->store->clearCache();
+        $this->clearCache($this->store, $clearAll, $this->authorities);
     }
 }
