@@ -63,11 +63,9 @@ class Store
 
             $modelArg = $args->getModel() ?: $args->getClass();
 
-            // Check if the use has a given ability
-            if (!$this->check($authority, $args->getAbility(), $modelArg, true)) {
+            if (!$this->check($authority, $args->getAbility(), $modelArg)) {
                 return false;
             } elseif (!$rucks->hasPolicyCheck($args->getAbility(), $modelArg)) {
-                // A policy is not defined so we should allow access
                 return true;
             }
 
@@ -81,15 +79,14 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function check(Model $authority, $ability, $model = null, $strict = false)
+    public function check(Model $authority, $ability, $model = null)
     {
         $map = $this->getMap($authority);
-        $requested = $this->compileAbilityIdentifiers($ability, $model, $strict);
+        $requested = $this->compileAbilityIdentifiers($ability, $model);
 
         $allows = false;
 
@@ -197,11 +194,10 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
-     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return array
      */
-    protected function compileAbilityIdentifiers($ability, $model, $strict = false)
+    protected function compileAbilityIdentifiers($ability, $model)
     {
         $ability = strtolower($ability);
 
@@ -209,7 +205,7 @@ class Store
             return [$ability, '*-*', '*'];
         }
 
-        return $this->compileModelAbilityIdentifiers($ability, $model, $strict);
+        return $this->compileModelAbilityIdentifiers($ability, $model);
     }
 
     /**
@@ -217,17 +213,12 @@ class Store
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string $model
-     * @param bool $strict Strictly check the ability, ignoring all access.
      *
      * @return array
      */
-    protected function compileModelAbilityIdentifiers($ability, $model, $strict = false)
+    protected function compileModelAbilityIdentifiers($ability, $model)
     {
         if ($model === '*') {
-            if ($strict) {
-                return ["{$ability}-*"];
-            }
-
             return ["{$ability}-*", '*-*'];
         }
 
@@ -239,11 +230,8 @@ class Store
             "{$ability}-{$type}",
             "{$ability}-*",
             "*-{$type}",
+            '*-*'
         ];
-
-        if (!$strict) {
-            $abilities[] = '*-*';
-        }
 
         if ($model->exists) {
             $abilities[] = "{$ability}-{$type}-{$model->getKey()}";
