@@ -2,7 +2,6 @@
 
 namespace Ethereal\Bastion;
 
-use Ethereal\Bastion\RuckArgs;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -242,15 +241,19 @@ class Rucks
      */
     protected function callCallbacks(array $callbacks, $user, RuckArgs $args, $payload = [])
     {
+        $grant = null;
+
         foreach ($callbacks as $callback) {
             $result = call_user_func_array($callback, array_merge([$user, $args], $payload));
 
-            if ($result !== null) {
+            if ($result === false) {
                 return $result;
+            } elseif ($result !== null) {
+                $grant = $result;
             }
         }
 
-        return null;
+        return $grant;
     }
 
     /**
