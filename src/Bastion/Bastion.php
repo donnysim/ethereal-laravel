@@ -155,14 +155,15 @@ class Bastion
      * Determine if the given ability should be granted for the current authority.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function allows($ability, $arguments = [])
+    public function allows($ability, $model = null, $payload = [])
     {
-        return $this->getRucks()->allows($ability, $arguments);
+        return $this->getRucks()->allows($ability, $model, $payload);
     }
 
     /**
@@ -189,14 +190,15 @@ class Bastion
      * Determine if the given ability should be denied for the current authority.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function denies($ability, $arguments = [])
+    public function denies($ability, $model = null, $payload = [])
     {
-        return $this->getRucks()->denies($ability, $arguments);
+        return $this->getRucks()->denies($ability, $model, $payload);
     }
 
     /**
