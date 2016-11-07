@@ -50,35 +50,4 @@ trait HasAbilities
 
         return $this;
     }
-
-    /**
-     * Determine if the given ability is granted for the current authority.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param array $payload
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function allowed($ability, $model = null, $payload = [])
-    {
-        return Helper::bastion()->allows($ability, $model, $payload);
-    }
-
-
-    /**
-     * Determine if the given ability is denied for the current authority.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param array $payload
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function denied($ability, $model = null, $payload = [])
-    {
-        return Helper::bastion()->denies($ability, $model, $payload);
-    }
 }
