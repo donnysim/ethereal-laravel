@@ -22,10 +22,11 @@ trait HasAbilities
     /**
      * Give abilities to the model.
      *
-     * @param string $ability
-     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param \Illuminate\Database\Eloquent\Model|array|string|int $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return $this
+     * @throws \InvalidArgumentException
      */
     public function allow($ability, $model = null)
     {
@@ -37,15 +38,47 @@ trait HasAbilities
     /**
      * Removes abilities from the model.
      *
-     * @param string $ability
-     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param \Illuminate\Database\Eloquent\Model|array|string|int $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return $this
+     * @throws \InvalidArgumentException
      */
     public function disallow($ability, $model = null)
     {
         Helper::bastion()->disallow($this)->to($ability, $model);
 
         return $this;
+    }
+
+    /**
+     * Determine if the given ability is granted for the current authority.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function allowed($ability, $model = null, $payload = [])
+    {
+        return Helper::bastion()->allows($ability, $model, $payload);
+    }
+
+
+    /**
+     * Determine if the given ability is denied for the current authority.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function denied($ability, $model = null, $payload = [])
+    {
+        return Helper::bastion()->denies($ability, $model, $payload);
     }
 }
