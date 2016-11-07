@@ -40,8 +40,6 @@ class Bastion
     {
         $this->rucks = $rucks;
         $this->store = $store;
-
-        $store->registerAt($rucks);
     }
 
     /**

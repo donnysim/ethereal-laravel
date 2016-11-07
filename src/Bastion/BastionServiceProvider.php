@@ -17,7 +17,7 @@ class BastionServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerStore();
-        $this->registerRucksInstance();
+        $this->registerRucks();
         $this->registerBastion();
     }
 
@@ -44,6 +44,8 @@ class BastionServiceProvider extends ServiceProvider
                 $this->app->make(Store::class)
             );
 
+            $bastion->getStore()->registerAt($bastion->getRucks());
+
             return $bastion;
         });
     }
@@ -68,7 +70,7 @@ class BastionServiceProvider extends ServiceProvider
     /**
      * Register the access rucks service.
      */
-    protected function registerRucksInstance()
+    protected function registerRucks()
     {
         $this->app->singleton(Rucks::class, function ($app) {
             return new Rucks($app, function () use ($app) {
