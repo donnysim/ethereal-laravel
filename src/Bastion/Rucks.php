@@ -139,21 +139,6 @@ class Rucks
     }
 
     /**
-     * Define a policy class for a given class type.
-     *
-     * @param string $class
-     * @param string $policy
-     *
-     * @return $this
-     */
-    public function policy($class, $policy)
-    {
-        $this->policies[$class] = $policy;
-
-        return $this;
-    }
-
-    /**
      * Create the ability callback for a callback string.
      *
      * @param string $callback
@@ -170,18 +155,30 @@ class Rucks
     }
 
     /**
-     * Determine if the given ability should be granted for the current user.
+     * Build a policy class instance of the given type.
      *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param array $payload
+     * @param object|string $class
      *
-     * @return bool
-     * @throws \InvalidArgumentException
+     * @return mixed
      */
-    public function allows($ability, $model = null, $payload = [])
+    public function resolvePolicy($class)
     {
-        return $this->check($ability, $model, $payload);
+        return $this->container->make($class);
+    }
+
+    /**
+     * Define a policy class for a given class type.
+     *
+     * @param string $class
+     * @param string $policy
+     *
+     * @return $this
+     */
+    public function policy($class, $policy)
+    {
+        $this->policies[$class] = $policy;
+
+        return $this;
     }
 
     /**
@@ -197,6 +194,21 @@ class Rucks
     public function denies($ability, $model = null, $payload = [])
     {
         return !$this->allows($ability, $model, $payload);
+    }
+
+    /**
+     * Determine if the given ability should be granted for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function allows($ability, $model = null, $payload = [])
+    {
+        return $this->check($ability, $model, $payload);
     }
 
     /**
@@ -227,6 +239,30 @@ class Rucks
         $this->callCallbacks($this->afterCallbacks, $user, $args, [$result]);
 
         return $result;
+    }
+
+    /**
+     * Resolve the user from the user resolver.
+     *
+     * @return mixed
+     */
+    public function resolveUser()
+    {
+        return call_user_func($this->userResolver);
+    }
+
+    /**
+     * Resolve request params.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
+     * @param array $payload
+     *
+     * @return \Ethereal\Bastion\RuckArgs
+     */
+    protected function resolveArgs($ability, $model, $payload = [])
+    {
+        return new RuckArgs($ability, $model, $payload);
     }
 
     /**
@@ -283,6 +319,22 @@ class Rucks
     }
 
     /**
+     * Determine if arguments correspond to a policy.
+     *
+     * @param \Ethereal\Bastion\RuckArgs $args
+     *
+     * @return bool
+     */
+    protected function correspondsToPolicy(RuckArgs $args)
+    {
+        if ($args->getClass() === null) {
+            return false;
+        }
+
+        return isset($this->policies[$args->getClass()]);
+    }
+
+    /**
      * Resolve the callback for a policy check.
      *
      * @param \Illuminate\Database\Eloquent\Model $user
@@ -319,19 +371,29 @@ class Rucks
     }
 
     /**
-     * Determine if arguments correspond to a policy.
+     * Get a policy instance for a given class.
      *
-     * @param \Ethereal\Bastion\RuckArgs $args
+     * @param object|string $class
+     * @param bool $throw
      *
-     * @return bool
+     * @return mixed
+     * @throws \InvalidArgumentException
      */
-    protected function correspondsToPolicy(RuckArgs $args)
+    public function getPolicyFor($class, $throw = true)
     {
-        if ($args->getClass() === null) {
-            return false;
+        if (is_object($class)) {
+            $class = get_class($class);
         }
 
-        return isset($this->policies[$args->getClass()]);
+        if (!isset($this->policies[$class])) {
+            if ($throw) {
+                throw new InvalidArgumentException("Policy not defined for [{$class}].");
+            }
+
+            return null;
+        }
+
+        return $this->resolvePolicy($this->policies[$class]);
     }
 
     /**
@@ -360,44 +422,6 @@ class Rucks
     }
 
     /**
-     * Get a policy instance for a given class.
-     *
-     * @param object|string $class
-     * @param bool $throw
-     *
-     * @return mixed
-     * @throws \InvalidArgumentException
-     */
-    public function getPolicyFor($class, $throw = true)
-    {
-        if (is_object($class)) {
-            $class = get_class($class);
-        }
-
-        if (!isset($this->policies[$class])) {
-            if ($throw) {
-                throw new InvalidArgumentException("Policy not defined for [{$class}].");
-            }
-
-            return null;
-        }
-
-        return $this->resolvePolicy($this->policies[$class]);
-    }
-
-    /**
-     * Build a policy class instance of the given type.
-     *
-     * @param object|string $class
-     *
-     * @return mixed
-     */
-    public function resolvePolicy($class)
-    {
-        return $this->container->make($class);
-    }
-
-    /**
      * Get a guard instance for the given user.
      *
      * @param \Illuminate\Contracts\Auth\Authenticatable|mixed $user
@@ -414,29 +438,5 @@ class Rucks
             $this->container, $callback, $this->abilities,
             $this->policies, $this->beforeCallbacks, $this->afterCallbacks
         );
-    }
-
-    /**
-     * Resolve the user from the user resolver.
-     *
-     * @return mixed
-     */
-    protected function resolveUser()
-    {
-        return call_user_func($this->userResolver);
-    }
-
-    /**
-     * Resolve request params.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
-     * @param array $payload
-     *
-     * @return \Ethereal\Bastion\RuckArgs
-     */
-    protected function resolveArgs($ability, $model, $payload = [])
-    {
-        return new RuckArgs($ability, $model, $payload);
     }
 }

@@ -80,6 +80,21 @@ class Bastion
     }
 
     /**
+     * Determine if the given authority has the given ability.
+     * This does not check policies or defined abilities.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function can($ability, $model = null)
+    {
+        return $this->getStore()->check($this->getRucks()->resolveUser(), $ability, $model);
+    }
+
+    /**
      * Start a chain, to disallow the given authority an ability.
      *
      * @param mixed $authorities
@@ -249,5 +264,18 @@ class Bastion
         $this->getRucks()->define($ability, $callback);
 
         return $this;
+    }
+
+    /**
+     * Get bastion instance for checking other user.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     *
+     * @return static
+     * @throws \InvalidArgumentException
+     */
+    public function forUser($user)
+    {
+        return new static($this->rucks->forUser($user), $this->store);
     }
 }
