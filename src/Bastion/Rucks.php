@@ -99,7 +99,7 @@ class Rucks
     public function before(callable $callback, $prepend = false)
     {
         if ($prepend) {
-            array_unshift($this->beforeCallbacks, $prepend);
+            array_unshift($this->beforeCallbacks, $callback);
         } else {
             $this->beforeCallbacks[] = $callback;
         }
