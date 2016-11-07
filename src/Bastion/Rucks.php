@@ -92,12 +92,17 @@ class Rucks
      * Register a callback to run before all checks.
      *
      * @param callable $callback
+     * @param bool $prepend
      *
      * @return $this
      */
-    public function before(callable $callback)
+    public function before(callable $callback, $prepend = false)
     {
-        $this->beforeCallbacks[] = $callback;
+        if ($prepend) {
+            array_unshift($this->beforeCallbacks, $prepend);
+        } else {
+            $this->beforeCallbacks[] = $callback;
+        }
 
         return $this;
     }

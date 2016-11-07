@@ -267,6 +267,35 @@ class Bastion
     }
 
     /**
+     * Register a callback to run before all checks.
+     *
+     * @param callable $callback
+     * @param bool $prepend
+     *
+     * @return $this
+     */
+    public function before(callable $callback, $prepend = false)
+    {
+        $this->getRucks()->before($callback, $prepend);
+
+        return $this;
+    }
+
+    /**
+     * Register a callback to run after all checks.
+     *
+     * @param callable $callback
+     *
+     * @return $this
+     */
+    public function after(callable $callback)
+    {
+        $this->getRucks()->after($callback);
+
+        return $this;
+    }
+
+    /**
      * Get bastion instance for checking other user.
      *
      * @param \Illuminate\Database\Eloquent\Model $user
