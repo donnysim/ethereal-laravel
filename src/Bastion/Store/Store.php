@@ -55,9 +55,9 @@ class Store
     public function registerAt(Rucks $rucks)
     {
         $rucks->before(function ($authority, RuckArgs $args) use ($rucks) {
-
-            // If ability is defined, we let the user handle the rest
-            if ($rucks->has($args->getAbility())) {
+            // If ability is defined, we let the user handle the rest.
+            // Check if class is null is required to prevent checking against policy.
+            if ($rucks->has($args->getAbility()) && $args->getClass() === null) {
                 return null;
             }
 
