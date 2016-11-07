@@ -149,13 +149,11 @@ class RuckArgs
     /**
      * Get function call arguments.
      *
-     * @param \Illuminate\Database\Eloquent\Model $user
-     *
      * @return array
      */
-    public function getArguments($user)
+    public function getArguments()
     {
-        $args = [$user];
+        $args = [];
 
         if ($this->model) {
             $args[] = $this->model;

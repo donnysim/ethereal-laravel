@@ -279,7 +279,7 @@ class Rucks
             };
         }
 
-        return call_user_func_array($callback, $args->getArguments($user));
+        return call_user_func_array($callback, array_merge([$user], $args->getArguments()));
     }
 
     /**
@@ -308,7 +308,7 @@ class Rucks
                 return false;
             }
 
-            $result = call_user_func_array([$instance, $args->getMethod()], array_merge([$user], $args->getArguments($user)));
+            $result = call_user_func_array([$instance, $args->getMethod()], array_merge([$user], $args->getArguments()));
 
             if (method_exists($instance, 'after')) {
                 call_user_func_array([$instance, 'after'], [$user, $args, $result]);
