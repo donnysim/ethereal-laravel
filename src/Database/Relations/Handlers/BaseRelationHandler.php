@@ -181,7 +181,9 @@ abstract class BaseRelationHandler implements RelationHandler
             if ($item instanceof Model) {
                 $collection->add($item);
             } elseif (!is_array($item) || !Arr::isAssoc($item)) {
-                throw new InvalidArgumentException("`{$this->relationName}` relation should contain valid model entries. One of the items is " . gettype($item) . '.');
+                throw new InvalidArgumentException(
+                    "`{$this->relationName}` relation should contain valid model entries. One of the items is " . $this->detailedExpection($item) . '.'
+                );
             } else {
                 if (empty($item)) {
                     throw new InvalidArgumentException("`{$this->relationName}` relation only accepts associative array and model as value.");
@@ -194,6 +196,24 @@ abstract class BaseRelationHandler implements RelationHandler
         $this->data = $collection;
 
         return $this;
+    }
+
+    /**
+     * Get a more detailed expectation.
+     *
+     * @param mixed $item
+     *
+     * @return string
+     */
+    protected function detailedExpection($item)
+    {
+        if (is_object($item)) {
+            return 'One of the items is ' . get_class($item) . ', ' . get_class($this->relation->getRelated()) . ' or array expected.';
+        } elseif (is_array($item) && count($item)) {
+            return 'One of the items is an empty array, ' . get_class($this->relation->getRelated()) . ' or array expected.';
+        }
+
+        return 'One of the items is ' . gettype($item) . ', ' . get_class($this->relation->getRelated()) . ' or array expected.';
     }
 
     /**
