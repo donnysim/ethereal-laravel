@@ -161,7 +161,7 @@ trait Validates
             }
         }
 
-        $validator = $this->validator(array_merge_recursive($rules, $additionalRules), true);
+        $validator = $this->validator($rules, $additionalRules, true);
 
         return $validator->passes();
     }
