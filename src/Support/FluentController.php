@@ -345,8 +345,6 @@ abstract class FluentController extends Controller implements ArrayAccess
      */
     protected function getJsonProperty()
     {
-        $this->properties['json'] = JsonResponse::make();
-
-        return $this->properties['json'];
+        return JsonResponse::make();
     }
 }
