@@ -209,7 +209,7 @@ abstract class BaseRelationHandler implements RelationHandler
     {
         if (is_object($item)) {
             return 'One of the items is ' . get_class($item) . ', ' . get_class($this->relation->getRelated()) . ' or array expected.';
-        } elseif (is_array($item) && count($item)) {
+        } elseif (is_array($item) && !count($item)) {
             return 'One of the items is an empty array, ' . get_class($this->relation->getRelated()) . ' or array expected.';
         }
 
