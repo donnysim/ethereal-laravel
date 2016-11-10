@@ -182,7 +182,7 @@ abstract class BaseRelationHandler implements RelationHandler
                 $collection->add($item);
             } elseif (!is_array($item) || !Arr::isAssoc($item)) {
                 throw new InvalidArgumentException(
-                    "`{$this->relationName}` relation should contain valid model entries." . $this->detailedExpection($item)
+                    "`{$this->relationName}` relation should contain valid model entries. " . $this->detailedExpection($item)
                 );
             } else {
                 if (empty($item)) {
