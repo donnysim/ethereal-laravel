@@ -77,7 +77,8 @@ trait Validates
 
         $this->validator = app('validator')->make(
             $attributes,
-            [array_merge_recursive($rules ?: $this->validationRules(), $additionalRules), $messages]
+            array_merge_recursive($rules ?: $this->validationRules(), $additionalRules),
+            $messages
         );
 
         return $this->validator;

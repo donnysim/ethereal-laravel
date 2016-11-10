@@ -181,7 +181,7 @@ abstract class BaseRelationHandler implements RelationHandler
             if ($item instanceof Model) {
                 $collection->add($item);
             } elseif (!is_array($item) || !Arr::isAssoc($item)) {
-                throw new InvalidArgumentException("`{$this->relationName}` relation should contain valid model entries.");
+                throw new InvalidArgumentException("`{$this->relationName}` relation should contain valid model entries. One of the items is " . gettype($item) . '.');
             } else {
                 if (empty($item)) {
                     throw new InvalidArgumentException("`{$this->relationName}` relation only accepts associative array and model as value.");
