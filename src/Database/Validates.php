@@ -141,7 +141,7 @@ trait Validates
     public function fullyValid(array $additionalRules = [])
     {
         if (count($this->relations) === 0) {
-            return $this->valid();
+            return $this->valid($additionalRules);
         }
 
         $rules = $this->validationRules();
