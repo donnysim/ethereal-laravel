@@ -255,15 +255,17 @@ abstract class FluentController extends Controller implements ArrayAccess
      */
     protected function json($payload = null)
     {
+        $json = $this->json;
+
         if (is_array($payload)) {
-            $this->json->payload($payload);
+            $json->payload($payload);
         } elseif ($payload instanceof Closure) {
-            $payload($this->json);
+            $payload($json);
         } elseif ($payload instanceof Model || $payload instanceof Collection) {
-            $this->json->payload($payload->toArray());
+            $json->payload($payload->toArray());
         }
 
-        return $this->json;
+        return $json;
     }
 
     /**
