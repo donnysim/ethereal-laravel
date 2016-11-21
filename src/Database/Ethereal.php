@@ -136,7 +136,7 @@ class Ethereal extends Model
      *
      * @param array $options
      *
-     * @return bool|void
+     * @return bool
      */
     public function smartPush($options = [])
     {
@@ -152,5 +152,39 @@ class Ethereal extends Model
     public function setRawAttribute($attribute, $value)
     {
         $this->attributes[$attribute] = $value;
+    }
+
+    /**
+     * Convert model into plain array without any morphing.
+     *
+     * @param bool $withRelations
+     *
+     * @return array
+     */
+    public function toPlainArray($withRelations = true)
+    {
+        $data = $this->attributes;
+
+        if ($withRelations) {
+            foreach ($this->relations as $relation => $data) {
+                $list = $data;
+
+                if ($data instanceof Model) {
+                    $list = [$data];
+                }
+
+                foreach ($list as $model) {
+                    if ($model instanceof Ethereal) {
+                        $data[$relation] = $model->toPlainArray();
+                    } elseif ($model instanceof Model) {
+                        $data[$relation] = $model->toArray();
+                    } elseif (is_array($model)) {
+                        $data[$relation] = $model;
+                    }
+                }
+            }
+        }
+
+        return $data;
     }
 }

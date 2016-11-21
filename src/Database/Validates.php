@@ -72,7 +72,7 @@ trait Validates
      */
     protected function validator(array $rules = [], array $additionalRules = [], $full = false)
     {
-        $attributes = $full ? $this->toArray() : $this->attributesToArray();
+        $attributes = $this->toPlainArray($full);
         $messages = $this->customValidationMessages();
 
         $this->validator = app('validator')->make(
