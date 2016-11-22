@@ -163,12 +163,12 @@ class Ethereal extends Model
      */
     public function toPlainArray($withRelations = true)
     {
-        $data = $this->attributes;
+        $attributes = $this->attributes;
 
         if ($withRelations) {
             foreach ($this->relations as $relation => $data) {
                 if ($data === null) {
-                    $data[$relation] = null;
+                    $attributes[$relation] = null;
                     continue;
                 }
 
@@ -180,16 +180,16 @@ class Ethereal extends Model
 
                 foreach ($list as $model) {
                     if ($model instanceof Ethereal) {
-                        $data[$relation] = $model->toPlainArray();
+                        $attributes[$relation] = $model->toPlainArray();
                     } elseif ($model instanceof Model) {
-                        $data[$relation] = $model->toArray();
+                        $attributes[$relation] = $model->toArray();
                     } elseif (is_array($model)) {
-                        $data[$relation] = $model;
+                        $attributes[$relation] = $model;
                     }
                 }
             }
         }
 
-        return $data;
+        return $attributes;
     }
 }
