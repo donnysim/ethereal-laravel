@@ -167,6 +167,11 @@ class Ethereal extends Model
 
         if ($withRelations) {
             foreach ($this->relations as $relation => $data) {
+                if ($data === null) {
+                    $data[$relation] = null;
+                    continue;
+                }
+
                 $list = $data;
 
                 if ($data instanceof Model) {
