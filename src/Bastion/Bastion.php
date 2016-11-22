@@ -10,37 +10,36 @@ use Ethereal\Bastion\Conductors\PermitsAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Store\Store;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Database\Eloquent\Model;
 
 class Bastion
 {
     /**
-     * The bouncer clipboard instance.
+     * The store instance.
      *
      * @var \Ethereal\Bastion\Store\Store
      */
     protected $store;
 
     /**
-     * The access gate instance.
+     * The access at rucks instance.
      *
-     * @var \Illuminate\Contracts\Auth\Access\Gate
+     * @var \Ethereal\Bastion\Rucks
      */
-    protected $gate;
+    protected $rucks;
 
     /**
      * Bastion constructor.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Ethereal\Bastion\Rucks $rucks
      * @param \Ethereal\Bastion\Store\Store $store
+     *
+     * @throws \InvalidArgumentException
      */
-    public function __construct(Gate $gate, Store $store)
+    public function __construct(Rucks $rucks, Store $store)
     {
-        $this->gate = $gate;
+        $this->rucks = $rucks;
         $this->store = $store;
-
-        $store->registerAt($gate);
     }
 
     /**
@@ -63,6 +62,34 @@ class Bastion
     public function getStore()
     {
         return $this->store;
+    }
+
+    /**
+     * Get ability and role map.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Store\StoreMap
+     * @throws \InvalidArgumentException
+     */
+    public function getMap(Model $authority)
+    {
+        return $this->getStore()->getMap($authority);
+    }
+
+    /**
+     * Determine if the given authority has the given ability.
+     * This does not check policies or defined abilities.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function can($ability, $model = null)
+    {
+        return $this->getStore()->check($this->getRucks()->resolveUser(), $ability, $model);
     }
 
     /**
@@ -141,46 +168,50 @@ class Bastion
      * Determine if the given ability should be granted for the current authority.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
-    public function allows($ability, $arguments = [])
+    public function allows($ability, $model = null, $payload = [])
     {
-        return $this->getGate()->allows($ability, $arguments);
+        return $this->getRucks()->allows($ability, $model, $payload);
     }
 
     /**
-     * Get gate instance.
+     * Get rucks instance.
      *
-     * @return \Illuminate\Contracts\Auth\Access\Gate
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function getGate()
+    public function getRucks()
     {
-        return $this->gate;
+        return $this->rucks;
     }
 
     /**
-     * Set gate instance.
+     * Set rucks instance.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Ethereal\Bastion\Rucks $rucks
      */
-    public function setGate($gate)
+    public function setRucks($rucks)
     {
-        $this->gate = $gate;
+        $this->rucks = $rucks;
     }
 
     /**
      * Determine if the given ability should be denied for the current authority.
      *
      * @param string $ability
-     * @param array|mixed $arguments
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param array $payload
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
-    public function denies($ability, $arguments = [])
+    public function denies($ability, $model = null, $payload = [])
     {
-        return $this->getGate()->denies($ability, $arguments);
+        return $this->getRucks()->denies($ability, $model, $payload);
     }
 
     /**
@@ -228,22 +259,50 @@ class Bastion
      */
     public function define($ability, $callback)
     {
-        $this->getGate()->define($ability, $callback);
+        $this->getRucks()->define($ability, $callback);
 
         return $this;
     }
 
     /**
-     * Set the bouncer to be the exclusive authority on gate access.
+     * Register a callback to run before all checks.
      *
-     * @param bool $boolean
+     * @param callable $callback
+     * @param bool $prepend
      *
      * @return $this
      */
-    public function exclusive($boolean = true)
+    public function before(callable $callback, $prepend = false)
     {
-        $this->store->setExclusivity($boolean);
+        $this->getRucks()->before($callback, $prepend);
 
         return $this;
+    }
+
+    /**
+     * Register a callback to run after all checks.
+     *
+     * @param callable $callback
+     *
+     * @return $this
+     */
+    public function after(callable $callback)
+    {
+        $this->getRucks()->after($callback);
+
+        return $this;
+    }
+
+    /**
+     * Get bastion instance for checking other user.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     *
+     * @return static
+     * @throws \InvalidArgumentException
+     */
+    public function forUser($user)
+    {
+        return new static($this->rucks->forUser($user), $this->store);
     }
 }

@@ -2,11 +2,14 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
 
 class PermitsAbilities
 {
+    use Traits\ClearsCache;
+
     /**
      * List of authorities to give the abilities.
      *
@@ -38,6 +41,8 @@ class PermitsAbilities
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @throws \InvalidArgumentException
      */
     public function to($abilities, $model = null)
     {
@@ -48,6 +53,7 @@ class PermitsAbilities
         /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
         $permissionModelClass = Helper::getPermissionModelClass();
 
+        $clearAll = false;
         $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         foreach ($this->authorities as $authority) {
@@ -57,7 +63,13 @@ class PermitsAbilities
                 if (!$authority) {
                     continue;
                 }
-            } elseif ($authority instanceof Model && $authority->exists) {
+            }
+
+            if ($authority instanceof RoleContract) {
+                $clearAll = true;
+            }
+
+            if ($authority instanceof Model && $authority->exists) {
                 // TODO move to model?
 
                 $permissionModelClass::whereIn('ability_id', $abilityIds)
@@ -68,6 +80,6 @@ class PermitsAbilities
             }
         }
 
-        $this->store->clearCache();
+        $this->clearCache($this->store, $clearAll, $this->authorities);
     }
 }

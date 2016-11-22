@@ -21,12 +21,14 @@ trait Validates
     /**
      * Check if model is valid, otherwise throw an exception.
      *
+     * @param array $additionalRules
+     *
      * @return $this
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function validOrFail()
+    public function validOrFail(array $additionalRules = [])
     {
-        if ($this->invalid()) {
+        if ($this->invalid($additionalRules)) {
             $this->throwValidationException();
         }
 
@@ -36,21 +38,25 @@ trait Validates
     /**
      * Check if the model is invalid.
      *
+     * @param array $additionalRules
+     *
      * @return bool
      */
-    public function invalid()
+    public function invalid(array $additionalRules = [])
     {
-        return !$this->valid();
+        return !$this->valid($additionalRules);
     }
 
     /**
      * Check if model is valid.
      *
+     * @param array $additionalRules
+     *
      * @return bool
      */
-    public function valid()
+    public function valid(array $additionalRules = [])
     {
-        $validator = $this->validator();
+        $validator = $this->validator([], $additionalRules);
 
         return $validator->passes();
     }
@@ -59,16 +65,23 @@ trait Validates
      * Make a Validator instance for a given ruleset.
      *
      * @param array $rules
+     * @param array $additionalRules
      * @param bool $full
      *
      * @return \Illuminate\Validation\Validator
      */
-    protected function validator(array $rules = [], $full = false)
+    protected function validator(array $rules = [], array $additionalRules = [], $full = false)
     {
-        $attributes = $full ? $this->toArray() : $this->attributesToArray();
+        $attributes = $this->toPlainArray($full);
         $messages = $this->customValidationMessages();
 
-        return $this->validator = app('validator')->make($attributes, $rules ?: $this->validationRules(), $messages);
+        $this->validator = app('validator')->make(
+            $attributes,
+            array_merge_recursive($rules ?: $this->validationRules(), $additionalRules),
+            $messages
+        );
+
+        return $this->validator;
     }
 
     /**
@@ -104,12 +117,14 @@ trait Validates
     /**
      * Check if model is fully valid otherwise throw an exception.
      *
+     * @param array $additionalRules
+     *
      * @return $this
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function fullyValidOrFail()
+    public function fullyValidOrFail(array $additionalRules = [])
     {
-        if (!$this->fullyValid()) {
+        if (!$this->fullyValid($additionalRules)) {
             $this->throwValidationException();
         }
 
@@ -119,12 +134,14 @@ trait Validates
     /**
      * Check if model and all of it's relations are valid. This does not include
      *
+     * @param array $additionalRules
+     *
      * @return bool
      */
-    public function fullyValid()
+    public function fullyValid(array $additionalRules = [])
     {
         if (count($this->relations) === 0) {
-            return $this->valid();
+            return $this->valid($additionalRules);
         }
 
         $rules = $this->validationRules();
@@ -145,7 +162,7 @@ trait Validates
             }
         }
 
-        $validator = $this->validator($rules, true);
+        $validator = $this->validator($rules, $additionalRules, true);
 
         return $validator->passes();
     }
@@ -162,40 +179,5 @@ trait Validates
         }
 
         return new MessageBag();
-    }
-
-    /**
-     * Check if model is valid and save.
-     *
-     * @param array $options
-     *
-     * @return bool
-     */
-    public function saveIfValid(array $options = [])
-    {
-        if ($this->invalid()) {
-            return false;
-        }
-
-        return $this->save($options);
-    }
-
-    /**
-     * Check if model is valid and save or throw exception if validation
-     * fails or save fails.
-     *
-     * @param array $options
-     *
-     * @return bool
-     * @throws \Throwable
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function saveIfValidOrFail(array $options = [])
-    {
-        if ($this->invalid()) {
-            $this->throwValidationException();
-        }
-
-        return $this->saveOrFail($options);
     }
 }

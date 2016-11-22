@@ -1,6 +1,7 @@
 <?php
 
 use Ethereal\Database\Ethereal;
+use Ethereal\Database\Relations\Handlers\HasOneHandler;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -191,7 +192,7 @@ class BasicRelationsTest extends BaseTestCase
         $user = TestUserModel::random(true);
         $handler = $user->profileHandler();
 
-        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertInstanceOf(HasOneHandler::class, $handler);
     }
 
     public function test_handler_returns_null_on_missing_relation()
@@ -213,7 +214,7 @@ class BasicRelationsTest extends BaseTestCase
         $handler = $user->profileHandler(true);
 
         static::assertTrue($user->relationLoaded('profile'));
-        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertInstanceOf(HasOneHandler::class, $handler);
     }
 
     public function test_relation_handler_call_accepts_callback()
@@ -229,7 +230,7 @@ class BasicRelationsTest extends BaseTestCase
         });
 
         static::assertTrue($user->relationLoaded('profile'));
-        static::assertInstanceOf(\Ethereal\Database\Relations\Handlers\HasOneHandler::class, $handler);
+        static::assertInstanceOf(HasOneHandler::class, $handler);
         static::assertEquals(['id', 'user_id', 'name'], array_keys($user->getRelation('profile')->getAttributes()));
     }
 }

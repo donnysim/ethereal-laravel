@@ -7,6 +7,8 @@ use InvalidArgumentException;
 
 class AssignsRoles
 {
+    use Traits\ClearsCache;
+
     /**
      * List of roles to assign to authority.
      *
@@ -66,8 +68,8 @@ class AssignsRoles
             }
 
             $assignedRoleClass::insert($inserts);
-
-            $this->store->clearCacheFor($auth);
         }
+
+        $this->clearCache($this->store, false, $authorities);
     }
 }

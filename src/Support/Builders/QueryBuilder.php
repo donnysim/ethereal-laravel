@@ -241,7 +241,7 @@ class QueryBuilder
      *
      * @return string
      */
-    private function getFullColumn($map, $column)
+    protected function getFullColumn($map, $column)
     {
         if (empty($map)) {
             return $column;
@@ -264,7 +264,7 @@ class QueryBuilder
      *
      * @return array
      */
-    private function getColumnAndOrder($key, $value)
+    protected function getColumnAndOrder($key, $value)
     {
         // if key is numeric, we assume value is in format - "name", "-name"
         if (is_numeric($key)) {

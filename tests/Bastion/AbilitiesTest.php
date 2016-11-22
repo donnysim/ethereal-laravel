@@ -1,22 +1,9 @@
 <?php
 
+use Ethereal\Bastion\Database\Permission;
+
 class AbilitiesTest extends BaseTestCase
 {
-    public function test_bastion_can_deny_access_if_set_to_work_exclusively()
-    {
-        $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
-
-        $bastion->getGate()->define('access-dashboard', function () {
-            return true;
-        });
-
-        static::assertTrue($bastion->allows('access-dashboard'));
-
-        $bastion->exclusive();
-
-        static::assertTrue($bastion->denies('access-dashboard'));
-    }
-
     public function test_can_give_and_remove_abilities()
     {
         $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
@@ -61,40 +48,46 @@ class AbilitiesTest extends BaseTestCase
         $bastion->allow($user1)->to('ban-users');
         $bastion->allow($user1)->to('ban-users');
 
+        static::assertEquals(1, Permission::count());
+
         $bastion->allow($user1)->to('ban', $user2);
         $bastion->allow($user1)->to('ban', $user2);
+
+        static::assertEquals(2, Permission::count());
 
         $bastion->allow('admin')->to('ban-users');
         $bastion->allow('admin')->to('ban-users');
 
+        static::assertEquals(3, Permission::count());
+
         $bastion->allow('admin')->to('ban', $user1);
         $bastion->allow('admin')->to('ban', $user1);
+
+        static::assertEquals(4, Permission::count());
     }
 
-    public function test_bastion_can_disallow_abilities_on_roles()
+    public function test_can_disallow_abilities_on_roles()
     {
         $bastion = $this->bastion($user = TestUserModel::create(['email' => 'test@email.com', 'password' => 'empty']));
-
-        $bastion->allow('admin')->to('edit-site');
-        $bastion->disallow('admin')->to('edit-site');
         $bastion->assign('admin')->to($user);
 
+        $bastion->allow('admin')->to('edit-site');
+        static::assertTrue($bastion->allows('edit-site'));
+
+        $bastion->disallow('admin')->to('edit-site');
         static::assertTrue($bastion->denies('edit-site'));
     }
 
-    public function test_bastion_can_allow_abilities_from_a_defined_callback()
+    public function test_defined_closure_abilities_ignore_bastion()
     {
         $user = TestUserModel::random(true);
         $user->smartPush();
 
         $bastion = $this->bastion($user);
         $bastion->define('edit', function ($user, $profile) {
-            if (! $profile instanceof TestProfileModel) {
-                return null;
-            }
-
-            return $user->id == $profile->user_id;
+            return $profile instanceof TestProfileModel && $user->id === $profile->user_id;
         });
+
         static::assertTrue($bastion->allows('edit', new TestProfileModel(['user_id' => $user->id])));
         static::assertFalse($bastion->allows('edit', new TestProfileModel(['user_id' => 99])));
     }

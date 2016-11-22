@@ -8,6 +8,8 @@ use InvalidArgumentException;
 
 class RemovesRoles
 {
+    use Traits\ClearsCache;
+
     /**
      * List of roles to remove from authority.
      *
@@ -66,9 +68,9 @@ class RemovesRoles
                     ->where("{$assignedModel->getTable()}.entity_id", $auth->getKey())
                     ->where("{$assignedModel->getTable()}.entity_type", $auth->getMorphClass());
             });
-
-            $this->store->clearCacheFor($auth);
         }
+
+        $this->clearCache($this->store, false, $authorities);
 
         // TODO what if too many auth users?
         $query->delete();

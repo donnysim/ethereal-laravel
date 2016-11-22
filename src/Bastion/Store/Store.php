@@ -2,10 +2,11 @@
 
 namespace Ethereal\Bastion\Store;
 
+use Ethereal\Bastion\RuckArgs;
+use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Database\Ability;
 use Ethereal\Bastion\Database\Role;
 use Ethereal\Bastion\Helper;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Cache\Store as CacheStore;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -19,13 +20,6 @@ class Store
      * @var string
      */
     protected $tag = 'donnysim-bastion';
-
-    /**
-     * Whether the bastion is the exclusive authority on gate access.
-     *
-     * @var bool
-     */
-    protected $exclusive = false;
 
     /**
      * The cache store.
@@ -52,57 +46,31 @@ class Store
     }
 
     /**
-     * Register the clipboard at the given gate.
+     * Register the store at given rucks instance.
      *
-     * @param \Illuminate\Contracts\Auth\Access\Gate $gate
+     * @param \Ethereal\Bastion\Rucks $rucks
+     *
+     * @throws \InvalidArgumentException
      */
-    public function registerAt(Gate $gate)
+    public function registerAt(Rucks $rucks)
     {
-        $gate->before(function ($authority, $ability, $arguments = [], $additional = null) use ($gate) {
-
-            list($model, $additional) = $this->parseGateArguments($arguments, $additional);
-
-            if (!$gate->has($ability) && $this->check($authority, $ability, $model)) {
-                return true;
-            }
-
-            if ($additional !== null) {
+        $rucks->before(function ($authority, RuckArgs $args) use ($rucks) {
+            // If ability is defined, we let the user handle the rest.
+            // Check if class is null is required to prevent checking against policy.
+            if ($rucks->has($args->getAbility()) && $args->getClass() === null) {
                 return null;
             }
 
-            if ($this->exclusive) {
+            $modelArg = $args->getModel() ?: $args->getClass();
+
+            if (!$this->check($authority, $args->getAbility(), $modelArg)) {
                 return false;
+            } elseif (!$rucks->hasPolicyCheck($args->getAbility(), $modelArg)) {
+                return true;
             }
 
             return null;
         });
-    }
-
-    /**
-     * Parse the arguments we got from the gate.
-     *
-     * @param mixed $arguments
-     * @param mixed $additional
-     *
-     * @return array
-     */
-    protected function parseGateArguments($arguments, $additional)
-    {
-        // The way arguments are passed into the gate's before callback has changed in Laravel
-        // in the middle of the 5.2 release. Before, arguments were spread out. Now they're
-        // all supplied in a single array instead. We will normalize it into two values.
-        if ($additional !== null) {
-            return [$arguments, $additional];
-        }
-
-        if (is_array($arguments)) {
-            return [
-                isset($arguments[0]) ? $arguments[0] : null,
-                isset($arguments[1]) ? $arguments[1] : null,
-            ];
-        }
-
-        return [$arguments, null];
     }
 
     /**
@@ -113,6 +81,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function check(Model $authority, $ability, $model = null)
     {
@@ -138,6 +107,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
      * @return \Ethereal\Bastion\Store\StoreMap
+     * @throws \InvalidArgumentException
      */
     public function getMap(Model $authority)
     {
@@ -163,8 +133,11 @@ class Store
             return $callback();
         }
 
-        if (($value = $this->cache->get($key)) === null) {
-            $this->cache->forever($key, $value = $callback());
+        $value = $this->cache->get($key);
+
+        if ($value === null) {
+            $value = $callback();
+            $this->cache->forever($key, $value);
         }
 
         return $value;
@@ -188,6 +161,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
      * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
      */
     public function getRoles(Model $authority)
     {
@@ -204,6 +178,7 @@ class Store
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
      *
      * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
      */
     public function getAbilities(Model $authority, Collection $roles = null)
     {
@@ -255,7 +230,7 @@ class Store
             "{$ability}-{$type}",
             "{$ability}-*",
             "*-{$type}",
-            '*-*',
+            '*-*'
         ];
 
         if ($model->exists) {
@@ -313,18 +288,6 @@ class Store
     }
 
     /**
-     * Set whether the bouncer is the exclusive authority on gate access.
-     *
-     * @param bool $boolean
-     *
-     * @return $this
-     */
-    public function setExclusivity($boolean)
-    {
-        $this->exclusive = $boolean;
-    }
-
-    /**
      * Check if an authority has the given roles.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -332,6 +295,7 @@ class Store
      * @param string $boolean
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function checkRole(Model $authority, $roles, $boolean = 'or')
     {

@@ -4,6 +4,7 @@ namespace Ethereal\Database;
 
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Ethereal extends Model
 {
@@ -136,7 +137,7 @@ class Ethereal extends Model
      *
      * @param array $options
      *
-     * @return bool|void
+     * @return bool
      */
     public function smartPush($options = [])
     {
@@ -152,5 +153,42 @@ class Ethereal extends Model
     public function setRawAttribute($attribute, $value)
     {
         $this->attributes[$attribute] = $value;
+    }
+
+    /**
+     * Convert model into plain array without any morphing.
+     *
+     * @param bool $withRelations
+     *
+     * @return array
+     */
+    public function toPlainArray($withRelations = true)
+    {
+        $attributes = $this->attributes;
+
+        if ($withRelations) {
+            foreach ($this->relations as $relation => $data) {
+                if ($data === null) {
+                    $attributes[$relation] = null;
+                    continue;
+                }
+
+                if ($data instanceof Ethereal) {
+                    $attributes[$relation] = $data->toPlainArray();
+                } elseif ($data instanceof Model) {
+                    $attributes[$relation] = $data->toArray();
+                } elseif (is_array($data) || $data instanceof Collection) {
+                    foreach ($data as $model) {
+                        if ($model instanceof Ethereal) {
+                            $attributes[$relation][] = $model->toPlainArray();
+                        } elseif ($data instanceof Model) {
+                            $attributes[$relation][] = $model->toArray();
+                        }
+                    }
+                }
+            }
+        }
+
+        return $attributes;
     }
 }

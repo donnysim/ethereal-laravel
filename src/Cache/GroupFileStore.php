@@ -21,7 +21,8 @@ class GroupFileStore extends FileStore
             list($prefix, $key) = $group;
         }
 
-        $parts = array_slice(str_split($hash = sha1($key), 2), 0, 2);
+        $hash = sha1($key);
+        $parts = array_slice(str_split($hash, 2), 0, 2);
 
         return "{$this->directory}/{$prefix}/" . implode('/', $parts) . "/{$hash}";
     }

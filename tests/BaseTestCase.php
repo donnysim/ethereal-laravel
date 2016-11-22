@@ -1,12 +1,10 @@
 <?php
 
+use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Bastion;
-use Ethereal\Bastion\Clipboard;
-use Ethereal\Bastion\Helper;
-use Ethereal\Bastion\Sanitizer;
 use Ethereal\Bastion\Store\Store;
+use Ethereal\Cache\GroupFileStore;
 use Ethereal\Database\Ethereal;
-use Illuminate\Auth\Access\Gate;
 use Illuminate\Container\Container;
 use Orchestra\Testbench\TestCase;
 
@@ -20,10 +18,6 @@ class BaseTestCase extends TestCase
             '--database' => 'ethereal',
             '--realpath' => __DIR__ . '/migrations',
         ]);
-//
-//        $this->app->singleton(Clipboard::class, function () {
-//            return new Clipboard();
-//        });
     }
 
     /**
@@ -53,10 +47,6 @@ class BaseTestCase extends TestCase
                 'permission' => \Ethereal\Bastion\Database\Permission::class,
                 'role' => \Ethereal\Bastion\Database\Role::class,
             ],
-
-            'authorities' => [
-                TestUserModel::class,
-            ]
         ]);
     }
 
@@ -74,12 +64,12 @@ class BaseTestCase extends TestCase
 
     protected function cacheStore()
     {
-        return new \Ethereal\Cache\GroupFileStore($this->app['files'], __DIR__ . '/cache');
+        return new GroupFileStore($this->app['files'], __DIR__ . '/cache');
     }
 
-    protected function gate(Ethereal $authority)
+    protected function rucks(Ethereal $authority)
     {
-        $gate = new Gate(new Container, function () use ($authority) {
+        $gate = new Rucks(new Container, function () use ($authority) {
             return $authority;
         });
 
@@ -88,20 +78,8 @@ class BaseTestCase extends TestCase
 
     protected function bastion(Ethereal $authority)
     {
-        $bastion = new Bastion($this->gate($authority), new Store($this->cacheStore()));
+        $bastion = new Bastion($this->rucks($authority), new Store($this->cacheStore()));
 
         return $bastion;
     }
-//
-//    protected function gate($authority)
-//    {
-//        $gate = new Gate($this->app, function () use ($authority) {
-//            return $authority;
-//        });
-//
-//        Helper::clipboard()->registerAt($gate);
-//
-//        return $gate;
-//    }
 }
-

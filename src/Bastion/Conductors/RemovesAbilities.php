@@ -2,10 +2,13 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Helper;
 
 class RemovesAbilities
 {
+    use Traits\ClearsCache;
+
     /**
      * List of authorities to remove abilities from.
      *
@@ -47,6 +50,7 @@ class RemovesAbilities
         /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
         $roleModelClass = Helper::getRoleModelClass();
 
+        $clearAll = false;
         $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
 
         if ($abilityIds->isEmpty()) {
@@ -62,9 +66,13 @@ class RemovesAbilities
                 }
             }
 
+            if ($authority instanceof RoleContract) {
+                $clearAll = true;
+            }
+
             $authority->abilities()->detach($abilityIds->all());
         }
 
-        $this->store->clearCache();
+        $this->clearCache($this->store, $clearAll, $this->authorities);
     }
 }
