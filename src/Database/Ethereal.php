@@ -4,6 +4,7 @@ namespace Ethereal\Database;
 
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class Ethereal extends Model
 {
@@ -172,19 +173,17 @@ class Ethereal extends Model
                     continue;
                 }
 
-                $list = $data;
-
-                if ($data instanceof Model) {
-                    $list = [$data];
-                }
-
-                foreach ($list as $model) {
-                    if ($model instanceof Ethereal) {
-                        $attributes[$relation] = $model->toPlainArray();
-                    } elseif ($model instanceof Model) {
-                        $attributes[$relation] = $model->toArray();
-                    } elseif (is_array($model)) {
-                        $attributes[$relation] = $model;
+                if ($data instanceof Ethereal) {
+                    $attributes[$relation] = $data->toPlainArray();
+                } elseif ($data instanceof Model) {
+                    $attributes[$relation] = $data->toArray();
+                } elseif (is_array($data) || $data instanceof Collection) {
+                    foreach ($data as $model) {
+                        if ($model instanceof Ethereal) {
+                            $attributes[$relation][] = $model->toPlainArray();
+                        } elseif ($data instanceof Model) {
+                            $attributes[$relation][] = $model->toArray();
+                        }
                     }
                 }
             }
