@@ -13,6 +13,58 @@ use InvalidArgumentException;
 trait IsAbility
 {
     /**
+     * Compile a list of ability identifiers that match the provided parameters.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string $model
+     *
+     * @return array
+     */
+    public static function compileAbilityIdentifiers($ability, $model)
+    {
+        $ability = strtolower($ability);
+
+        if ($model === null) {
+            return [$ability, '*-*', '*'];
+        }
+
+        return static::compileModelAbilityIdentifiers($ability, $model);
+    }
+
+    /**
+     * Compile a list of ability identifiers that match the given model.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string $model
+     *
+     * @return array
+     */
+    public static function compileModelAbilityIdentifiers($ability, $model)
+    {
+        if ($model === '*') {
+            return ["{$ability}-*", '*-*'];
+        }
+
+        $model = $model instanceof Model ? $model : new $model;
+
+        $type = strtolower($model->getMorphClass());
+
+        $abilities = [
+            "{$ability}-{$type}",
+            "{$ability}-*",
+            "*-{$type}",
+            '*-*'
+        ];
+
+        if ($model->exists) {
+            $abilities[] = "{$ability}-{$type}-{$model->getKey()}";
+            $abilities[] = "*-{$type}-{$model->getKey()}";
+        }
+
+        return $abilities;
+    }
+
+    /**
      * Get abilities assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority

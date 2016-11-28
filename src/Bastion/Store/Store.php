@@ -86,7 +86,10 @@ class Store
     public function check(Model $authority, $ability, $model = null)
     {
         $map = $this->getMap($authority);
-        $requested = $this->compileAbilityIdentifiers($ability, $model);
+
+        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
+        $abilityClass = Helper::getAbilityModelClass();
+        $requested = $abilityClass::compileAbilityIdentifiers($ability, $model);
 
         $allows = false;
 
@@ -187,58 +190,6 @@ class Store
         $class = Helper::getAbilityModelClass();
 
         return $class::getAbilities($authority, $roles);
-    }
-
-    /**
-     * Compile a list of ability identifiers that match the provided parameters.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string $model
-     *
-     * @return array
-     */
-    protected function compileAbilityIdentifiers($ability, $model)
-    {
-        $ability = strtolower($ability);
-
-        if ($model === null) {
-            return [$ability, '*-*', '*'];
-        }
-
-        return $this->compileModelAbilityIdentifiers($ability, $model);
-    }
-
-    /**
-     * Compile a list of ability identifiers that match the given model.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string $model
-     *
-     * @return array
-     */
-    protected function compileModelAbilityIdentifiers($ability, $model)
-    {
-        if ($model === '*') {
-            return ["{$ability}-*", '*-*'];
-        }
-
-        $model = $model instanceof Model ? $model : new $model;
-
-        $type = strtolower($model->getMorphClass());
-
-        $abilities = [
-            "{$ability}-{$type}",
-            "{$ability}-*",
-            "*-{$type}",
-            '*-*'
-        ];
-
-        if ($model->exists) {
-            $abilities[] = "{$ability}-{$type}-{$model->getKey()}";
-            $abilities[] = "*-{$type}-{$model->getKey()}";
-        }
-
-        return $abilities;
     }
 
     /**
