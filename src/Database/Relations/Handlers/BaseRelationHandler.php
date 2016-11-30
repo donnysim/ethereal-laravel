@@ -3,6 +3,7 @@
 namespace Ethereal\Database\Relations\Handlers;
 
 use Ethereal\Contracts\Database\RelationHandler;
+use Ethereal\Database\Ethereal;
 use Ethereal\Database\Relations\RelationProcessor;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -153,7 +154,15 @@ abstract class BaseRelationHandler implements RelationHandler
         }
 
         /** @var \Illuminate\Database\Eloquent\Model $model */
-        $model = new $relatedModel($data);
+
+        $test = new $relatedModel();
+
+        if ($test instanceof Ethereal) {
+            $model = $relatedModel::smartNew($data);
+        } else {
+            $model = new $relatedModel($data);
+        }
+
         $keyName = $model->getKeyName();
         if (isset($data[$keyName])) {
             $model->setAttribute($keyName, $data[$keyName]);
