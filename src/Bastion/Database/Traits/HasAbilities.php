@@ -4,9 +4,6 @@ namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
 
-/**
- * @mixin \Ethereal\Database\Ethereal
- */
 trait HasAbilities
 {
     /**

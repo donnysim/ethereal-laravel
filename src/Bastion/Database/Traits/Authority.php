@@ -4,9 +4,6 @@ namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
 
-/**
- * @mixin \Ethereal\Database\Ethereal
- */
 trait Authority
 {
     use HasAbilities, HasRoles;
@@ -15,6 +12,7 @@ trait Authority
      * Get abilities assigned to this authority.
      *
      * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
      */
     public function getAbilities()
     {
@@ -25,6 +23,7 @@ trait Authority
      * Get authority map.
      *
      * @return \Ethereal\Bastion\Store\StoreMap
+     * @throws \InvalidArgumentException
      */
     public function getAuthorityMap()
     {

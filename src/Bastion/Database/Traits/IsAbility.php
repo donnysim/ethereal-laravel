@@ -7,9 +7,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-/**
- * @mixin \Ethereal\Database\Ethereal
- */
 trait IsAbility
 {
     /**
@@ -53,7 +50,7 @@ trait IsAbility
             "{$ability}-{$type}",
             "{$ability}-*",
             "*-{$type}",
-            '*-*'
+            '*-*',
         ];
 
         if ($model->exists) {
@@ -70,7 +67,7 @@ trait IsAbility
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param \Illuminate\Database\Eloquent\Collection|null $roles
      *
-     * @return array|\Illuminate\Database\Eloquent\Collection|static[]
+     * @return \Illuminate\Support\Collection
      * @throws \InvalidArgumentException
      */
     public static function getAbilities(Model $authority, Collection $roles = null)

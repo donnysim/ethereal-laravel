@@ -4,9 +4,6 @@ namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
 
-/**
- * @mixin \Ethereal\Database\Ethereal
- */
 trait HasRoles
 {
     /**
@@ -25,6 +22,7 @@ trait HasRoles
      * @param string|int|array $roles
      *
      * @return $this
+     * @throws \InvalidArgumentException
      */
     public function assign($roles)
     {
@@ -39,6 +37,7 @@ trait HasRoles
      * @param string|int|array $roles
      *
      * @return $this
+     * @throws \InvalidArgumentException
      */
     public function retract($roles)
     {
@@ -53,6 +52,7 @@ trait HasRoles
      * @param string|array $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function isAn($role)
     {
@@ -65,6 +65,7 @@ trait HasRoles
      * @param string|array $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function isA($role)
     {
@@ -77,6 +78,7 @@ trait HasRoles
      * @param string|array $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function isNot($role)
     {
@@ -89,6 +91,7 @@ trait HasRoles
      * @param string|array $role
      *
      * @return bool
+     * @throws \InvalidArgumentException
      */
     public function isAll($role)
     {

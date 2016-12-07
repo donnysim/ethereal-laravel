@@ -4,9 +4,6 @@ namespace Ethereal\Bastion\Database\Traits;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @mixin \Ethereal\Database\Ethereal
- */
 trait IsPermission
 {
     /**
