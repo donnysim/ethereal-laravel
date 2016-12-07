@@ -385,7 +385,11 @@ class JsonResponse extends Response
     public function payload($key, $value = null)
     {
         if (is_string($key)) {
-            Arr::set($this->data, "data.{$key}", $value);
+            $this->data([
+                'data' => [
+                    $key => $value,
+                ],
+            ]);
         } else {
             $this->data([
                 'data' => $key,
