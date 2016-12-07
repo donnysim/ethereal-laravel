@@ -21,7 +21,7 @@ class JsonResponse extends Response
     /**
      * Response data.
      *
-     * @var \Illuminate\Support\Collection
+     * @var array
      */
     protected $data;
 
@@ -76,13 +76,9 @@ class JsonResponse extends Response
      */
     public static function make($data = null, $status = 200, $headers = [])
     {
-        if ($data === null) {
-            $data = new Collection();
-        } else {
-            $data = Collection::make($data);
-        }
+        $instance = new static(null, $status, $headers);
 
-        return new static($data, $status, $headers);
+        return $instance->setContent($data);
     }
 
     /**
@@ -257,7 +253,7 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
-        $responseData = array_merge_recursive($responseData, $this->data->all());
+        $responseData = array_merge_recursive($responseData, $this->data);
 
         return $responseData;
     }
@@ -368,7 +364,15 @@ class JsonResponse extends Response
      */
     public function setContent($content)
     {
-        $this->data = new Collection($content);
+        if ($content === null) {
+            $data = [];
+        } elseif ($content instanceof Collection) {
+            $data = $data->toArray();
+        } else {
+            $data = $content;
+        }
+
+        $this->data = $data;
 
         return $this;
     }
@@ -410,7 +414,7 @@ class JsonResponse extends Response
      */
     public function data($data)
     {
-        $this->setContent($this->data->merge($data));
+        $this->setContent(array_merge_recursive($this->data, $data));
 
         return $this;
     }
