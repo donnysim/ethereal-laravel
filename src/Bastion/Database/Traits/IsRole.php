@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion\Database\Traits;
 
+use Ethereal\Bastion\Bastion;
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -92,5 +93,29 @@ trait IsRole
             'entity_id' => $authority->getKey(),
             'entity_type' => $authority->getMorphClass(),
         ];
+    }
+
+    /**
+     * Start a chain, to assign the given role to a authority.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
+     *
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     */
+    public function assignTo($authority)
+    {
+        return app(Bastion::class)->assign($this)->to(is_array($authority) ? $authority : func_get_args());
+    }
+
+    /**
+     * Start a chain, to retract the given role from a authority.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
+     *
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     */
+    public function retractFrom($authority)
+    {
+        return app(Bastion::class)->retract($this)->from(is_array($authority) ? $authority : func_get_args());
     }
 }
