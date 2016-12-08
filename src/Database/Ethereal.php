@@ -4,6 +4,7 @@ namespace Ethereal\Database;
 
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class Ethereal extends Model
@@ -190,5 +191,19 @@ class Ethereal extends Model
         }
 
         return $attributes;
+    }
+
+    /**
+     * Keep only a subset of the attributes from the given array.
+     *
+     * @param array $keep
+     *
+     * @return $this
+     */
+    public function keepOnlyAttributes(array $keep)
+    {
+        $this->attributes = Arr::only($this->attributes, $keep);
+
+        return $this;
     }
 }

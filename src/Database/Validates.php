@@ -6,9 +6,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 
-/**
- * @mixin Ethereal
- */
 trait Validates
 {
     /**

@@ -8,9 +8,6 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-/**
- * @mixin Ethereal
- */
 trait HandlesRelations
 {
     /**
