@@ -8,6 +8,13 @@ use Ethereal\Database\Ethereal;
 class AssignedRole extends Ethereal
 {
     /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
+    /**
      * Create a new Permission model instance.
      *
      * @param array $attributes
