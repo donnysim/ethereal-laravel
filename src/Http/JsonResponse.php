@@ -367,7 +367,7 @@ class JsonResponse extends Response
         if ($content === null) {
             $data = [];
         } elseif ($content instanceof Collection) {
-            $data = $data->toArray();
+            $data = $content->toArray();
         } else {
             $data = $content;
         }
