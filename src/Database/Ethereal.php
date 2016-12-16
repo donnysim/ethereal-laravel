@@ -194,7 +194,23 @@ class Ethereal extends Model
     }
 
     /**
+     * Keep only attributes and relations.
+     *
+     * @param array $keep
+     *
+     * @return $this
+     */
+    public function keepOnly(array $keep)
+    {
+        $this->keepOnlyAttributes($keep);
+        $this->keepOnlyRelations($keep);
+
+        return $this;
+    }
+
+    /**
      * Keep only a subset of the attributes from the given array.
+     * Does not modify relations.
      *
      * @param array $keep
      *
@@ -203,6 +219,21 @@ class Ethereal extends Model
     public function keepOnlyAttributes(array $keep)
     {
         $this->attributes = Arr::only($this->attributes, $keep);
+
+        return $this;
+    }
+
+    /**
+     * Keep only a subset of the relations from the given array.
+     * Does not modify attributes.
+     *
+     * @param array $keep
+     *
+     * @return $this
+     */
+    public function keepOnlyRelations(array $keep)
+    {
+        $this->relations = Arr::only($this->relations, $keep);
 
         return $this;
     }
