@@ -7,7 +7,8 @@ use Illuminate\Support\Arr;
 
 class Ethereal extends BaseModel
 {
-    use Traits\WithoutFillable;
+    use Traits\WithoutFillable,
+        Traits\Validates;
 
     /**
      * Keep only specific attributes and relations.
