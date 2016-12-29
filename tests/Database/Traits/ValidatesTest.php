@@ -23,9 +23,24 @@ class ValidatesTest extends BaseTestCase
         $model = new ValidatesEthereal;
         $model->rules = ['email' => 'required'];
 
-        $validator = $model->validator();
+        $validator = $model->makeValidator();
 
         self::assertInstanceOf(\Illuminate\Validation\Validator::class, $validator);
+    }
+
+    /**
+     * @test
+     */
+    public function it_provides_last_used_validator_instance()
+    {
+        $model = new ValidatesEthereal;
+        $model->rules = ['email' => 'required'];
+
+        self::assertNull($model->validator());
+
+        $model->valid();
+
+        self::assertInstanceOf(\Illuminate\Validation\Validator::class, $model->validator());
     }
 
     /**
@@ -131,9 +146,9 @@ class ValidatesTest extends BaseTestCase
                     'title' => 'Doe',
                     'nested' => ['name' => 'John'],
                     'multi' => [
-                        ['name' => 'John']
-                    ]
-                ]
+                        ['name' => 'John'],
+                    ],
+                ],
             ],
         ], $model->collectValidationData(true));
     }
@@ -154,6 +169,37 @@ class ValidatesTest extends BaseTestCase
     /**
      * @test
      */
+    public function it_can_check_if_relations_data_is_also_valid()
+    {
+        $model = new ValidatesEthereal(['email' => 'john@example.com']);
+        $model->rules = ['email' => ['required', 'email']];
+
+        $single = new ValidatesEthereal(['name' => 'John']);
+        $single->rules = ['name' => 'required'];
+        $model->setRelation('single', $single);
+
+        $one = new ValidatesEthereal(['title' => 'Doe']);
+        $one->rules = ['title' => 'required'];
+        $model->setRelation('multi', collect([$one]));
+
+        $nestedSingle = new ValidatesEthereal(['name' => 'John']);
+        $nestedSingle->rules = ['name' => 'required'];
+        $single->setRelation('nested', $nestedSingle);
+        $one->setRelation('nested', $nestedSingle);
+        $one->setRelation('multi', collect([$nestedSingle]));
+
+        $model->setRelation('empty', null);
+
+        self::assertTrue($model->fullyValid());
+
+        $nestedSingle->rules['name'] = 'email';
+
+        self::assertFalse($model->fullyValid());
+    }
+
+    /**
+     * @test
+     */
     public function it_can_check_if_data_is_invalid()
     {
         $model = new ValidatesEthereal(['email' => 'john']);
@@ -162,6 +208,32 @@ class ValidatesTest extends BaseTestCase
         ];
 
         self::assertTrue($model->invalid());
+    }
+
+    /**
+     * @test
+     */
+    public function it_allows_passing_additional_rules()
+    {
+        $model = new ValidatesEthereal(['email' => 'john']);
+        $model->rules = [
+            'email' => ['required'],
+        ];
+
+        self::assertTrue($model->valid());
+        self::assertTrue($model->invalid(['email' => ['email']]));
+        self::assertTrue($model->validator()->getMessageBag()->has('email'));
+    }
+
+    /**
+     * @test
+     * @expectedException \Illuminate\Validation\ValidationException
+     */
+    public function it_can_throw_exception_if_data_is_invalid()
+    {
+        $model = new ValidatesEthereal(['email' => 'john']);
+        $model->rules = ['email' => ['required', 'email']];
+        $model->validOrFail();
     }
 }
 

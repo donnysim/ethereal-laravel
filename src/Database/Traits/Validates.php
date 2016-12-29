@@ -54,26 +54,65 @@ trait Validates
      * Determine if the model data is valid.
      *
      * @param array $rules
+     * @param bool $merge
      *
      * @return bool
      */
-    public function valid(array $rules = [])
+    public function valid(array $rules = [], $merge = true)
     {
-        $validator = $this->validator(false, $rules);
+        $validator = $this->makeValidator(false,
+            $merge ? array_merge_recursive($this->collectValidationRules(true), $rules) : $rules
+        );
 
         return $validator->passes();
+    }
+
+    /**
+     * Validate model data and throw an exception if it's invalid.
+     *
+     * @param array $rules
+     * @param bool $merge
+     *
+     * @return $this
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function validOrFail(array $rules = [], $merge = true)
+    {
+        if ($this->invalid($rules, $merge)) {
+            $this->throwValidationException();
+        }
+
+        return $this;
     }
 
     /**
      * Determine if the model data is invalid.
      *
      * @param array $rules
+     * @param bool $merge
      *
      * @return bool
      */
-    public function invalid(array $rules = [])
+    public function invalid(array $rules = [], $merge = true)
     {
-        return !$this->valid($rules);
+        return !$this->valid($rules, $merge);
+    }
+
+    /**
+     * Determine if the model and all it's relations has valid data.
+     *
+     * @param array $rules
+     * @param bool $merge
+     *
+     * @return bool
+     */
+    public function fullyValid(array $rules = [], $merge = true)
+    {
+        $validator = $this->makeValidator(true,
+            $merge ? array_merge_recursive($this->collectValidationRules(true), $rules) : $rules
+        );
+
+        return $validator->passes();
     }
 
     /**
@@ -84,7 +123,7 @@ trait Validates
      *
      * @return \Illuminate\Validation\Validator
      */
-    public function validator($full = false, array $rules = [])
+    public function makeValidator($full = false, array $rules = [])
     {
         $data = $this->collectValidationData($full);
 
@@ -92,9 +131,19 @@ trait Validates
             $rules = $this->collectValidationRules($full);
         }
 
-        $validator = app('validator')->make($data, $rules, $this->validationMessages(), $this->validationAttributes());
+        $this->validator = app('validator')->make($data, $rules, $this->validationMessages(), $this->validationAttributes());
 
-        return $validator;
+        return $this->validator;
+    }
+
+    /**
+     * Get last created validator.
+     *
+     * @return \Illuminate\Validation\Validator
+     */
+    public function validator()
+    {
+        return $this->validator;
     }
 
     /**
