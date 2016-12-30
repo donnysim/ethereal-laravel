@@ -20,7 +20,7 @@ class ManagerTest extends BaseTestCase
      */
     public function it_provides_default_options()
     {
-        self::assertEquals(Manager::OPTION_SAVE | Manager::OPTION_ATTACH, Manager::getDefaultOptions());
+        self::assertEquals(Manager::SAVE | Manager::ATTACH, Manager::getDefaultOptions());
     }
 
     /**
@@ -41,18 +41,18 @@ class ManagerTest extends BaseTestCase
     public function it_can_determine_if_the_relation_can_should_be_skipped()
     {
         // Relations marked as skip should be skipped
-        self::assertTrue(Manager::shouldSkipRelation(null, Manager::OPTION_SKIP));
+        self::assertTrue(Manager::shouldSkipRelation(null, Manager::SKIP));
 
         // Invalid types should be skipped
-        self::assertTrue(Manager::shouldSkipRelation(null, Manager::OPTION_SAVE));
-        self::assertTrue(Manager::shouldSkipRelation([], Manager::OPTION_SAVE));
-        self::assertTrue(Manager::shouldSkipRelation(new stdClass, Manager::OPTION_SAVE));
+        self::assertTrue(Manager::shouldSkipRelation(null, Manager::SAVE));
+        self::assertTrue(Manager::shouldSkipRelation([], Manager::SAVE));
+        self::assertTrue(Manager::shouldSkipRelation(new stdClass, Manager::SAVE));
 
         // Checks if relation method exists
-        self::assertTrue(Manager::shouldSkipRelation(new Ethereal, Manager::OPTION_SAVE, new Ethereal, 'test'));
+        self::assertTrue(Manager::shouldSkipRelation(new Ethereal, Manager::SAVE, new Ethereal, 'test'));
 
         // Valid
-        self::assertFalse(Manager::shouldSkipRelation(new Ethereal, Manager::OPTION_SAVE));
+        self::assertFalse(Manager::shouldSkipRelation(new Ethereal, Manager::SAVE));
     }
 
     /**
@@ -112,26 +112,55 @@ class ManagerTest extends BaseTestCase
     {
         $manager = new Manager(new Ethereal, [
             'relations' => [
-                'single' => Manager::OPTION_SKIP,
+                'single' => Manager::SAVE,
+                'single.nested' => Manager::DELETE,
             ]
         ]);
 
-        self::assertEquals(Manager::OPTION_SKIP, $manager->getRelationOptions('single'));
+        self::assertEquals(Manager::SAVE, $manager->getRelationOptions('single'));
+        self::assertEquals(Manager::DELETE, $manager->getRelationOptions('single.nested'));
     }
 
     /**
      * @test
      */
-    public function it_can_get_check_if_nested_relation_will_be_skipped()
+    public function it_can_check_if_nested_relation_will_be_skipped()
     {
         $manager = new Manager(new Ethereal, [
             'relations' => [
-                'single' => Manager::OPTION_SKIP,
-                'single.multi' => Manager::OPTION_SAVE,
+                'single' => Manager::SKIP,
+                'single.multi' => Manager::SAVE,
             ]
         ]);
 
-        self::assertEquals(Manager::OPTION_SKIP, $manager->getRelationOptions('single.multi'));
+        self::assertEquals(Manager::SKIP, $manager->getRelationOptions('single.multi'));
+
+        $manager = new Manager(new Ethereal, [
+            'relations' => [
+                'single' => Manager::SAVE | Manager::SKIP_RELATIONS,
+                'single.multi' => Manager::SAVE,
+            ]
+        ]);
+
+        self::assertEquals(Manager::SKIP, $manager->getRelationOptions('single.multi'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_skip_relations()
+    {
+        $manager = new Manager(new Ethereal, [
+            'relations' => [
+                'single' => Manager::SAVE,
+                'single.nested' => Manager::SAVE | Manager::SKIP_RELATIONS,
+                'single.nested.child' => Manager::SAVE,
+            ]
+        ]);
+
+        self::assertEquals(Manager::SAVE, $manager->getRelationOptions('single'));
+        self::assertEquals(Manager::SAVE | Manager::SKIP_RELATIONS, $manager->getRelationOptions('single.nested'));
+        self::assertEquals(Manager::SKIP, $manager->getRelationOptions('single.nested.child'));
     }
 }
 

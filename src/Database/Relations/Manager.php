@@ -3,8 +3,8 @@
 namespace Ethereal\Database\Relations;
 
 use Closure;
+use Ethereal\Database\Ethereal;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection as SupportCollection;
@@ -13,12 +13,13 @@ use InvalidArgumentException;
 
 class Manager
 {
-    const OPTION_SKIP = 1;
-    const OPTION_SAVE = 2;
-    const OPTION_DELETE = 4;
-    const OPTION_ATTACH = 8;
-    const OPTION_SYNC = 16;
-    const OPTION_DETACH = 32;
+    const SKIP = 1;
+    const SAVE = 2;
+    const DELETE = 4;
+    const ATTACH = 8;
+    const SYNC = 16;
+    const DETACH = 32;
+    const SKIP_RELATIONS = 64;
 
     /**
      * Registered relation handlers.
@@ -60,12 +61,14 @@ class Manager
     /**
      * Manager constructor.
      *
-     * @param \Illuminate\Database\Eloquent\Model $root
+     * @param \Ethereal\Database\Ethereal $root
      * @param \Illuminate\Support\Collection|array $options
      */
-    public function __construct(Model $root, $options)
+    public function __construct(Ethereal $root, $options = [])
     {
-        if (is_array($options)) {
+        if (!$options) {
+            $options = new SupportCollection([]);
+        } elseif (is_array($options)) {
             $options = new SupportCollection($options);
         }
 
@@ -73,13 +76,13 @@ class Manager
         $this->options = $options;
 
         // Make sure relation options is available as instance of collection
-        if (!$this->options->has('relations')) {
-            $this->options->put('relations', new SupportCollection);
-        } elseif (!$this->options->get('relations') instanceof SupportCollection) {
-            $this->options->put('relations', new SupportCollection($this->options->get('relations')));
+        if (!$options->has('relations')) {
+            $options->put('relations', new SupportCollection);
+        } elseif (!$options->get('relations') instanceof SupportCollection) {
+            $options->put('relations', new SupportCollection($options->get('relations')));
         }
 
-//        $this->buildQueue($root);
+        $this->buildQueue($root);
     }
 
     /**
@@ -128,18 +131,27 @@ class Manager
 
         $segments = explode('.', $key);
         $lastResult = null;
-        $segment = 'relations';
+        $segment = '';
+        $skipRelations = false;
 
         foreach ($segments as $part) {
-            $segment .= ".{$part}";
-            $options = Arr::get($this->options, $segment, null);
+            if ($skipRelations) {
+                return static::SKIP;
+            }
+
+            $segment = ltrim("{$segment}.{$part}", '.');
+            $options = Arr::get($this->options->get('relations'), $segment, null);
 
             if ($options === null && $lastResult === null) {
                 return static::getDefaultOptions();
-            } elseif ($options === static::OPTION_SKIP) {
-                return static::OPTION_SKIP;
+            } elseif ($options === static::SKIP) {
+                return static::SKIP;
             } elseif ($options === null && !$lastResult) {
                 return $lastResult;
+            }
+
+            if ($options & static::SKIP_RELATIONS) {
+                $skipRelations = true;
             }
 
             $lastResult = $options;
@@ -150,6 +162,108 @@ class Manager
         }
 
         return $lastResult;
+    }
+
+    protected function buildQueue($data, $optionsRoot = '')
+    {
+        $models = [$data];
+
+        if ($data instanceof Collection) {
+            $models = $data;
+        }
+
+        foreach ($models as $model) {
+            if ($model instanceof Ethereal) {
+                $this->buildRelationsQueue($model, $optionsRoot);
+            }
+        }
+    }
+
+    /**
+     * Build a queue for model of before and after events.
+     *
+     * @param \Ethereal\Database\Ethereal $parent
+     * @param string $optionsRoot
+     *
+     * @throws \InvalidArgumentException
+     */
+    protected function buildRelationsQueue(Ethereal $parent, $optionsRoot = '')
+    {
+        foreach ($parent->getRelations() as $relationName => $data) {
+            $optionsPath = $this->getRelationOptionsPath($relationName, $optionsRoot);
+            $relationOptions = $this->getRelationOptions($optionsPath);
+
+            if (static::shouldSkipRelation($data, $relationOptions, $parent, $relationName)) {
+                continue;
+            }
+
+            /** @var \Illuminate\Database\Eloquent\Relations\Relation $relation */
+            $relation = $parent->{$relationName}();
+
+            if (!static::canHandle($relation)) {
+                continue;
+            }
+
+            $handler = $this->makeHandler($relation, $relationName, $data, $parent, $relationOptions);
+            $action = function () use ($handler) {
+                $handler->save();
+            };
+
+            if ($handler->isWaitingForParent()) {
+                $this->after($action);
+            } else {
+                $this->before($action);
+            }
+
+            $this->buildQueue($data, $optionsPath);
+        }
+    }
+
+    /**
+     * Get full relation options path.
+     *
+     * @param string $relationName
+     * @param string $root
+     *
+     * @return string
+     */
+    protected function getRelationOptionsPath($relationName, $root)
+    {
+        if (!$root) {
+            return $relationName;
+        }
+
+        return "{$root}.{$relationName}";
+    }
+
+    /**
+     * Create an instance of relation handler.
+     *
+     * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
+     * @param string $relationName
+     * @param \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection $data
+     * @param \Ethereal\Database\Ethereal $parent
+     * @param int $options
+     *
+     * @return \Ethereal\Database\Relations\RelationHandler|null
+     * @throws \InvalidArgumentException
+     */
+    public function makeHandler(Relation $relation, $relationName, $data, Ethereal $parent, $options)
+    {
+        if (!static::canHandle($relation)) {
+            return null;
+        }
+
+        $handlerClass = static::$handlers[get_class($relation)];
+
+        /** @var \Ethereal\Database\Relations\RelationHandler $handler */
+        $handler = new $handlerClass($relation, $relationName, $parent, $data, $options);
+
+        if (method_exists($handler, 'setManager')) {
+            $handler->setManager($this);
+        }
+
+        return $handler;
     }
 
     /**
@@ -197,7 +311,7 @@ class Manager
      */
     public static function getDefaultOptions()
     {
-        return static::OPTION_SAVE | static::OPTION_ATTACH;
+        return static::SAVE | static::ATTACH;
     }
 
     /**
@@ -205,20 +319,20 @@ class Manager
      *
      * @param mixed $data
      * @param int $options
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     * @param \Ethereal\Database\Ethereal|null $parent
      * @param string|null $relationName
      *
      * @return bool
      */
-    public static function shouldSkipRelation($data, $options, Model $parent = null, $relationName = null)
+    public static function shouldSkipRelation($data, $options, Ethereal $parent = null, $relationName = null)
     {
         // Marked to skip
-        if ($options & static::OPTION_SKIP) {
+        if ($options & static::SKIP) {
             return true;
         }
 
         // Invalid types
-        if (!$data || (!$data instanceof Collection && !$data instanceof Model)) {
+        if (!$data || (!$data instanceof Collection && !$data instanceof Ethereal)) {
             return true;
         }
 
