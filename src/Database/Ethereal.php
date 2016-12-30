@@ -11,6 +11,17 @@ class Ethereal extends BaseModel
         Traits\Validates;
 
     /**
+     * Set attribute value without morphing.
+     *
+     * @param string $name
+     * @param mixed $value
+     */
+    public function setRawAttribute($name, $value)
+    {
+        $this->attributes[$name] = $value;
+    }
+
+    /**
      * Keep only specific attributes and relations.
      *
      * @param array|string $keep
