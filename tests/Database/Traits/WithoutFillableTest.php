@@ -7,7 +7,7 @@ class EtherealTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_does_have_guarded_or_fillable_attributes()
+    public function it_does_not_have_guarded_or_fillable_attributes()
     {
         $model = new Ethereal;
 
