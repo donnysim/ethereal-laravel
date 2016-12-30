@@ -58,4 +58,14 @@ class Ethereal extends BaseModel
 
         return $this;
     }
+
+    /**
+     * Determine if the model is soft deleting.
+     *
+     * @return bool
+     */
+    public function isSoftDeleting()
+    {
+        return method_exists($this, 'bootSoftDeletes');
+    }
 }

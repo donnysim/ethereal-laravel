@@ -48,10 +48,24 @@ class EtherealTest extends BaseTestCase
 
         self::assertEquals('test', $model->email);
     }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_the_model_is_soft_deleting()
+    {
+        $model = new Ethereal;
+        self::assertFalse($model->isSoftDeleting());
+
+        $model = new MorphEthereal;
+        self::assertTrue($model->isSoftDeleting());
+    }
 }
 
 class MorphEthereal extends Ethereal
 {
+    use \Illuminate\Database\Eloquent\SoftDeletes;
+
     public function setEmailAttribute($value)
     {
         $this->attributes['email'] = 'not ' . $value;
