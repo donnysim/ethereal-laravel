@@ -2,7 +2,7 @@
 
 use Ethereal\Database\Ethereal;
 
-class EtherealTest extends BaseTestCase
+class WithoutFillableTest extends BaseTestCase
 {
     /**
      * @test

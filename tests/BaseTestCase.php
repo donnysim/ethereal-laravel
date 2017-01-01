@@ -10,16 +10,6 @@ use Orchestra\Testbench\TestCase;
 
 class BaseTestCase extends TestCase
 {
-    public function setUp()
-    {
-        parent::setUp();
-
-//        $this->artisan('migrate', [
-//            '--database' => 'ethereal',
-//            '--realpath' => __DIR__ . '/migrations',
-//        ]);
-    }
-
     /**
      * Setup testing environment.
      *
@@ -27,12 +17,6 @@ class BaseTestCase extends TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-//        $app['config']->set('database.default', 'ethereal');
-//        $app['config']->set('database.connections.ethereal', [
-//            'driver' => 'sqlite',
-//            'database' => ':memory:',
-//            'prefix' => '',
-//        ]);
 //        $app['config']->set('bastion', [
 //            'tables' => [
 //                'abilities' => 'abilities',

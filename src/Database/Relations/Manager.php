@@ -5,6 +5,7 @@ namespace Ethereal\Database\Relations;
 use Closure;
 use Ethereal\Database\Ethereal;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection as SupportCollection;
@@ -27,7 +28,7 @@ class Manager
      * @var array
      */
     protected static $handlers = [
-
+        HasOne::class => Handlers\HasOneHandler::class,
     ];
 
     /**
@@ -81,8 +82,34 @@ class Manager
         } elseif (!$options->get('relations') instanceof SupportCollection) {
             $options->put('relations', new SupportCollection($options->get('relations')));
         }
+    }
 
-        $this->buildQueue($root);
+    /**
+     * Save parent model and all it's relations.
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function save()
+    {
+        $this->beforeParentSave = [];
+        $this->afterParentSave = [];
+
+        $this->buildQueue($this->root);
+
+        if (!$this->processQueue($this->beforeParentSave)) {
+            return false;
+        }
+
+        if (!$this->root->save()) {
+            return false;
+        }
+
+        if (!$this->processQueue($this->afterParentSave)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -164,6 +191,30 @@ class Manager
         return $lastResult;
     }
 
+    /**
+     * Process queue actions.
+     *
+     * @param array $queue
+     *
+     * @return bool
+     */
+    protected function processQueue(array $queue)
+    {
+        while ($action = array_shift($queue)) {
+            $action();
+        }
+
+        return true;
+    }
+
+    /**
+     * Build after and before action queues.
+     *
+     * @param \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection $data
+     * @param string $optionsRoot
+     *
+     * @throws \InvalidArgumentException
+     */
     protected function buildQueue($data, $optionsRoot = '')
     {
         $models = [$data];
@@ -204,9 +255,9 @@ class Manager
                 continue;
             }
 
-            $handler = $this->makeHandler($relation, $relationName, $data, $parent, $relationOptions);
+            $handler = $this->makeHandler($relation, $relationName, $data, $relationOptions);
             $action = function () use ($handler) {
-                $handler->save();
+                return $handler->save();
             };
 
             if ($handler->isWaitingForParent()) {
@@ -242,13 +293,12 @@ class Manager
      * @param \Illuminate\Database\Eloquent\Relations\Relation $relation
      * @param string $relationName
      * @param \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection $data
-     * @param \Ethereal\Database\Ethereal $parent
      * @param int $options
      *
      * @return \Ethereal\Database\Relations\RelationHandler|null
      * @throws \InvalidArgumentException
      */
-    public function makeHandler(Relation $relation, $relationName, $data, Ethereal $parent, $options)
+    public function makeHandler(Relation $relation, $relationName, $data, $options)
     {
         if (!static::canHandle($relation)) {
             return null;
@@ -257,7 +307,7 @@ class Manager
         $handlerClass = static::$handlers[get_class($relation)];
 
         /** @var \Ethereal\Database\Relations\RelationHandler $handler */
-        $handler = new $handlerClass($relation, $relationName, $parent, $data, $options);
+        $handler = new $handlerClass($relation, $relationName, $data, $options);
 
         if (method_exists($handler, 'setManager')) {
             $handler->setManager($this);

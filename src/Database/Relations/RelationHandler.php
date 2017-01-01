@@ -7,7 +7,7 @@ interface RelationHandler
     /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
+     * @return \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection
      */
     public function build();
 
@@ -20,8 +20,6 @@ interface RelationHandler
 
     /**
      * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
      */
     public function validate();
 
