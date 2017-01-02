@@ -13,6 +13,6 @@ class TestProfileModel extends Ethereal
 
     public function users()
     {
-        return $this->belongsToMany(TestUserModel::class, 'user_id');
+        return $this->belongsToMany(TestUserModel::class, 'profile_user', 'profile_id', 'user_id');
     }
 }

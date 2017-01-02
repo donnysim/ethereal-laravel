@@ -6,6 +6,7 @@ use Closure;
 use Ethereal\Database\Ethereal;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -30,6 +31,7 @@ class Manager
      * @var array
      */
     protected static $handlers = [
+        BelongsToMany::class => Handlers\BelongsToManyHandler::class,
         BelongsTo::class => Handlers\BelongsToHandler::class,
         HasMany::class => Handlers\HasManyHandler::class,
         HasOne::class => Handlers\HasOneHandler::class,

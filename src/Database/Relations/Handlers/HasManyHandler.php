@@ -15,7 +15,7 @@ class HasManyHandler extends Handler
     public function build()
     {
         $model = $this->hydrateCollection($this->data);
-        $this->validate();
+        $this->validateType($model);
 
         return $model;
     }

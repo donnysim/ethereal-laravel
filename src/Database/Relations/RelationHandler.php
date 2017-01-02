@@ -19,11 +19,6 @@ interface RelationHandler
     public function save();
 
     /**
-     * Validate relation data.
-     */
-    public function validate();
-
-    /**
      * Check if the relation is waiting for parent model to be saved.
      *
      * @return bool

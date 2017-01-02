@@ -9,52 +9,6 @@ class HandlerTest extends BaseTestCase
 {
     /**
      * @test
-     * #@expectedException \Ethereal\Database\Relations\Exceptions\InvalidTypeException
-     */
-    public function it_can_validate_single_model_type()
-    {
-        $parent = new HandlerParent;
-        $handler = new RelationHandler($parent->child(), 'child', new HandlerRelation, Manager::SAVE);
-
-        try {
-            $handler->validate();
-        } catch (InvalidTypeException $exception) {
-            self::fail('Single model type was validated incorrectly.');
-        }
-
-        $handler = new RelationHandler($parent->child(), 'child', new Ethereal, Manager::SAVE);
-
-        $handler->validate();
-    }
-
-    /**
-     * @test
-     * #@expectedException \Ethereal\Database\Relations\Exceptions\InvalidTypeException
-     */
-    public function it_can_validate_model_collection_types()
-    {
-        $parent = new HandlerParent;
-        $handler = new RelationHandler($parent->child(), 'child', new Collection([
-            new HandlerRelation,
-            new HandlerRelation,
-        ]), Manager::SAVE);
-
-        try {
-            $handler->validate();
-        } catch (InvalidTypeException $exception) {
-            self::fail('Model collection was validated incorrectly.');
-        }
-
-        $handler = new RelationHandler($parent->child(), 'child', new Collection([
-            new HandlerRelation,
-            new Ethereal,
-        ]), Manager::SAVE);
-
-        $handler->validate();
-    }
-
-    /**
-     * @test
      */
     public function it_can_hydrate_model_from_attributes()
     {

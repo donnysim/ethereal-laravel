@@ -28,11 +28,11 @@ class ManagerTest extends BaseTestCase
      */
     public function it_can_register_handler_and_check_if_relation_can_be_handled()
     {
-        self::assertFalse(Manager::canHandle(BelongsTo::class));
+        self::assertFalse(Manager::canHandle('RandomClass'));
 
-        Manager::register(BelongsTo::class, 'SomeClass');
+        Manager::register('RandomClass', 'SomeClass');
 
-        self::assertTrue(Manager::canHandle(BelongsTo::class));
+        self::assertTrue(Manager::canHandle('RandomClass'));
     }
 
     /**

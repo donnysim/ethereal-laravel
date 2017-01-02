@@ -80,16 +80,6 @@ abstract class Handler implements RelationHandler
     }
 
     /**
-     * Validate relation data.
-     *
-     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
-     */
-    public function validate()
-    {
-        $this->validateType($this->data);
-    }
-
-    /**
      * Create an instance of model from given attributes.
      *
      * @param mixed $data

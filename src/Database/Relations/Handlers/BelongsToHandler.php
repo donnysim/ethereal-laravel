@@ -15,7 +15,7 @@ class BelongsToHandler extends Handler
     public function build()
     {
         $model = $this->hydrateModel($this->data);
-        $this->validate();
+        $this->validateType($model);
 
         return $model;
     }
