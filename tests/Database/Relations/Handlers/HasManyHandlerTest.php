@@ -1,6 +1,6 @@
 <?php
 
-use Ethereal\Database\Relations\Handlers\HasOneHandler;
+use Ethereal\Database\Relations\Handlers\HasManyHandler;
 use Ethereal\Database\Relations\Manager;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -62,7 +62,7 @@ class HasManyHandlerTest extends BaseTestCase
     public function it_waits_for_parent_to_be_saved()
     {
         $user = new TestUserModel;
-        $handler = new HasOneHandler($user->profile(), 'profile', new TestProfileModel, Manager::SAVE);
+        $handler = new HasManyHandler($user->profile(), 'profiles', new Collection([new TestProfileModel]), Manager::SAVE);
 
         self::assertTrue($handler->isWaitingForParent());
 
