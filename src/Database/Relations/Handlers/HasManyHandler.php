@@ -4,7 +4,7 @@ namespace Ethereal\Database\Relations\Handlers;
 
 use Ethereal\Database\Relations\Manager;
 
-class HasOneHandler extends Handler
+class HasManyHandler extends Handler
 {
     /**
      * Wrap data into model or collection of models based on relation type.
@@ -14,7 +14,7 @@ class HasOneHandler extends Handler
      */
     public function build()
     {
-        $model = $this->hydrateModel($this->data);
+        $model = $this->hydrateCollection($this->data);
         $this->validate();
 
         return $model;
@@ -25,19 +25,35 @@ class HasOneHandler extends Handler
      *
      * @return bool
      * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
-     * @throws \Exception
      */
     public function save()
     {
-        $model = $this->build();
+        $collection = $this->build();
 
-        if ($this->options & Manager::SAVE) {
-            $this->relation->save($model);
+        $exists = 0;
+
+        foreach ($collection as $item) {
+            if ($this->options & Manager::SAVE) {
+                $this->relation->save($item);
+            }
+
+            if ($this->options & Manager::DELETE && $item->exists) {
+                $item->delete();
+            }
+
+            $exists += (int)$item->exists;
         }
 
-        if ($this->options & Manager::DELETE && $model->exists) {
-            $model->delete();
-            $model->setAttribute($this->relation->getPlainForeignKey(), null);
+        if ($this->options & Manager::SYNC) {
+            if ($collection->isEmpty() || $exists === 0) {
+                $this->relation->delete();
+            } else {
+                $modelKeyName = $collection->first()->getKeyName();
+
+                foreach ($collection->pluck($modelKeyName)->chunk(20) as $chunk) {
+                    $this->relation->whereNotIn($modelKeyName, $chunk->toArray())->delete();
+                }
+            }
         }
 
         return true;

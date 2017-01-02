@@ -12,6 +12,11 @@ class TestUserModel extends Ethereal
         return $this->hasOne(TestProfileModel::class, 'user_id');
     }
 
+    public function profiles()
+    {
+        return $this->hasMany(TestProfileModel::class, 'user_id');
+    }
+
 //    public function comments()
 //    {
 //        return $this->hasMany(TestCommentModel::class, 'user_id');

@@ -10,4 +10,9 @@ class TestProfileModel extends Ethereal
     {
         return $this->belongsTo(TestUserModel::class, 'user_id');
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(TestUserModel::class, 'user_id');
+    }
 }

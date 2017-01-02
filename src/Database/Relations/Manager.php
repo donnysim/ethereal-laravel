@@ -5,6 +5,7 @@ namespace Ethereal\Database\Relations;
 use Closure;
 use Ethereal\Database\Ethereal;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -28,6 +29,7 @@ class Manager
      * @var array
      */
     protected static $handlers = [
+        HasMany::class => Handlers\HasManyHandler::class,
         HasOne::class => Handlers\HasOneHandler::class,
     ];
 

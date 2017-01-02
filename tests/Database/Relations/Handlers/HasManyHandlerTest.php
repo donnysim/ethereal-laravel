@@ -2,8 +2,9 @@
 
 use Ethereal\Database\Relations\Handlers\HasOneHandler;
 use Ethereal\Database\Relations\Manager;
+use Illuminate\Database\Eloquent\Collection;
 
-class HasOneHandlerTest extends BaseTestCase
+class HasManyHandlerTest extends BaseTestCase
 {
     use UsesDatabase;
 
@@ -15,15 +16,18 @@ class HasOneHandlerTest extends BaseTestCase
         $this->migrate();
 
         $user = new TestUserModel(['email' => 'john@example.com']);
-        $profile = new TestProfileModel(['name' => 'John']);
-        $user->setRelation('profile', $profile);
+        $profile1 = new TestProfileModel(['name' => 'John']);
+        $profile2 = new TestProfileModel(['name' => 'Jane']);
+        $user->setRelation('profiles', new Collection([$profile1, $profile2]));
 
         $manager = new Manager($user);
         $manager->save();
 
         self::assertTrue($user->exists);
-        self::assertTrue($profile->exists);
-        self::assertEquals($user->getKey(), $profile->user_id);
+        self::assertTrue($profile1->exists);
+        self::assertTrue($profile2->exists);
+        self::assertEquals($user->getKey(), $profile1->user_id);
+        self::assertEquals($user->getKey(), $profile2->user_id);
     }
 
     /**
@@ -33,20 +37,23 @@ class HasOneHandlerTest extends BaseTestCase
     {
         $this->migrate();
 
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $profile = TestProfileModel::create(['user_id' => $user->getKey(), 'name' => 'John']);
-        $user->setRelation('profile', $profile);
+        $user = new TestUserModel(['email' => 'john@example.com']);
+        $profile1 = new TestProfileModel(['name' => 'John']);
+        $profile2 = new TestProfileModel(['name' => 'Jane']);
+        $user->setRelation('profiles', new Collection([$profile1, $profile2]));
 
         $manager = new Manager($user, [
             'relations' => [
-                'profile' => Manager::DELETE,
+                'profiles' => Manager::DELETE,
             ]
         ]);
         $manager->save();
 
         self::assertTrue($user->exists);
-        self::assertFalse($profile->exists);
-        self::assertNull($profile->user_id);
+        self::assertFalse($profile1->exists);
+        self::assertFalse($profile2->exists);
+        self::assertNull($profile1->user_id);
+        self::assertNull($profile2->user_id);
     }
 
     /**
