@@ -26,6 +26,8 @@ class HasManyHandlerTest extends BaseTestCase
         self::assertTrue($user->exists);
         self::assertTrue($profile1->exists);
         self::assertTrue($profile2->exists);
+        self::assertNotNull($profile1->user_id);
+        self::assertNotNull($profile2->user_id);
         self::assertEquals($user->getKey(), $profile1->user_id);
         self::assertEquals($user->getKey(), $profile2->user_id);
     }

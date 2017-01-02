@@ -23,6 +23,7 @@ class HasOneHandlerTest extends BaseTestCase
 
         self::assertTrue($user->exists);
         self::assertTrue($profile->exists);
+        self::assertNotNull($profile->user_id);
         self::assertEquals($user->getKey(), $profile->user_id);
     }
 
@@ -46,6 +47,7 @@ class HasOneHandlerTest extends BaseTestCase
 
         self::assertTrue($user->exists);
         self::assertFalse($profile->exists);
+        self::assertNotNull($profile->user_id);
         self::assertNull($profile->user_id);
     }
 
