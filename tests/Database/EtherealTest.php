@@ -60,6 +60,60 @@ class EtherealTest extends BaseTestCase
         $model = new MorphEthereal;
         self::assertTrue($model->isSoftDeleting());
     }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_attribute_is_present()
+    {
+        $model = new Ethereal;
+
+        self::assertFalse($model->hasAttribute('title'));
+
+        $model->setAttribute('title', 'test');
+        self::assertTrue($model->hasAttribute('title'));
+
+        $model->setAttribute('name', null);
+        self::assertTrue($model->hasAttribute('name'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_all_attributes_are_present()
+    {
+        $model = new Ethereal;
+
+        self::assertFalse($model->hasAttributes(['title']));
+
+        $model->fill([
+            'title' => 'test',
+            'name' => null,
+        ]);
+
+        self::assertTrue($model->hasAttributes(['title']));
+        self::assertFalse($model->hasAttributes(['email']));
+        self::assertFalse($model->hasAttributes(['title', 'email']));
+        self::assertTrue($model->hasAttributes(['title', 'name']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_one_of_the_attributes_is_present()
+    {
+        $model = new Ethereal;
+
+        $model->fill([
+            'title' => 'test',
+            'name' => null,
+        ]);
+
+        self::assertTrue($model->hasAttributes(['title'], false));
+        self::assertFalse($model->hasAttributes(['email'], false));
+        self::assertTrue($model->hasAttributes(['title', 'email'], false));
+        self::assertTrue($model->hasAttributes(['email', 'name'], false));
+    }
 }
 
 class MorphEthereal extends Ethereal

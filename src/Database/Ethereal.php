@@ -8,7 +8,35 @@ use Illuminate\Support\Arr;
 class Ethereal extends BaseModel
 {
     use Traits\WithoutFillable,
-        Traits\Validates;
+        Traits\Validates,
+        Traits\ExtendsRelations;
+
+    /**
+     * Determine if an attribute is present in the attributes list.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function hasAttribute($name)
+    {
+        return array_key_exists($name, $this->attributes);
+    }
+
+    /**
+     * @param array $attributes
+     * @param bool $all
+     *
+     * @return bool
+     */
+    public function hasAttributes(array $attributes, $all = true)
+    {
+        if ($all) {
+            return count(array_intersect_key(array_flip($attributes), $this->attributes)) === count($attributes);
+        }
+
+        return count(array_intersect_key(array_flip($attributes), $this->attributes)) > 0;
+    }
 
     /**
      * Set attribute value without morphing.

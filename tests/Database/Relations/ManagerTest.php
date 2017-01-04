@@ -2,7 +2,6 @@
 
 use Ethereal\Database\Ethereal;
 use Ethereal\Database\Relations\Manager;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ManagerTest extends BaseTestCase
 {
