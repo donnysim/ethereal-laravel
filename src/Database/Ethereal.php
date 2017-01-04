@@ -247,6 +247,6 @@ class Ethereal extends Model
      */
     public function hasAttribute($key)
     {
-        return array_key_exists($this->attributes, $key);
+        return array_key_exists($key, $this->attributes);
     }
 }
