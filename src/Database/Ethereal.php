@@ -12,6 +12,16 @@ class Ethereal extends BaseModel
         Traits\ExtendsRelations;
 
     /**
+     * Set model key value.
+     *
+     * @param string|int $value
+     */
+    public function setKey($value)
+    {
+        $this->setAttribute($this->getKeyName(), $value);
+    }
+
+    /**
      * Determine if an attribute is present in the attributes list.
      *
      * @param string $name

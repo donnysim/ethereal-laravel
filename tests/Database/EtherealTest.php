@@ -114,6 +114,17 @@ class EtherealTest extends BaseTestCase
         self::assertTrue($model->hasAttributes(['title', 'email'], false));
         self::assertTrue($model->hasAttributes(['email', 'name'], false));
     }
+
+    /**
+     * @test
+     */
+    public function it_can_set_model_key()
+    {
+        $model = new Ethereal;
+        $model->setKey(1);
+
+        self::assertEquals(1, $model->getAttribute('id'));
+    }
 }
 
 class MorphEthereal extends Ethereal
