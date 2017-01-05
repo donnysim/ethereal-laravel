@@ -12,6 +12,37 @@ class Ethereal extends BaseModel
         Traits\ExtendsRelations;
 
     /**
+     * Database columns. This is used to filter out any
+     *
+     * @var string[]
+     */
+    protected $columns = [];
+
+    /**
+     * Fill the model with an array of attributes.
+     *
+     * @param array $attributes
+     *
+     * @return $this
+     * @throws \UnexpectedValueException
+     * @throws \InvalidArgumentException
+     */
+    public function fill(array $attributes)
+    {
+        foreach ($attributes as $key => $value) {
+            $key = $this->removeTableFromKey($key);
+
+            if ($this->isRelationFillable($key)) {
+                $this->setRelation($key, $value);
+            }
+
+            $this->setAttribute($key, $value);
+        }
+
+        return $this;
+    }
+
+    /**
      * Set model key value.
      *
      * @param string|int $value
@@ -107,5 +138,47 @@ class Ethereal extends BaseModel
     public function isSoftDeleting()
     {
         return method_exists($this, 'bootSoftDeletes');
+    }
+
+    /**
+     * Get the attributes that have been changed since last sync.
+     *
+     * @return array
+     */
+    public function getDirty()
+    {
+        $dirty = [];
+        $columns = empty($this->columns) ? $this->attributes : Arr::only($this->attributes, $this->getColumns());
+
+        foreach ($columns as $key => $value) {
+            if (!array_key_exists($key, $this->original)) {
+                $dirty[$key] = $value;
+            } elseif ($value !== $this->original[$key] &&
+                !$this->originalIsNumericallyEquivalent($key)) {
+                $dirty[$key] = $value;
+            }
+        }
+
+        return $dirty;
+    }
+
+    /**
+     * Get a list of columns this model table contains.
+     *
+     * @return string[]
+     */
+    public function getColumns()
+    {
+        return $this->columns;
+    }
+
+    /**
+     * Set a list of columns this model table contains.
+     *
+     * @param array $columns
+     */
+    public function setColumns(array $columns)
+    {
+        $this->columns = $columns;
     }
 }

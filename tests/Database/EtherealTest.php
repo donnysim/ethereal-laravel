@@ -1,6 +1,7 @@
 <?php
 
 use Ethereal\Database\Ethereal;
+use Illuminate\Database\Eloquent\Collection;
 
 class EtherealTest extends BaseTestCase
 {
@@ -125,14 +126,95 @@ class EtherealTest extends BaseTestCase
 
         self::assertEquals(1, $model->getAttribute('id'));
     }
+
+    /**
+     * @test
+     */
+    public function it_can_fill_relations()
+    {
+        $model = new MorphEthereal([
+            'user' => new TestProfileModel,
+            'profile' => new TestProfileModel,
+            'profiles' => new Collection([
+                new TestProfileModel,
+                new TestProfileModel,
+            ]),
+        ]);
+
+        self::assertFalse($model->relationLoaded('user'));
+        self::assertTrue($model->relationLoaded('profile'));
+        self::assertTrue($model->relationLoaded('profiles'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_get_model_database_columns()
+    {
+        $model = new MorphEthereal;
+
+        static::assertEquals(['id', 'title'], $model->getColumns());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_set_model_database_columns()
+    {
+        $model = new MorphEthereal;
+        static::assertEquals(['id', 'title'], $model->getColumns());
+
+        $model->setColumns(['email', 'password']);
+        static::assertEquals(['email', 'password'], $model->getColumns());
+    }
+
+    /**
+     * @test
+     */
+    public function it_dirty_gets_only_column_values()
+    {
+        $model = new MorphEthereal([
+            'name' => 'john',
+            'title' => 'old',
+        ]);
+        $model->syncOriginal();
+
+        self::assertEquals([], $model->getDirty());
+
+        $model->name = 'doe';
+        $model->id = 2;
+
+        self::assertEquals(['id' => 2], $model->getDirty());
+
+        $model->title = 'new';
+
+        self::assertEquals([
+            'title' => 'new',
+            'id' => 2,
+        ], $model->getDirty());
+    }
 }
 
 class MorphEthereal extends Ethereal
 {
     use \Illuminate\Database\Eloquent\SoftDeletes;
 
+    protected $columns = ['id', 'title'];
+
+    protected $relationships = ['profile', 'profiles'];
+
     public function setEmailAttribute($value)
     {
         $this->attributes['email'] = 'not ' . $value;
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(TestProfileModel::class, 'user_id');
+    }
+
+    public function profiles()
+    {
+        return $this->hasMany(TestProfileModel::class, 'user_id');
     }
 }

@@ -16,6 +16,13 @@ trait ExtendsRelations
     protected $extendedRelations = true;
 
     /**
+     * Relationships that can be filled.
+     *
+     * @var array
+     */
+    protected $relationships = [];
+
+    /**
      * Set the specific relationship in the model.
      *
      * @param string $name
@@ -44,5 +51,17 @@ trait ExtendsRelations
         $this->relations[$name] = (new Manager($this))->makeHandler($relation, $name, $value, 0)->build();
 
         return $this;
+    }
+
+    /**
+     * Determine if specific relation is fillable.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    protected function isRelationFillable($name)
+    {
+        return in_array($name, $this->relationships, true);
     }
 }
