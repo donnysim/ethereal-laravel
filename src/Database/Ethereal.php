@@ -24,6 +24,8 @@ class Ethereal extends BaseModel
     }
 
     /**
+     * Determine if all ony any of the attributes are present.
+     *
      * @param array $attributes
      * @param bool $all
      *
