@@ -50,6 +50,39 @@ class ExtendsRelationsTest extends BaseTestCase
 
         self::assertInstanceOf(TestUserModel::class, $model->getRelation('profile'));
     }
+
+    /**
+     * @test
+     */
+    public function it_automatically_wraps_array_into_model_and_sets_exists_property_depending_on_primary_key()
+    {
+        $model = new TestUserModel;
+        $model->setRelation('profile', ['id' => 1, 'name' => 'John']);
+
+        self::assertInstanceOf(TestProfileModel::class, $model->getRelation('profile'));
+        self::assertEquals(['id' => 1, 'name' => 'John'], $model->getRelation('profile')->toArray());
+        self::assertTrue($model->getRelation('profile')->exists);
+    }
+
+    /**
+     * @test
+     */
+    public function it_automatically_wraps_array_into_model_collection_and_sets_exists_property_depending_on_primary_key()
+    {
+        $profilesValues = [['id' => 1, 'name' => 'John'], ['name' => 'Jane']];
+        $model = new TestUserModel;
+        $model->setRelation('profiles', $profilesValues);
+
+        $profiles = $model->getRelation('profiles');
+
+        self::assertInstanceOf(Collection::class, $profiles);
+
+        foreach ($profiles as $index => $profile) {
+            self::assertInstanceOf(TestProfileModel::class, $profile);
+            self::assertEquals($profilesValues[$index], $profile->toArray());
+            self::assertEquals($index === 0, $profile->exists);
+        }
+    }
 }
 
 class ExtendsRelationsEthereal extends Ethereal

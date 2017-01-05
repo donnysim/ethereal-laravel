@@ -12,16 +12,23 @@ This package provides extended laravel Model, named `Ethereal`. This model works
 
 - all fillable and guarded functionality is disabled;
 
-> It's the only reasonable way to work with Eloquent and prevents the use of request()->all(). This also improves code readability where you don't have to guess what request 
+It's the only reasonable way to work with Eloquent and prevents the use of request()->all(). This also improves code readability where you don't have to guess what request 
 data you'll receive as you'll have to specify it if you're going to fill it to the model.
 
-- `columns` model field is provided
+- `columns` model field is available
 
-> This field is used to get dirty columns for model save or update, so you can have as many custom attributes in there as you want. If the column is empty (default), all 
+This field is used to get dirty columns for model save or update, so you can have as many custom attributes in there as you want. If the column is empty (default), all 
 attributes are held as possible table columns.
 
 - model validation is available
 
-> Methods like `valid` and `validOrFail` are provided to validate the model. `fullyValid` is present if you want to validate the model and all it's relations. This uses 
+Methods like `valid` and `validOrFail` are provided to validate the model. `fullyValid` is present if you want to validate the model and all it's relations. This uses 
 laravel's validator so after any validation action you can call `validator` to get the last used validator. Model validation rules are determined by `validationRules` method - 
 sometimes rules change depending on model existence, to determine model existence you can use `$this->exists` model field.
+
+- `relationships` model field is available
+
+`relationships` field can be used to write all relations that can be auto filled by `fill` method. In addition, `extendedRelations` property is available and enabled by default 
+to provide automatic relation packing - you can pass array and it will be converted into model or collection depending on relation type. 
+
+> Note: unsupported relation types or values will be added as is.
