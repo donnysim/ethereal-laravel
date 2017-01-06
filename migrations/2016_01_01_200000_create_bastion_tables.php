@@ -1,6 +1,5 @@
 <?php
 
-use Ethereal\Bastion\Helper;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
@@ -17,7 +16,6 @@ class CreateBastionTables extends Migration
             $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('name', 100);
-            $table->string('title')->nullable();
             $table->integer('entity_id')->unsigned()->nullable();
             $table->string('entity_type')->nullable();
             $table->timestamps();
@@ -49,6 +47,7 @@ class CreateBastionTables extends Migration
             $table->integer('ability_id')->unsigned()->index();
             $table->morphs('entity');
             $table->boolean('forbidden')->default(false);
+            $table->string('group')->nullable();
 
             $table->foreign('ability_id')->references('id')->on(Helper::getAbilityTable())->onUpdate('cascade')->onDelete('cascade');
         });

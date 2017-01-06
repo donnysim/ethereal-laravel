@@ -1,6 +1,7 @@
 <?php
 
 use Ethereal\Bastion\Rucks;
+use Ethereal\Bastion\Store;
 
 class RucksTest extends BaseTestCase
 {
@@ -32,8 +33,33 @@ class RucksTest extends BaseTestCase
         self::assertInstanceOf(TestUserModel::class, $userRucks->resolveUser());
     }
 
+    /**
+     * @test
+     */
+    public function it_can_set_and_get_store()
+    {
+        $rucks = $this->getRucks();
+
+        self::assertInstanceOf(Store::class, $rucks->getStore());
+
+        $rucks->setStore(null);
+
+        self::assertNull($rucks->getStore());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_register_policies()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy('model', 'policy');
+
+        self::assertEquals(['model' => 'policy'], $rucks->policies());
+    }
+
     protected function getRucks()
     {
-        return new Rucks($this->app);
+        return new Rucks($this->app, new Store);
     }
 }

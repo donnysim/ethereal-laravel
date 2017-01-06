@@ -2,8 +2,13 @@
 
 namespace Ethereal\Bastion;
 
+use BadMethodCallException;
 use Illuminate\Contracts\Container\Container;
 
+/**
+ * @method policy($model, $policy)
+ * @method array policies()
+ */
 class Bastion
 {
     /**
@@ -23,18 +28,81 @@ class Bastion
     /**
      * Initiated ruck instances.
      *
-     * @var array Type => Rucks
+     * @var array
      */
     protected $rucks = [];
+
+    /**
+     * Pass these methods to Rucks.
+     *
+     * @var array
+     */
+    protected $passthrough = ['policy', 'policies'];
+
+    /**
+     * Primary store used to get roles and abilities.
+     *
+     * @var \Ethereal\Bastion\Store
+     */
+    protected $store;
 
     /**
      * Create a new rucks instance.
      *
      * @param \Illuminate\Contracts\Container\Container $container
+     * @param \Ethereal\Bastion\Store $store
      */
-    public function __construct(Container $container)
+    public function __construct(Container $container, $store)
     {
         $this->container = $container;
+        $this->store = $store;
+    }
+
+    /**
+     * Set default rucks type.
+     *
+     * @param string $type
+     */
+    public function useType($type)
+    {
+        static::$type = $type;
+    }
+
+    /**
+     * Get store.
+     *
+     * @return \Ethereal\Bastion\Store
+     */
+    public function getStore()
+    {
+        return $this->store;
+    }
+
+    /**
+     * Set store.
+     *
+     * @param \Ethereal\Bastion\Store $store
+     */
+    public function setStore($store)
+    {
+        $this->store = $store;
+    }
+
+    /**
+     * Passthrough methods directly to rucks.
+     *
+     * @param string $name
+     * @param array $arguments
+     *
+     * @throws \BadMethodCallException
+     */
+    public function __call($name, $arguments)
+    {
+        if (in_array($name, $this->passthrough, true)) {
+            return $this->rucks()->{$name}(...$arguments);
+        }
+
+        throw new BadMethodCallException("Method {$name} is not defined.");
     }
 
     /**
@@ -51,19 +119,9 @@ class Bastion
         }
 
         if (!isset($this->rucks[$type])) {
-            $this->rucks[$type] = new Rucks($this->container);
+            $this->rucks[$type] = new Rucks($this->container, $this->store);
         }
 
         return $this->rucks[$type];
-    }
-
-    /**
-     * Set default rucks type.
-     *
-     * @param string $type
-     */
-    public function useType($type)
-    {
-        static::$type = $type;
     }
 }
