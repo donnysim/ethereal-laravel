@@ -3,6 +3,7 @@
 namespace Ethereal\Bastion;
 
 use BadMethodCallException;
+use Ethereal\Bastion\Conductors\AssignsRoles;
 use Illuminate\Contracts\Container\Container;
 
 /**
@@ -56,6 +57,18 @@ class Bastion
     {
         $this->container = $container;
         $this->store = $store;
+    }
+
+    /**
+     * Start a chain, to assign the given role to a authority.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
+     *
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     */
+    public function assign($roles)
+    {
+        return new AssignsRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
     }
 
     /**

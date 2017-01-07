@@ -72,18 +72,42 @@ class BastionTest extends BaseTestCase
     {
         // TODO remove
 
-        // 1. Have bastion
+        // 1. Prepare
         $bastion = $this->getBastion();
+        $user = new TestUserModel;
 
         // 2. Register policies
         $bastion->policy('random', 'policy');
         $bastion->rucks('employee')->policy('random', 'policy');
 
         // 3. Assignment, on is permission group
-        $bastion->allow(new TestUserModel)->of('employee class or model', 'id or ids')->group('employee')->to('dance');
-
-        $bastion->assign('admin')->to(new TestUserModel);
+        $bastion->assign('admin')->to($user);
         $bastion->retract('admin')->from('user model[s] or class', 'id or ids');
+
+        $bastion->allow($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
+        $bastion->disallow($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
+
+        $bastion->forbid($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
+        $bastion->permit($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
+
+        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->allow('dance');
+        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->disallow('dance');
+
+        $user->assign('admin');
+        $user->retract('admin');
+
+        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->forbid('dance');
+        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->permit('dance');
+
+        // 4. Checking
+        $bastion->is($user)->a('dancer');
+        $bastion->is($user)->an('admin');
+        $bastion->is($user)->notA('dancer');
+        $bastion->is($user)->notAn('admin');
+
+        // group-ability-type-id
+        // group-ability-type-id-parentType-parentId
+
     }
 
     /**
