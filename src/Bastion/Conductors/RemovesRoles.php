@@ -5,12 +5,12 @@ namespace Ethereal\Bastion\Conductors;
 use Ethereal\Bastion\Helper;
 use InvalidArgumentException;
 
-class AssignsRoles
+class RemovesRoles
 {
     use Traits\CollectsAuthorities;
 
     /**
-     * Roles to assign to the authority.
+     * Roles to remove from the authority.
      *
      * @var array
      */
@@ -24,7 +24,7 @@ class AssignsRoles
     protected $store;
 
     /**
-     * AssignsRoles constructor.
+     * RemovesRoles constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $roles
@@ -36,26 +36,27 @@ class AssignsRoles
     }
 
     /**
-     * Assign roles to one or more authorities.
+     * Remove roles to one or more authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
-     * @param array $assignAttributes
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function to($authorities, array $ids = [], array $assignAttributes = [])
+    public function from($authorities, array $ids = [])
     {
         $authorities = $this->collectAuthorities($authorities, $ids);
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
-        $roles = $roleClass::collectRoles($this->roles);
+        $roles = $roleClass::collectRoles($this->roles)->keys()->all();
 
-        if ($roles->isEmpty()) {
+        if (empty($roles)) {
             return;
         }
+
+        $query = Helper::getAssignedRoleModel()->newQuery();
 
         foreach ($authorities as $authority) {
             /** @var \Illuminate\Database\Eloquent\Model $authority */
@@ -63,13 +64,12 @@ class AssignsRoles
                 throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 
-            $missingRolesIds = $roles->keys()->diff($roleClass::getRoles($authority)->keys());
-
-            foreach ($missingRolesIds as $missingRoleId) {
-                $roles->get($missingRoleId)->createAssignRecord($authority, $assignAttributes);
-            }
+            $query->orWhere(function ($query) use ($roles, $authority) {
+                $query->rolesForAuthority($roles, $authority);
+            });
         }
 
+        $query->delete();
         // TODO clear cache
     }
 }

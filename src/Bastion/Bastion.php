@@ -4,6 +4,7 @@ namespace Ethereal\Bastion;
 
 use BadMethodCallException;
 use Ethereal\Bastion\Conductors\AssignsRoles;
+use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Container\Container;
 
 /**
@@ -60,7 +61,7 @@ class Bastion
     }
 
     /**
-     * Start a chain, to assign the given role to a authority.
+     * Start a chain to assign the given role to authority.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
@@ -69,6 +70,18 @@ class Bastion
     public function assign($roles)
     {
         return new AssignsRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
+    }
+
+    /**
+     * Start a chain to remove the given role from authority.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
+     *
+     * @return \Ethereal\Bastion\Conductors\RemovesRoles
+     */
+    public function retract($roles)
+    {
+        return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
     }
 
     /**
