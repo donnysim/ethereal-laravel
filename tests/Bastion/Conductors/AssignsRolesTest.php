@@ -3,6 +3,7 @@
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Database\AssignedRole;
 use Ethereal\Bastion\Database\Role;
+use Ethereal\Bastion\Helper;
 use Ethereal\Bastion\Store;
 
 class AssignsRolesTest extends BaseTestCase
@@ -52,6 +53,29 @@ class AssignsRolesTest extends BaseTestCase
         self::assertEquals(3, Role::getRoles($user)->count());
         self::assertEquals(3, AssignedRole::where('target_id', $user->getKey())
             ->where('target_type', $user->getMorphClass())
+            ->count()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_assign_roles_to_model_class_and_ids()
+    {
+        $this->migrate();
+
+        $assign = new AssignsRoles(new Store, ['user', 'admin']);
+
+        $assign->to(TestUserModel::class, [1, 2, 3]);
+
+        $user = new TestUserModel(['id' => 1]);
+        $user->exists = true;
+
+        self::assertEquals(2, Role::getRoles($user)->count());
+        self::assertEquals(2, Role::getRoles($user->setAttribute('id', 2))->count());
+        self::assertEquals(2, Role::getRoles($user->setAttribute('id', 3))->count());
+        self::assertEquals(6, AssignedRole::whereIn('target_id', [1, 2, 3])
+            ->where('target_type', Helper::getMorphOfClass(TestUserModel::class))
             ->count()
         );
     }

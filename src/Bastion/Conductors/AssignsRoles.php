@@ -4,6 +4,7 @@ namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
 use InvalidArgumentException;
+use Traversable;
 
 class AssignsRoles
 {
@@ -33,9 +34,19 @@ class AssignsRoles
         $this->store = $store;
     }
 
-    public function to($authorities, array $assignAttributes = [])
+    /**
+     * Assign roles to one or more authorities.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
+     * @param array $ids
+     * @param array $assignAttributes
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @throws \InvalidArgumentException
+     */
+    public function to($authorities, array $ids = [], array $assignAttributes = [])
     {
-        $authorities = is_array($authorities) ? $authorities : func_get_args();
+        $authorities = $this->collectAuthorities($authorities, $ids);
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
@@ -55,5 +66,33 @@ class AssignsRoles
         }
 
         // TODO clear cache
+    }
+
+    /**
+     * Collect authority list.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|string|array $listOrClass
+     * @param array $ids
+     *
+     * @return array
+     */
+    protected function collectAuthorities($listOrClass, array $ids)
+    {
+        if (is_string($listOrClass)) {
+            $authorities = [];
+
+            foreach ($ids as $id) {
+                $model = new $listOrClass;
+                $model->setAttribute($model->getKeyName(), $id);
+                $model->exists = true;
+                $authorities[] = $model;
+            }
+
+            return $authorities;
+        } elseif (!is_array($listOrClass) && !$listOrClass instanceof Traversable) {
+            return [$listOrClass];
+        }
+
+        return $listOrClass;
     }
 }
