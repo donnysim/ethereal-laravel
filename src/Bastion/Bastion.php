@@ -4,6 +4,7 @@ namespace Ethereal\Bastion;
 
 use BadMethodCallException;
 use Ethereal\Bastion\Conductors\AssignsRoles;
+use Ethereal\Bastion\Conductors\GivesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Container\Container;
 
@@ -82,6 +83,18 @@ class Bastion
     public function retract($roles)
     {
         return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
+    }
+
+    /**
+     * Start a chain to give abilities to authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\GivesAbilities
+     */
+    public function allow($authorities)
+    {
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
     }
 
     /**

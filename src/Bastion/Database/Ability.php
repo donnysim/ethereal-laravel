@@ -39,7 +39,7 @@ class Ability extends Ethereal
      *
      * @return mixed
      */
-    public static function createAbility($ability, $model = null, $id = null, array $attributes = [])
+    public static function createAbilityRecord($ability, $model = null, $id = null, array $attributes = [])
     {
         list($modelType, $modelId) = static::getModelTypeAndId($model, $id);
 
@@ -75,11 +75,11 @@ class Ability extends Ethereal
                 $abilitiesList->push(static::findOrFail($ability));
             } elseif (is_string($key) && is_array($ability)) {
                 $abilitiesList->push(
-                    static::findAbility($key, $model) ?: static::createAbility($key, $model, null, $ability)
+                    static::findAbility($key, $model) ?: static::createAbilityRecord($key, $model, null, $ability)
                 );
             } elseif (is_string($ability)) {
                 $abilitiesList->push(
-                    static::findAbility($ability, $model) ?: static::createAbility($ability, $model)
+                    static::findAbility($ability, $model) ?: static::createAbilityRecord($ability, $model)
                 );
             }
         }

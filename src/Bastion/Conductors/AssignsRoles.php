@@ -42,6 +42,7 @@ class AssignsRoles
      * @param array $ids
      * @param array $assignAttributes
      *
+     * @return $this
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
@@ -54,7 +55,7 @@ class AssignsRoles
         $roles = $roleClass::collectRoles($this->roles);
 
         if ($roles->isEmpty()) {
-            return;
+            return $this;
         }
 
         foreach ($authorities as $authority) {
@@ -71,5 +72,6 @@ class AssignsRoles
         }
 
         // TODO clear cache
+        return $this;
     }
 }

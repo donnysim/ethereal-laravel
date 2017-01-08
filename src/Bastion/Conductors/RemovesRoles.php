@@ -41,6 +41,7 @@ class RemovesRoles
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
      *
+     * @return $this
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
@@ -53,7 +54,7 @@ class RemovesRoles
         $roles = $roleClass::collectRoles($this->roles)->keys()->all();
 
         if (empty($roles)) {
-            return;
+            return $this;
         }
 
         $query = Helper::getAssignedRoleModel()->newQuery();
@@ -71,5 +72,6 @@ class RemovesRoles
 
         $query->delete();
         // TODO clear cache
+        return $this;
     }
 }

@@ -26,7 +26,7 @@ trait IsRole
 
         /** @var \Ethereal\Bastion\Database\Role $role */
         $role = new static;
-        $query = $role->newQuery();
+        $query = $role->newQueryWithoutScopes();
 
         return $query->whereIn($role->getKeyName(), function ($query) use ($authority) {
             $query

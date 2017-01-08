@@ -24,10 +24,10 @@ class RemovesRolesTest extends BaseTestCase
 
         self::assertEquals(1, Role::getRoles($user)->count());
         self::assertEquals('user', Role::getRoles($user)->first()->name);
-        self::assertEquals(1, AssignedRole::where('target_id', $user->getKey())
-            ->where('target_type', $user->getMorphClass())
-            ->count()
-        );
+        self::assertEquals(1, AssignedRole::where([
+            'target_id' => $user->getKey(),
+            'target_type' => $user->getMorphClass(),
+        ])->count());
     }
 
     /**

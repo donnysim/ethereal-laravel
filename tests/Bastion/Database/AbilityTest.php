@@ -13,35 +13,40 @@ class AbilityTest extends BaseTestCase
     {
         $this->migrate();
 
-        Ability::createAbility('test');
-        self::assertEquals(1, Ability::where('name', 'test')
-            ->where('entity_id', null)
-            ->where('entity_type', null)->count()
-        );
+        Ability::createAbilityRecord('test');
+        self::assertEquals(1, Ability::where([
+            'name' => 'test',
+            'entity_id' => null,
+            'entity_type' => null,
+        ])->count());
 
-        Ability::createAbility('test', '*');
-        self::assertEquals(1, Ability::where('name', 'test')
-            ->where('entity_id', null)
-            ->where('entity_type', '*')->count()
-        );
+        Ability::createAbilityRecord('test', '*');
+        self::assertEquals(1, Ability::where([
+            'name' => 'test',
+            'entity_id' => null,
+            'entity_type' => '*',
+        ])->count());
 
-        Ability::createAbility('test', TestUserModel::class);
-        self::assertEquals(1, Ability::where('name', 'test')
-            ->where('entity_id', null)
-            ->where('entity_type', TestUserModel::class)->count()
-        );
+        Ability::createAbilityRecord('test', TestUserModel::class);
+        self::assertEquals(1, Ability::where([
+            'name' => 'test',
+            'entity_id' => null,
+            'entity_type' => TestUserModel::class,
+        ])->count());
 
-        Ability::createAbility('test', TestUserModel::class, 1);
-        self::assertEquals(1, Ability::where('name', 'test')
-            ->where('entity_id', 1)
-            ->where('entity_type', TestUserModel::class)->count()
-        );
+        Ability::createAbilityRecord('test', TestUserModel::class, 1);
+        self::assertEquals(1, Ability::where([
+            'name' => 'test',
+            'entity_id' => 1,
+            'entity_type' => TestUserModel::class,
+        ])->count());
 
-        Ability::createAbility('test', new TestUserModel(['id' => 2]));
-        self::assertEquals(1, Ability::where('name', 'test')
-            ->where('entity_id', 2)
-            ->where('entity_type', TestUserModel::class)->count()
-        );
+        Ability::createAbilityRecord('test', new TestUserModel(['id' => 2]));
+        self::assertEquals(1, Ability::where([
+            'name' => 'test',
+            'entity_id' => 2,
+            'entity_type' => TestUserModel::class,
+        ])->count());
     }
 
     /**
@@ -90,7 +95,7 @@ class AbilityTest extends BaseTestCase
     {
         $this->migrate();
 
-        $ability = Ability::createAbility('create');
+        $ability = Ability::createAbilityRecord('create');
         $abilities = Ability::collectAbilities([$ability->getKey(), 'destroy']);
 
         static::assertArraySubset([
@@ -110,7 +115,7 @@ class AbilityTest extends BaseTestCase
     {
         $this->migrate();
 
-        $ability = Ability::createAbility('create');
+        $ability = Ability::createAbilityRecord('create');
         $abilities = Ability::collectAbilities([$ability, 'destroy']);
 
         static::assertArraySubset([
@@ -174,7 +179,7 @@ class AbilityTest extends BaseTestCase
     {
         $this->migrate();
 
-        $created = Ability::createAbility('create');
+        $created = Ability::createAbilityRecord('create');
         $ability = Ability::findAbility('create');
 
         static::assertArraySubset($created->toArray(), $ability->toArray());
@@ -188,7 +193,7 @@ class AbilityTest extends BaseTestCase
         $this->migrate();
 
         $model = new TestUserModel(['id' => 0]);
-        $created = Ability::createAbility('create', $model);
+        $created = Ability::createAbilityRecord('create', $model);
 
         $ability = Ability::findAbility('create', $model);
         static::assertArraySubset($created->toArray(), $ability->toArray());

@@ -85,7 +85,7 @@ class BastionTest extends BaseTestCase
         $bastion->retract('admin')->from('user model[s] or class', 'id or ids');
 
         $bastion->allow($user)->target('employee class or model', 'id or ids')->parent('model or class', 'id')->group('employee|any')->to('dance');
-        $bastion->disallow($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
+        $bastion->disallow($user)->target('employee class or model', 'id or ids')->parent('model or class', 'id')->group('employee|any')->to('dance');
 
         $bastion->forbid($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
         $bastion->permit($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');

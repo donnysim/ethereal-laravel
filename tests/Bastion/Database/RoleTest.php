@@ -142,11 +142,11 @@ class RoleTest extends BaseTestCase
 
         $role->createAssignRecord($user);
 
-        self::assertEquals(1, AssignedRole::where('role_id', $role->getKey())
-            ->where('target_id', $user->getKey())
-            ->where('target_type', $user->getMorphClass())
-            ->count()
-        );
+        self::assertEquals(1, AssignedRole::where([
+            'role_id' => $role->getKey(),
+            'target_id' => $user->getKey(),
+            'target_type' => $user->getMorphClass(),
+        ])->count());
     }
 
     /**
@@ -176,11 +176,10 @@ class RoleTest extends BaseTestCase
         $role->createAssignRecord($user);
         $role2->createAssignRecord($user);
 
-        self::assertEquals(2, AssignedRole::where('target_id', $user->getKey())
-            ->where('target_type', $user->getMorphClass())
-            ->count()
-        );
-
+        self::assertEquals(2, AssignedRole::where([
+            'target_id' => $user->getKey(),
+            'target_type' => $user->getMorphClass(),
+        ])->count());
         self::assertEquals(2, Role::getRoles($user)->count());
     }
 }

@@ -7,7 +7,8 @@ use Ethereal\Database\Ethereal;
 
 class Role extends Ethereal
 {
-    use Traits\IsRole;
+    use Traits\IsRole,
+        Traits\HasAbilities;
 
     protected $columns = ['id', 'name', 'title', 'system', 'private', 'level', 'created_at', 'updated_at'];
 
