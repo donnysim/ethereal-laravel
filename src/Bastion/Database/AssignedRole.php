@@ -10,21 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AssignedRole extends Ethereal
 {
-    protected $columns = ['role_id', 'target_id', 'target_type', 'created_at', 'updated_at'];
+    use Traits\IsAssignedRole;
 
-    /**
-     * Scope query to roles for authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param array $roleIds
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return mixed
-     */
-    public function scopeRolesForAuthority($query, array $roleIds, Model $authority)
-    {
-        return $query->whereIn("{$this->getTable()}.role_id", $roleIds)
-            ->where("{$this->getTable()}.target_id", $authority->getKey())
-            ->where("{$this->getTable()}.target_type", $authority->getMorphClass());
-    }
+    protected $columns = ['role_id', 'target_id', 'target_type', 'created_at', 'updated_at'];
 }

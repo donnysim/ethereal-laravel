@@ -10,16 +10,16 @@ trait CollectsAuthorities
      * Collect authority list.
      *
      * @param \Illuminate\Database\Eloquent\Model|string|array $listOrClass
-     * @param array $ids
+     * @param mixed $ids
      *
      * @return array
      */
-    protected function collectAuthorities($listOrClass, array $ids)
+    protected function collectAuthorities($listOrClass, $ids)
     {
         if (is_string($listOrClass)) {
             $authorities = [];
 
-            foreach ($ids as $id) {
+            foreach ((array)$ids as $id) {
                 $model = new $listOrClass;
                 $model->setAttribute($model->getKeyName(), $id);
                 $model->exists = true;

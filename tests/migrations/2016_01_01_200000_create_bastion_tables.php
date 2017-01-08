@@ -17,6 +17,7 @@ class CreateBastionTables extends Migration
             $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('name', 100);
+            $table->string('title', 100)->nullable();
             $table->integer('entity_id')->unsigned()->nullable();
             $table->string('entity_type')->nullable();
             $table->timestamps();
