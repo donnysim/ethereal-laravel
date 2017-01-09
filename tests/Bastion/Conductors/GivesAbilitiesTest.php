@@ -19,9 +19,9 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->to('kick');
+        $allow->to('kick', 'punch');
 
-        self::assertEquals(1, Permission::where([
+        self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => false,
@@ -29,11 +29,10 @@ class GivesAbilitiesTest extends BaseTestCase
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
-        self::assertEquals(1, Ability::where([
-            'name' => 'kick',
+        self::assertEquals(2, Ability::where([
             'entity_id' => null,
             'entity_type' => null,
-        ])->count());
+        ])->whereIn('name', ['kick', 'punch'])->count());
     }
 
     /**
@@ -95,7 +94,7 @@ class GivesAbilitiesTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_give_allow_everything()
+    public function it_can_allow_everything()
     {
         $this->migrate();
 

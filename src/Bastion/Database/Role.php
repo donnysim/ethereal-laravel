@@ -13,7 +13,7 @@ class Role extends Ethereal
     protected $columns = ['id', 'name', 'title', 'system', 'private', 'level', 'created_at', 'updated_at'];
 
     /**
-     * Create a new Permission model instance.
+     * Create a new Role model instance.
      *
      * @param array $attributes
      */

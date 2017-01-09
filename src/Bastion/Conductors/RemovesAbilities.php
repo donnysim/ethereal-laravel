@@ -5,13 +5,13 @@ namespace Ethereal\Bastion\Conductors;
 use Ethereal\Bastion\Helper;
 use UnexpectedValueException;
 
-class GivesAbilities
+class RemovesAbilities
 {
     use Traits\CollectsAuthorities,
         Traits\UsesScopes;
 
     /**
-     * Authorities to give abilities to.
+     * Authorities to remove abilities from.
      *
      * @var array
      */
@@ -25,7 +25,7 @@ class GivesAbilities
     protected $store;
 
     /**
-     * GivesAbilities constructor.
+     * RemovesAbilities constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $authorities
@@ -37,7 +37,7 @@ class GivesAbilities
     }
 
     /**
-     * Allow everything.
+     * Disallow everything.
      *
      * @return $this
      * @throws \UnexpectedValueException
@@ -50,7 +50,7 @@ class GivesAbilities
     }
 
     /**
-     * Give abilities to authorities.
+     * Remove abilities from authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string ...$abilities
      *
@@ -70,10 +70,10 @@ class GivesAbilities
 
         if ($this->targeted) {
             foreach ($this->scopeTargets as $target) {
-                $this->assignPermissionsToAuthority($abilityClass::collectAbilities($abilities, $target)->keys());
+                $this->removePermissionsFromAuthority($abilityClass::collectAbilities($abilities, $target)->keys());
             }
         } else {
-            $this->assignPermissionsToAuthority($abilityClass::collectAbilities($abilities)->keys());
+            $this->removePermissionsFromAuthority($abilityClass::collectAbilities($abilities)->keys());
         }
 
         // TODO clear cache
@@ -87,7 +87,7 @@ class GivesAbilities
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    protected function assignPermissionsToAuthority($abilityIds)
+    protected function removePermissionsFromAuthority($abilityIds)
     {
         if ($abilityIds->isEmpty()) {
             return;
@@ -95,19 +95,28 @@ class GivesAbilities
 
         /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
         $roleModelClass = Helper::getRoleModelClass();
-        $abilityKeyName = Helper::getAbilityModel()->getKeyName();
-        /** @var \Ethereal\Bastion\Database\Permission $permissionModelClass */
-        $permissionModelClass = Helper::getPermissionModelClass();
 
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
+                /** @var \Ethereal\Bastion\Database\Traits\HasAbilities $authority */
                 $authority = $roleModelClass::collectRoles([$authority])->first();
             }
 
-            $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn($abilityKeyName, $abilityIds)->pluck('id'));
-            foreach ($missingAbilities as $abilityId) {
-                $permissionModelClass::createPermissionRecord($abilityId, $authority, $this->scopeGroup, false, $this->scopeParent);
+            $query = $authority->abilities()->newPivotStatement()
+                ->where('group', $this->scopeGroup)
+                ->whereIn('ability_id', $abilityIds->all());
+
+            if ($this->scopeParent) {
+                $query
+                    ->where('parent_id', $this->scopeParent->getKey())
+                    ->where('parent_type', $this->scopeParent->getMorphClass());
+            } else {
+                $query
+                    ->whereNull('parent_id')
+                    ->whereNull('parent_type');
             }
+
+            $query->delete();
         }
     }
 }
