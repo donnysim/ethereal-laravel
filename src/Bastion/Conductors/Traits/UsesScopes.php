@@ -9,20 +9,6 @@ use Traversable;
 trait UsesScopes
 {
     /**
-     * State if any entity was targeted.
-     *
-     * @var bool
-     */
-    protected $targeted = false;
-
-    /**
-     * Targeted entities.
-     *
-     * @var array
-     */
-    protected $scopeTargets = [];
-
-    /**
      * Permission parent scope.
      *
      * @var \Illuminate\Database\Eloquent\Model
@@ -35,48 +21,6 @@ trait UsesScopes
      * @var string
      */
     protected $scopeGroup;
-
-    /**
-     * Target everything.
-     *
-     * @return $this
-     */
-    public function targetEverything()
-    {
-        return $this->target(['*']);
-    }
-
-    /**
-     * Set targeted entities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|string|array|null $listOrClass
-     * @param array|int|string|null $ids
-     *
-     * @return $this
-     */
-    public function target($listOrClass, $ids = null)
-    {
-        $this->targeted = $listOrClass !== null;
-
-        if (is_array($listOrClass) || $listOrClass instanceof Traversable) {
-            $this->scopeTargets = $listOrClass;
-        } elseif ($listOrClass instanceof Model) {
-            $this->scopeTargets = [$listOrClass];
-        } elseif (!empty($ids)) {
-            $models = [];
-
-            foreach ((array)$ids as $id) {
-                $model = new $listOrClass;
-                $model->setAttribute($model->getKeyName(), $id);
-                $model->exists = true;
-                $models[] = $model;
-            }
-
-            $this->scopeTargets = $models;
-        }
-
-        return $this;
-    }
 
     /**
      * Set parent scope for permission.
@@ -115,5 +59,39 @@ trait UsesScopes
         $this->scopeGroup = $group;
 
         return $this;
+    }
+
+    /**
+     * Set targeted entities.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|string|array|null $listOrClass
+     * @param array|int|string|null $ids
+     *
+     * @return array|\Traversable
+     */
+    protected function getTargets($listOrClass, $ids = null)
+    {
+        $targets = [];
+
+        if (is_array($listOrClass) || $listOrClass instanceof Traversable) {
+            $targets = $listOrClass;
+        } elseif ($listOrClass instanceof Model) {
+            $targets = [$listOrClass];
+        } elseif (!empty($ids)) {
+            $models = [];
+
+            foreach ((array)$ids as $id) {
+                $model = new $listOrClass;
+                $model->setAttribute($model->getKeyName(), $id);
+                $model->exists = true;
+                $models[] = $model;
+            }
+
+            $targets = $models;
+        } else {
+            $targets[] = $listOrClass;
+        }
+
+        return $targets;
     }
 }

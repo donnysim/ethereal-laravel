@@ -19,7 +19,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->to('kick', 'punch');
+        $allow->to(['kick', 'punch']);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -46,7 +46,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->to('kick');
+        $allow->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -74,7 +74,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->group('employee')->to('kick');
+        $allow->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -129,7 +129,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick');
+        $allow->parent($owner)->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -156,7 +156,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->to('kick', 'punch');
+        $allow->to(['kick', 'punch']);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -183,7 +183,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->to('kick');
+        $allow->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -211,7 +211,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->group('employee')->to('kick');
+        $allow->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -266,7 +266,7 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick');
+        $allow->parent($owner)->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
