@@ -20,7 +20,7 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->to('kick', 'punch');
+        $allow->to(['kick', 'punch']);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
         $remove->to('kick');
@@ -51,7 +51,7 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch']);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
         $remove->to('kick');
@@ -82,10 +82,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->to('kick', 'punch');
+        $allow->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
-        $remove->target($user)->to('kick');
+        $remove->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'ability_id' => Ability::findAbility('punch', $user)->getKey(),
@@ -113,10 +113,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
-        $remove->target($user)->group('employee')->to('kick');
+        $remove->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'ability_id' => Ability::findAbility('punch', $user)->getKey(),
@@ -144,10 +144,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
-        $remove->target($user)->to('kick');
+        $remove->to('kick', $user);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -204,10 +204,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick', 'punch');
+        $allow->parent($owner)->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
-        $remove->target($user)->parent($owner)->group('employee')->to('kick');
+        $remove->parent($owner)->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -234,10 +234,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick', 'punch');
+        $allow->parent($owner)->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner]);
-        $remove->target($user)->group('employee')->to('kick');
+        $remove->group('employee')->to('kick', $user);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -263,7 +263,7 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->to('kick', 'punch');
+        $allow->to(['kick', 'punch']);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
         $remove->to('kick');
@@ -294,7 +294,7 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch']);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
         $remove->to('kick');
@@ -325,10 +325,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->to('kick', 'punch');
+        $allow->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->to('kick');
+        $remove->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'ability_id' => Ability::findAbility('punch', $user)->getKey(),
@@ -356,10 +356,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->group('employee')->to('kick');
+        $remove->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'ability_id' => Ability::findAbility('punch', $user)->getKey(),
@@ -387,10 +387,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->to('kick');
+        $remove->to('kick', $user);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -447,10 +447,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick', 'punch');
+        $allow->parent($owner)->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->parent($owner)->group('employee')->to('kick');
+        $remove->parent($owner)->group('employee')->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
@@ -477,10 +477,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->target($user)->parent($owner)->group('employee')->to('kick', 'punch');
+        $allow->parent($owner)->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->group('employee')->to('kick');
+        $remove->group('employee')->to('kick', $user);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),
@@ -507,10 +507,10 @@ class RemovesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->target($user)->group('employee')->to('kick', 'punch');
+        $allow->group('employee')->to(['kick', 'punch'], $user);
 
         $remove = new RemovesAbilities(new Store, [$owner], true);
-        $remove->target($user)->group('employee')->to('kick');
+        $remove->group('employee')->to('kick', $user);
 
         self::assertEquals(2, Permission::where([
             'target_id' => $owner->getKey(),

@@ -65,34 +65,32 @@ class RemovesAbilities
      */
     public function everything()
     {
-        return $this->targetEverything()->to('*');
+        return $this->to('*', '*');
     }
 
     /**
      * Remove abilities from authorities.
      *
-     * @param \Illuminate\Database\Eloquent\Model|array|string ...$abilities
+     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
+     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
+     * @param array|string|int|null $ids
      *
      * @return $this
      * @throws \UnexpectedValueException
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function to(...$abilities)
+    public function to($abilities, $modelListOrClass = null, $ids = null)
     {
         /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
         $abilityClass = Helper::getAbilityModelClass();
 
-        if ($this->targeted && empty($this->scopeTargets)) {
-            throw new UnexpectedValueException('Models were targeted but the list is empty.');
-        }
-
-        if ($this->targeted) {
-            foreach ($this->scopeTargets as $target) {
-                $this->removePermissionsFromAuthority($abilityClass::collectAbilities($abilities, $target)->keys());
-            }
+        if ($modelListOrClass === null && $ids === null) {
+            $this->removePermissionsFromAuthority($abilityClass::collectAbilities((array)$abilities)->keys());
         } else {
-            $this->removePermissionsFromAuthority($abilityClass::collectAbilities($abilities)->keys());
+            foreach ($this->getTargets($modelListOrClass, $ids) as $target) {
+                $this->removePermissionsFromAuthority($abilityClass::collectAbilities((array)$abilities, $target)->keys());
+            }
         }
 
         // TODO clear cache
