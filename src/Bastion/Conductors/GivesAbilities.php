@@ -25,15 +25,34 @@ class GivesAbilities
     protected $store;
 
     /**
+     * Determine if the given ability forbids it.
+     *
+     * @var bool
+     */
+    protected $forbidden = false;
+
+    /**
      * GivesAbilities constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $authorities
+     * @param bool $forbids
      */
-    public function __construct($store, array $authorities)
+    public function __construct($store, array $authorities, $forbids = false)
     {
         $this->authorities = $authorities;
         $this->store = $store;
+        $this->forbidden = $forbids;
+    }
+
+    /**
+     * Set whether the given abilities should forbid.
+     *
+     * @param bool $value
+     */
+    public function forbids($value = true)
+    {
+        $this->forbidden = $value;
     }
 
     /**
@@ -106,7 +125,7 @@ class GivesAbilities
 
             $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn($abilityKeyName, $abilityIds)->pluck('id'));
             foreach ($missingAbilities as $abilityId) {
-                $permissionModelClass::createPermissionRecord($abilityId, $authority, $this->scopeGroup, false, $this->scopeParent);
+                $permissionModelClass::createPermissionRecord($abilityId, $authority, $this->scopeGroup, $this->forbidden, $this->scopeParent);
             }
         }
     }

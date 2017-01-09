@@ -25,15 +25,34 @@ class RemovesAbilities
     protected $store;
 
     /**
+     * Determine if the removed ability is forbidden.
+     *
+     * @var bool
+     */
+    protected $forbidden = false;
+
+    /**
      * RemovesAbilities constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $authorities
+     * @param bool $forbidden
      */
-    public function __construct($store, array $authorities)
+    public function __construct($store, array $authorities, $forbidden = false)
     {
         $this->authorities = $authorities;
         $this->store = $store;
+        $this->forbidden = $forbidden;
+    }
+
+    /**
+     * Set whether the given abilities should forbid.
+     *
+     * @param bool $value
+     */
+    public function forbidden($value = true)
+    {
+        $this->forbidden = $value;
     }
 
     /**
@@ -103,6 +122,7 @@ class RemovesAbilities
             }
 
             $query = $authority->abilities()->newPivotStatement()
+                ->where('forbidden', $this->forbidden)
                 ->where('group', $this->scopeGroup)
                 ->whereIn('ability_id', $abilityIds->all());
 

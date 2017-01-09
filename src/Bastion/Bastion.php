@@ -5,6 +5,7 @@ namespace Ethereal\Bastion;
 use BadMethodCallException;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\GivesAbilities;
+use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Container\Container;
 
@@ -94,7 +95,43 @@ class Bastion
      */
     public function allow($authorities)
     {
-        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
+    }
+
+    /**
+     * Start a chain to remove abilities from authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     */
+    public function disallow($authorities)
+    {
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
+    }
+
+    /**
+     * Start a chain to forbid abilities to authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\GivesAbilities
+     */
+    public function forbid($authorities)
+    {
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
+    }
+
+    /**
+     * Start a chain to permit forbidden abilities from authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     */
+    public function permit($authorities)
+    {
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
     }
 
     /**
