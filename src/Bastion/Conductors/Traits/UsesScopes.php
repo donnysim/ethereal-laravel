@@ -43,10 +43,7 @@ trait UsesScopes
      */
     public function targetEverything()
     {
-        $this->targeted = true;
-        $this->scopeTargets = ['*'];
-
-        return $this;
+        return $this->target(['*']);
     }
 
     /**
@@ -74,6 +71,7 @@ trait UsesScopes
                 $model->exists = true;
                 $models[] = $model;
             }
+
             $this->scopeTargets = $models;
         }
 
