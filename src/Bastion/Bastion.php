@@ -8,6 +8,8 @@ use Ethereal\Bastion\Conductors\GivesAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * @method policy($model, $policy)
@@ -132,6 +134,33 @@ class Bastion
     public function permit($authorities)
     {
         return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
+    }
+
+    /**
+     * Get authority roles.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Illuminate\Support\Collection
+     * @throws \InvalidArgumentException
+     */
+    public function roles(Model $authority)
+    {
+        return $this->getStore()->getRoles($authority);
+    }
+
+    /**
+     * Get authority abilities.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param \Illuminate\Support\Collection|null $roles
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \InvalidArgumentException
+     */
+    public function abilities(Model $authority, Collection $roles = null)
+    {
+        return $this->getStore()->getAbilities($authority, $roles);
     }
 
     /**

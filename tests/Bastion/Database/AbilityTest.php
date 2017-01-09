@@ -1,6 +1,10 @@
 <?php
 
+use Ethereal\Bastion\Bastion;
 use Ethereal\Bastion\Database\Ability;
+use Ethereal\Bastion\Database\Role;
+use Ethereal\Bastion\Store;
+use Illuminate\Support\Collection;
 
 class AbilityTest extends BaseTestCase
 {
@@ -200,5 +204,52 @@ class AbilityTest extends BaseTestCase
 
         $ability = Ability::findAbility('create', TestUserModel::class, $model->getKey());
         static::assertArraySubset($created->toArray(), $ability->toArray());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_get_abilities_for_authority()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+
+        $randomUser = TestUserModel::create(['email' => 'john@example.com']);
+        $user = TestUserModel::create(['email' => 'jane@example.com']);
+
+        $bastion->allow($randomUser)->to('dance');
+        $bastion->allow($user)->to(['kick', 'punch']);
+
+        self::assertEquals(2, Ability::getAbilities($user)->count());
+        self::assertEquals(['kick', 'punch'], Ability::getAbilities($user)->pluck('name')->all());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_get_abilities_for_authority_and_his_roles()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+
+        $role = Role::create(['name' => 'admin']);
+        $bastion->allow($role)->to('sit');
+
+        $randomUser = TestUserModel::create(['email' => 'john@example.com']);
+        $bastion->assign('admin')->to($randomUser);
+        $bastion->allow($randomUser)->to('dance');
+
+        $user = TestUserModel::create(['email' => 'jane@example.com']);
+        $bastion->assign('admin')->to($user);
+        $bastion->allow($user)->to(['kick', 'punch']);
+
+        $roles = new Collection([$role]);
+
+        self::assertEquals(3, Ability::getAbilities($user, $roles)->count());
+        self::assertEquals(['kick', 'punch', 'sit'], Ability::getAbilities($user, $roles)->pluck('name')->all());
     }
 }
