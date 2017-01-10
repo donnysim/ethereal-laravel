@@ -117,8 +117,6 @@ class Store
     public function hasAbility(Model $authority, $ability, $model = null, $group = null, $parent = null)
     {
         $map = $this->getMap($authority);
-        $allowed = $map->getAllowedAbilities();
-        $forbidden = $map->getForbiddenAbilities();
 
         /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
         $abilityClass = Helper::getAbilityModelClass();
