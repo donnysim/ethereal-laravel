@@ -125,4 +125,16 @@ class Map
     {
         return $this->getForbiddenAbilities()->has($identifier);
     }
+
+    /**
+     * Determine if the ability is allowed.
+     *
+     * @param string $identifier
+     *
+     * @return bool
+     */
+    public function isAllowed($identifier)
+    {
+        return $this->getAllowedAbilities()->has($identifier);
+    }
 }
