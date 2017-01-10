@@ -11,37 +11,13 @@ use Orchestra\Testbench\TestCase;
 class BaseTestCase extends TestCase
 {
     /**
-     * Setup testing environment.
-     *
-     * @param \Illuminate\Foundation\Application $app
-     */
-    protected function getEnvironmentSetUp($app)
-    {
-//        $app['config']->set('bastion', [
-//            'tables' => [
-//                'abilities' => 'abilities',
-//                'assigned_roles' => 'assigned_roles',
-//                'permissions' => 'permissions',
-//                'roles' => 'roles',
-//            ],
-//
-//            'models' => [
-//                'ability' => \Ethereal\Bastion\Database\Ability::class,
-//                'assigned_role' => \Ethereal\Bastion\Database\AssignedRole::class,
-//                'permission' => \Ethereal\Bastion\Database\Permission::class,
-//                'role' => \Ethereal\Bastion\Database\Role::class,
-//            ],
-//        ]);
-    }
-
-    /**
      * Clean up the testing environment before the next test.
      *
      * @return void
      */
     public function tearDown()
     {
-        $this->app['files']->deleteDirectory(__DIR__ . '/cache');
+        $this->app['files']->deleteDirectory(__DIR__ . '/storage');
 
         parent::tearDown();
     }
