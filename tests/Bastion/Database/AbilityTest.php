@@ -343,4 +343,36 @@ class AbilityTest extends BaseTestCase
             return $item->name === '*';
         })->identifier);
     }
+
+    /**
+     * @test
+     */
+    public function it_can_generate_ability_identifiers()
+    {
+        self::assertEquals(['kick', '*-*-*', '*'], Ability::compileAbilityIdentifiers('kick'));
+        self::assertEquals(
+            ['kick-testusermodel-*', 'kick-*-*', '*-testusermodel-*', '*-*-*', 'kick-testusermodel-1', '*-testusermodel-1'],
+            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]))
+        );
+        self::assertEquals(
+            ['kick-testusermodel-*-guest', 'kick-*-*-guest', '*-testusermodel-*-guest', '*-*-*-guest', 'kick-testusermodel-1-guest', '*-testusermodel-1-guest'],
+            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]), 'guest')
+        );
+        self::assertEquals(
+            [
+                'kick-testusermodel-*-guest-testusermodel-2',
+                'kick-*-*-guest-testusermodel-2',
+                '*-testusermodel-*-guest-testusermodel-2',
+                '*-*-*-guest-testusermodel-2',
+                'kick-testusermodel-1-guest-testusermodel-2',
+                '*-testusermodel-1-guest-testusermodel-2',
+            ],
+            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]), 'guest', new TestUserModel(['id' => 2]))
+        );
+    }
+
+    protected function assertContainsValues($expected, $array)
+    {
+        self::assertEquals(count($expected), count(array_intersect($expected, $array)));
+    }
 }

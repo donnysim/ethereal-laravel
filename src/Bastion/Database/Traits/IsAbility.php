@@ -26,7 +26,7 @@ trait IsAbility
             $slug .= "-{$this->attributes['entity_id']}";
         }
 
-        // These attributes are joined when retrieved through bastion
+        // These attributes are joined when retrieved through bastion.
         if (isset($this->attributes['group'])) {
             $slug .= "-{$this->attributes['group']}";
         }
@@ -99,6 +99,77 @@ trait IsAbility
                 ->whereIn("{$permissionTable}.target_id", $roles->pluck($role->getKeyName()))
                 ->where("{$permissionTable}.target_type", $role->getMorphClass());
         }, null, null, $boolean);
+    }
+
+    /**
+     * Compile possible ability identifiers.
+     *
+     * The minimum compiled format is the following:
+     * {ability|*}-{morph|*}-{id|*}
+     *
+     * After the minimum compiled format a group and/or parent is added.
+     * If group is specified -{group} is added;
+     * If parent is specified -{parentMorph}-{parentId} is added.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|null $model
+     * @param string|null $group
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     *
+     * @return array
+     */
+    public static function compileAbilityIdentifiers($ability, $model = null, $group = null, Model $parent = null)
+    {
+        $ability = strtolower($ability);
+
+        $identifiers = [$ability, '*-*-*', '*'];
+        if ($model) {
+            $identifiers = static::compileModelAbilityIdentifiers($ability, $model);
+        }
+
+        foreach ($identifiers as &$identifier) {
+            if ($group) {
+                $identifier .= strtolower("-{$group}");
+            }
+
+            if ($parent) {
+                $identifier .= strtolower("-{$parent->getMorphClass()}-{$parent->getKey()}");
+            }
+        }
+
+        return $identifiers;
+    }
+
+    /**
+     * Compile possible ability identifiers for model.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return array
+     */
+    public static function compileModelAbilityIdentifiers($ability, $model)
+    {
+        if ($model === '*') {
+            return ["{$ability}-*", '*-*'];
+        }
+
+        $model = $model instanceof Model ? $model : new $model;
+        $morph = strtolower($model->getMorphClass());
+
+        $abilities = [
+            "{$ability}-{$morph}-*",
+            "{$ability}-*-*",
+            "*-{$morph}-*",
+            '*-*-*',
+        ];
+
+        if ($model->getKey()) {
+            $abilities[] = "{$ability}-{$morph}-{$model->getKey()}";
+            $abilities[] = "*-{$morph}-{$model->getKey()}";
+        }
+
+        return $abilities;
     }
 
     /**
