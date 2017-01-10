@@ -252,4 +252,95 @@ class AbilityTest extends BaseTestCase
         self::assertEquals(3, Ability::getAbilities($user, $roles)->count());
         self::assertEquals(['kick', 'punch', 'sit'], Ability::getAbilities($user, $roles)->pluck('name')->all());
     }
+
+    /**
+     * @test
+     */
+    public function it_has_identifier()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+
+        $role = Role::create(['name' => 'admin']);
+        $bastion->allow($role)->to('sit');
+
+        self::assertEquals('sit', Ability::findAbility('sit')->identifier);
+
+        $bastion->allow($role)->to('stand', TestUserModel::class);
+        self::assertEquals('stand-testusermodel', Ability::findAbility('stand', TestUserModel::class)->identifier);
+
+        $bastion->allow($role)->to('crouch', TestUserModel::class, 1);
+        self::assertEquals('crouch-testusermodel-1', Ability::findAbility('crouch', TestUserModel::class, 1)->identifier);
+
+        $bastion->allow($role)->everything();
+        self::assertEquals('*-*', Ability::findAbility('*', '*')->identifier);
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_identifier_with_group_when_retrieved_from_store()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+
+        $role = Role::create(['name' => 'admin']);
+        $bastion->allow($role)->group('employee')->to('sit');
+
+        self::assertEquals('sit-employee', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'sit';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->to('stand', TestUserModel::class);
+        self::assertEquals('stand-testusermodel-employee', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'stand';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->to('crouch', TestUserModel::class, 1);
+        self::assertEquals('crouch-testusermodel-1-employee', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'crouch';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->everything();
+        self::assertEquals('*-*-employee', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === '*';
+        })->identifier);
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_identifier_with_parent_when_retrieved_from_store()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+
+        $role = Role::create(['name' => 'admin']);
+        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('sit');
+
+        self::assertEquals('sit-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'sit';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('stand', TestUserModel::class);
+        self::assertEquals('stand-testusermodel-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'stand';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('crouch', TestUserModel::class, 1);
+        self::assertEquals('crouch-testusermodel-1-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === 'crouch';
+        })->identifier);
+
+        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->everything();
+        self::assertEquals('*-*-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+            return $item->name === '*';
+        })->identifier);
+    }
 }

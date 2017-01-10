@@ -29,6 +29,22 @@ class Store
     protected $useCache = true;
 
     /**
+     * Get authority permissions map.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Map
+     * @throws \InvalidArgumentException
+     */
+    public function getMap(Model $authority)
+    {
+        $roles = $this->getRoles($authority);
+        $abilities = $this->getAbilities($authority, $roles);
+
+        return new Map($roles, $abilities);
+    }
+
+    /**
      * Get authority roles.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority

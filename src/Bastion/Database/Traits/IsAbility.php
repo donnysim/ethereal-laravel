@@ -10,6 +10,35 @@ use InvalidArgumentException;
 trait IsAbility
 {
     /**
+     * Get ability identifier.
+     *
+     * @return string
+     */
+    public function getIdentifierAttribute()
+    {
+        $slug = $this->attributes['name'];
+
+        if ($this->attributes['entity_type']) {
+            $slug .= "-{$this->attributes['entity_type']}";
+        }
+
+        if ($this->attributes['entity_id']) {
+            $slug .= "-{$this->attributes['entity_id']}";
+        }
+
+        // These attributes are joined when retrieved through bastion
+        if (isset($this->attributes['group'])) {
+            $slug .= "-{$this->attributes['group']}";
+        }
+
+        if (isset($this->attributes['parent_id'])) {
+            $slug .= "-{$this->attributes['parent_type']}-{$this->attributes['parent_id']}";
+        }
+
+        return strtolower($slug);
+    }
+
+    /**
      * Join permissions table.
      *
      * @param \Illuminate\Database\Query\Builder $query
@@ -96,7 +125,7 @@ trait IsAbility
             ->joinPermissions()
             ->forAuthority($authority)
             ->ofRoles($roles, 'or')
-            ->get(['abilities.*', "{$permissionTable}.forbidden"]);
+            ->get(['abilities.*', "{$permissionTable}.forbidden", "{$permissionTable}.group", "{$permissionTable}.parent_id", "{$permissionTable}.parent_type"]);
     }
 
     /**
@@ -199,6 +228,7 @@ trait IsAbility
             $modelId = $model->getKey();
             return [$modelType, $modelId];
         }
+
         return [$modelType, $modelId];
     }
 }

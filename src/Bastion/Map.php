@@ -2,6 +2,8 @@
 
 namespace Ethereal\Bastion;
 
+use Illuminate\Support\Collection;
+
 class Map
 {
     /**
@@ -45,4 +47,70 @@ class Map
      * @var int
      */
     protected $lowestRoleLevel = 0;
+
+    /**
+     * Map constructor.
+     *
+     * @param \Illuminate\Support\Collection $roles
+     * @param \Illuminate\Support\Collection $abilities
+     */
+    public function __construct(Collection $roles, Collection $abilities)
+    {
+        $this->roles = $roles;
+        $this->abilities = $abilities;
+    }
+
+    /**
+     * Get authority roles.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     */
+    public function getRoles()
+    {
+        return $this->roles;
+    }
+
+    /**
+     * Get authority abilities.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     */
+    public function getAbilities()
+    {
+        return $this->abilities;
+    }
+
+    /**
+     * Get role names.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getRoleNames()
+    {
+        return $this->roles->pluck('name');
+    }
+
+    /**
+     * Get all allowed abilities.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAllowedAbilities()
+    {
+        return $this->abilities->filter(function ($item) {
+            return !(bool)$item->forbidden;
+        })->keyBy('identifier');
+    }
+
+    /**
+     * Get all allowed abilities.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getForbiddenAbilities()
+    {
+        return $this->abilities->filter(function ($item) {
+            return (bool)$item->forbidden;
+        })->keyBy('identifier');
+    }
 }
