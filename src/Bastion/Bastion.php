@@ -253,6 +253,19 @@ class Bastion
     }
 
     /**
+     * Get authority permissions map.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Map
+     * @throws \InvalidArgumentException
+     */
+    public function permissions(Model $authority)
+    {
+        return $this->getStore()->getMap($authority);
+    }
+
+    /**
      * Passthrough methods directly to rucks.
      *
      * @param string $name
