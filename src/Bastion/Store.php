@@ -78,4 +78,27 @@ class Store
 
         return $class::getAbilities($authority, $roles);
     }
+
+    /**
+     * Check if authority has role.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param array|string $roles
+     * @param string $boolean
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function hasRole(Model $authority, $roles, $boolean = 'or')
+    {
+        $available = $this->getMap($authority)->getRoleNames()->intersect($roles);
+
+        if ($boolean === 'or') {
+            return $available->count() > 0;
+        } elseif ($boolean === 'not') {
+            return $available->isEmpty();
+        }
+
+        return $available->count() === count((array)$roles);
+    }
 }

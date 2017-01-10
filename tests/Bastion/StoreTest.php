@@ -29,4 +29,23 @@ class StoreTest extends BaseTestCase
         self::assertEquals(1, $map->getRoles()->count());
         self::assertEquals(2, $map->getAbilities()->count());
     }
+
+    /**
+     * @test
+     */
+    public function it_can_check_role()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+
+        $bastion->assign('admin')->to($user);
+
+        self::assertTrue($store->hasRole($user, 'admin'));
+        self::assertTrue($store->hasRole($user, ['user'], 'not'));
+        self::assertFalse($store->hasRole($user, ['user', 'admin'], 'not'));
+        self::assertFalse($store->hasRole($user, ['user', 'admin'], 'and'));
+    }
 }
