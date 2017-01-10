@@ -179,14 +179,13 @@ class Bastion
      * Get authority abilities.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param \Illuminate\Support\Collection|null $roles
      *
      * @return \Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
-    public function abilities(Model $authority, Collection $roles = null)
+    public function abilities(Model $authority)
     {
-        return $this->getStore()->getAbilities($authority, $roles);
+        return $this->getStore()->getAbilities($authority);
     }
 
     /**

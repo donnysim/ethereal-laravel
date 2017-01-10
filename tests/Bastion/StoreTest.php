@@ -1,8 +1,11 @@
 <?php
 
 use Ethereal\Bastion\Bastion;
+use Ethereal\Bastion\Database\Ability;
+use Ethereal\Bastion\Database\Permission;
 use Ethereal\Bastion\Map;
 use Ethereal\Bastion\Store;
+use Ethereal\Cache\TagFileStore;
 
 class StoreTest extends BaseTestCase
 {
@@ -119,5 +122,32 @@ class StoreTest extends BaseTestCase
 
         self::assertFalse($store->hasAbility($user, 'kick', $user, 'employee'));
         self::assertTrue($store->hasAbility($user, 'kick', $user, 'employee', $user));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_cache_permissions()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $store->setCache(new TagFileStore($this->app['files'], __DIR__ . '/../storage'));
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+        $bastion->assign('admin')->to($user);
+        $bastion->allow($user)->to('kick');
+
+        self::assertEquals(1, $store->getRoles($user)->count());
+        self::assertEquals(1, $store->getAbilities($user)->count());
+
+        $punch = Ability::collectAbilities(['punch'])->first();
+        Permission::createPermissionRecord($punch->getKey(), $user);
+
+        self::assertEquals(1, $store->getAbilities($user)->count());
+
+        $store->clearCache();
+
+        self::assertEquals(2, $store->getAbilities($user)->count());
     }
 }
