@@ -48,4 +48,76 @@ class StoreTest extends BaseTestCase
         self::assertFalse($store->hasRole($user, ['user', 'admin'], 'not'));
         self::assertFalse($store->hasRole($user, ['user', 'admin'], 'and'));
     }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_ability_is_allowed()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+
+        $bastion->assign('admin')->to($user);
+        $bastion->allow('admin')->to(['kick', 'punch']);
+        $bastion->forbid('admin')->to('punch');
+
+        self::assertTrue($store->hasAbility($user, 'kick'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_ability_is_allowed_including_model()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+
+        $bastion->assign('admin')->to($user);
+        $bastion->allow('admin')->to('kick', $user);
+
+        self::assertFalse($store->hasAbility($user, 'kick'));
+        self::assertTrue($store->hasAbility($user, 'kick', $user));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_ability_is_allowed_including_group()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+
+        $bastion->assign('admin')->to($user);
+        $bastion->allow('admin')->group('employee')->to('kick', $user);
+
+        self::assertFalse($store->hasAbility($user, 'kick', $user));
+        self::assertTrue($store->hasAbility($user, 'kick', $user, 'employee'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_ability_is_allowed_including_parent()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $bastion = new Bastion($this->app, $store);
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+
+        $bastion->assign('admin')->to($user);
+        $bastion->allow('admin')->group('employee')->parent($user)->to('kick', $user);
+
+        self::assertFalse($store->hasAbility($user, 'kick', $user, 'employee'));
+        self::assertTrue($store->hasAbility($user, 'kick', $user, 'employee', $user));
+    }
 }

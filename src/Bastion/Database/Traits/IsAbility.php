@@ -20,14 +20,10 @@ trait IsAbility
 
         if ($this->attributes['entity_type']) {
             $slug .= "-{$this->attributes['entity_type']}";
-        } else {
-            $slug .= '-*';
         }
 
         if ($this->attributes['entity_id']) {
             $slug .= "-{$this->attributes['entity_id']}";
-        } else {
-            $slug .= '-*';
         }
 
         // These attributes are joined when retrieved through bastion.
@@ -126,7 +122,7 @@ trait IsAbility
     {
         $ability = strtolower($ability);
 
-        $identifiers = [$ability, '*-*-*', '*'];
+        $identifiers = [$ability, '*-*', '*'];
         if ($model) {
             $identifiers = static::compileModelAbilityIdentifiers($ability, $model);
         }
@@ -162,10 +158,10 @@ trait IsAbility
         $morph = strtolower($model->getMorphClass());
 
         $abilities = [
-            "{$ability}-{$morph}-*",
-            "{$ability}-*-*",
-            "*-{$morph}-*",
-            '*-*-*',
+            "{$ability}-{$morph}",
+            "{$ability}-*",
+            "*-{$morph}",
+            '*-*',
         ];
 
         if ($model->getKey()) {

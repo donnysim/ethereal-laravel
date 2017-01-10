@@ -82,8 +82,8 @@ class MapTest extends BaseTestCase
 
         $map = $store->getMap($user);
 
-        self::assertFalse($map->isForbidden('kick-*-*'));
-        self::assertTrue($map->isForbidden('punch-*-*'));
+        self::assertFalse($map->isForbidden('kick'));
+        self::assertTrue($map->isForbidden('punch'));
     }
 
     /**
@@ -103,7 +103,7 @@ class MapTest extends BaseTestCase
 
         $map = $store->getMap($user);
 
-        self::assertTrue($map->isAllowed('kick-*-*'));
-        self::assertFalse($map->isAllowed('punch-*-*'));
+        self::assertTrue($map->isAllowed('kick'));
+        self::assertFalse($map->isAllowed('punch'));
     }
 }

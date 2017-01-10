@@ -101,4 +101,39 @@ class Store
 
         return $available->count() === count((array)$roles);
     }
+
+    /**
+     * Check if authority has ability.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|null $model
+     * @param string|null $group
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function hasAbility(Model $authority, $ability, $model = null, $group = null, $parent = null)
+    {
+        $map = $this->getMap($authority);
+        $allowed = $map->getAllowedAbilities();
+        $forbidden = $map->getForbiddenAbilities();
+
+        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
+        $abilityClass = Helper::getAbilityModelClass();
+        $requested = $abilityClass::compileAbilityIdentifiers($ability, $model, $group, $parent);
+
+        $allows = false;
+
+        foreach ($requested as $identifier) {
+            if ($map->isForbidden($identifier)) {
+                return false;
+            } elseif (!$allows && $map->isAllowed($identifier)) {
+                $allows = true;
+            }
+        }
+
+        return $allows;
+    }
 }

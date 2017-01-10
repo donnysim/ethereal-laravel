@@ -68,48 +68,6 @@ class BastionTest extends BaseTestCase
         self::assertNull($rucks->getStore());
     }
 
-    public function general_usage_ideas()
-    {
-        // TODO remove
-
-        // 1. Prepare
-        $bastion = $this->getBastion();
-        $user = new TestUserModel;
-
-        // 2. Register policies
-        $bastion->policy('random', 'policy');
-        $bastion->rucks('employee')->policy('random', 'policy');
-
-        // 3. Assignment, on is permission group
-        $bastion->assign('admin')->to($user);
-        $bastion->retract('admin')->from('user model[s] or class', 'id or ids');
-
-        $bastion->allow($user)->target('employee class or model', 'id or ids')->parent('model or class', 'id')->group('employee|any')->to('dance');
-        $bastion->disallow($user)->target('employee class or model', 'id or ids')->parent('model or class', 'id')->group('employee|any')->to('dance');
-
-        $bastion->forbid($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
-        $bastion->permit($user)->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->to('dance');
-
-        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->allow('dance');
-        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->disallow('dance');
-
-        $user->assign('admin');
-        $user->retract('admin');
-
-        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->forbid('dance');
-        $user->for('employee class or model', 'id or ids')->of('model or class', 'id')->as('employee|any')->permit('dance');
-
-        // 4. Checking
-        $bastion->is($user)->a('dancer');
-        $bastion->is($user)->an('admin');
-        $bastion->is($user)->notA('dancer');
-        $bastion->is($user)->notAn('admin');
-
-        // group-ability-type-id
-        // group-ability-type-id-parentType-parentId
-
-    }
-
     /**
      * @return \Ethereal\Bastion\Bastion
      */

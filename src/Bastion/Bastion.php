@@ -4,6 +4,7 @@ namespace Ethereal\Bastion;
 
 use BadMethodCallException;
 use Ethereal\Bastion\Conductors\AssignsRoles;
+use Ethereal\Bastion\Conductors\CheckProxy;
 use Ethereal\Bastion\Conductors\ChecksRoles;
 use Ethereal\Bastion\Conductors\GivesAbilities;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
@@ -147,6 +148,18 @@ class Bastion
     public function is(Model $authority)
     {
         return new ChecksRoles($this->getStore(), $authority);
+    }
+
+    /**
+     * Start a chain to check authority role or ability.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Conductors\CheckProxy
+     */
+    public function check(Model $authority)
+    {
+        return new CheckProxy($this->getStore(), $authority);
     }
 
     /**
