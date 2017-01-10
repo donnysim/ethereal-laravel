@@ -20,10 +20,14 @@ trait IsAbility
 
         if ($this->attributes['entity_type']) {
             $slug .= "-{$this->attributes['entity_type']}";
+        } else {
+            $slug .= '-*';
         }
 
         if ($this->attributes['entity_id']) {
             $slug .= "-{$this->attributes['entity_id']}";
+        } else {
+            $slug .= '-*';
         }
 
         // These attributes are joined when retrieved through bastion.

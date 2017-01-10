@@ -113,4 +113,16 @@ class Map
             return (bool)$item->forbidden;
         })->keyBy('identifier');
     }
+
+    /**
+     * Determine if the ability is forbidden.
+     *
+     * @param string $identifier
+     *
+     * @return bool
+     */
+    public function isForbidden($identifier)
+    {
+        return $this->getForbiddenAbilities()->has($identifier);
+    }
 }
