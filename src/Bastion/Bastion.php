@@ -219,6 +219,24 @@ class Bastion
     }
 
     /**
+     * Clear cached data for authority.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     */
+    public function refreshFor(Model $authority)
+    {
+        $this->getStore()->clearCacheFor($authority);
+    }
+
+    /**
+     * Clear cached data.
+     */
+    public function clearCache()
+    {
+        $this->getStore()->clearCache();
+    }
+
+    /**
      * Passthrough methods directly to rucks.
      *
      * @param string $name

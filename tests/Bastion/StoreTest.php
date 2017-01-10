@@ -150,4 +150,37 @@ class StoreTest extends BaseTestCase
 
         self::assertEquals(2, $store->getAbilities($user)->count());
     }
+
+    /**
+     * @test
+     */
+    public function it_can_refresh_permissions_for()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $store->setCache(new TagFileStore($this->app['files'], __DIR__ . '/../storage'));
+        $bastion = new Bastion($this->app, $store);
+
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+        $bastion->allow($user)->to('kick');
+
+        $user2 = TestUserModel::create(['email' => 'jane@example.com']);
+        $bastion->allow($user2)->to('kick');
+
+        self::assertEquals(1, $store->getAbilities($user)->count());
+        self::assertEquals(1, $store->getAbilities($user2)->count());
+
+        $punch = Ability::collectAbilities(['punch'])->first();
+        Permission::createPermissionRecord($punch->getKey(), $user);
+        Permission::createPermissionRecord($punch->getKey(), $user2);
+
+        self::assertEquals(1, $store->getAbilities($user)->count());
+        self::assertEquals(1, $store->getAbilities($user2)->count());
+
+        $store->clearCacheFor($user2);
+
+        self::assertEquals(1, $store->getAbilities($user)->count());
+        self::assertEquals(2, $store->getAbilities($user2)->count());
+    }
 }
