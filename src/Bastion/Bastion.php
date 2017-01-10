@@ -219,11 +219,27 @@ class Bastion
     }
 
     /**
+     * Enable cache.
+     */
+    public function enableCache()
+    {
+        $this->getStore()->enableCache();
+    }
+
+    /**
+     * Disable cache.
+     */
+    public function disableCache()
+    {
+        $this->getStore()->disableCache();
+    }
+
+    /**
      * Clear cached data for authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      */
-    public function refreshFor(Model $authority)
+    public function clearCacheFor(Model $authority)
     {
         $this->getStore()->clearCacheFor($authority);
     }
