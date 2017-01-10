@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion;
 
+use Ethereal\Cache\TagFileStore;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
@@ -24,5 +25,15 @@ class BastionServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/../../config/bastion.php';
         $this->mergeConfigFrom($configPath, 'bastion');
+
+        $this->app->singleton(Store::class, function ($app) {
+            $store = new Store();
+            $store->setCache(new TagFileStore($app['files'], storage_path('cache/bastion')));
+            return $store;
+        });
+
+        $this->app->singleton(Bastion::class, function ($app) {
+            return new Bastion($app, $app->make(Store::class));
+        });
     }
 }
