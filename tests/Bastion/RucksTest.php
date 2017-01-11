@@ -58,8 +58,67 @@ class RucksTest extends BaseTestCase
         self::assertEquals(['model' => 'policy'], $rucks->policies());
     }
 
+    /**
+     * @test
+     */
+    public function it_can_check_if_policy_is_defined()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy('model', 'policy');
+
+        self::assertTrue($rucks->hasPolicy('model'));
+        self::assertFalse($rucks->hasPolicy('policy'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_register_abilities()
+    {
+        $rucks = $this->getRucks();
+        $rucks->define('kick', function () {
+
+        });
+
+        self::assertTrue($rucks->hasAbility('kick'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_get_policy_for_class()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy(TestUserModel::class, TestPolicy::class);
+
+        self::assertInstanceOf(TestPolicy::class, $rucks->getPolicyFor(TestUserModel::class));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_determine_if_policy_is_available()
+    {
+        $rucks = $this->getRucks();
+
+        self::assertFalse($rucks->hasPolicyCheck('kick', new TestUserModel));
+
+        $rucks->policy(TestUserModel::class, TestPolicy::class);
+
+        self::assertFalse($rucks->hasPolicyCheck('dance', new TestUserModel));
+        self::assertTrue($rucks->hasPolicyCheck('kick', new TestUserModel));
+    }
+
     protected function getRucks()
     {
         return new Rucks($this->app, new Store);
+    }
+}
+
+class TestPolicy
+{
+    public function kick()
+    {
+
     }
 }

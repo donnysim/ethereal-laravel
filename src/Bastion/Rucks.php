@@ -3,11 +3,11 @@
 namespace Ethereal\Bastion;
 
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class Rucks
 {
-    use Traits\ManagesPermissions;
-
     /**
      * The container instance.
      *
@@ -70,6 +70,40 @@ class Rucks
     }
 
     /**
+     * Define a new ability.
+     *
+     * @param string $ability
+     * @param callable $callback
+     *
+     * @return $this
+     * @throws \InvalidArgumentException
+     */
+    public function define($ability, $callback)
+    {
+        if (is_string($callback) && Str::contains($callback, '@')) {
+            $callback = $this->buildAbilityCallback($callback);
+        } elseif (!is_callable($callback)) {
+            throw new InvalidArgumentException("Callback must be a callable or a 'Class@method' string.");
+        }
+
+        $this->abilities[$ability] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Determine if the ability is defined.
+     *
+     * @param string $ability
+     *
+     * @return bool
+     */
+    public function hasAbility($ability)
+    {
+        return isset($this->abilities[$ability]);
+    }
+
+    /**
      * Register a policy for model.
      *
      * @param string $model
@@ -88,6 +122,46 @@ class Rucks
     public function policies()
     {
         return $this->policies;
+    }
+
+    /**
+     * Determine if the policy is defined.
+     *
+     * @param string $policy
+     *
+     * @return bool
+     */
+    public function hasPolicy($policy)
+    {
+        return isset($this->policies[$policy]);
+    }
+
+    /**
+     * Register a callback to run before all checks.
+     *
+     * @param callable $callback
+     *
+     * @return $this
+     */
+    public function before(callable $callback)
+    {
+        $this->beforeCallbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Register a callback to run after all checks.
+     *
+     * @param callable $callback
+     *
+     * @return $this
+     */
+    public function after(callable $callback)
+    {
+        $this->afterCallbacks[] = $callback;
+
+        return $this;
     }
 
     /**
@@ -145,5 +219,98 @@ class Rucks
         });
 
         return $rucks;
+    }
+
+    /**
+     * Get a policy instance for a given class.
+     *
+     * @param object|string $class
+     * @param bool $throw
+     *
+     * @return mixed
+     * @throws \InvalidArgumentException
+     */
+    public function getPolicyFor($class, $throw = true)
+    {
+        if (is_object($class)) {
+            $class = get_class($class);
+        }
+
+        if (!isset($this->policies[$class])) {
+            if ($throw) {
+                throw new InvalidArgumentException("Policy not defined for [{$class}].");
+            }
+
+            return null;
+        }
+
+        return $this->resolvePolicy($this->policies[$class]);
+    }
+
+    /**
+     * Check if policy has a handler defined for checking ability.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string $model
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function hasPolicyCheck($ability, $model)
+    {
+        $args = $this->resolveArgs($ability, $model, null);
+        $instance = $this->getPolicyFor($args->modelClass(), false);
+
+        if ($instance === null) {
+            return false;
+        }
+
+        if (method_exists($instance, $args->method())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Build a policy class instance of the given type.
+     *
+     * @param object|string $class
+     *
+     * @return mixed
+     */
+    public function resolvePolicy($class)
+    {
+        return $this->container->make($class);
+    }
+
+    /**
+     * Create the ability callback for a callback string.
+     *
+     * @param string $callback
+     *
+     * @return \Closure
+     */
+    protected function buildAbilityCallback($callback)
+    {
+        return function () use ($callback) {
+            list($class, $method) = explode('@', $callback);
+
+            return call_user_func_array([$this->resolvePolicy($class), $method], func_get_args());
+        };
+    }
+
+    /**
+     * Resolve request params.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
+     * @param array $payload
+     *
+     * @return \Ethereal\Bastion\Args
+     */
+    protected function resolveArgs($ability, $model, $payload = [])
+    {
+        return new Args($ability, $model, $payload);
     }
 }
