@@ -109,6 +109,69 @@ class RucksTest extends BaseTestCase
         self::assertTrue($rucks->hasPolicyCheck('kick', new TestUserModel));
     }
 
+    /**
+     * @test
+     */
+    public function check_fails_if_no_policy_is_available()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return new TestUserModel;
+        });
+
+        self::assertFalse($rucks->check('kick', TestUserModel::class));
+    }
+
+    /**
+     * @test
+     */
+    public function check_succeeds_if_before_callback_returns_true()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return new TestUserModel;
+        });
+        $rucks->before(function () {
+            return true;
+        });
+
+        self::assertTrue($rucks->check('kick', TestUserModel::class));
+    }
+
+    /**
+     * @test
+     */
+    public function check_fails_if_before_callback_returns_false()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return new TestUserModel;
+        });
+        $rucks->before(function () {
+            return false;
+        });
+
+        self::assertFalse($rucks->check('kick', TestUserModel::class));
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_policy_if_before_returns_null()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy(TestUserModel::class, TestPolicy::class);
+        $rucks->setUserResolver(function () {
+            return new TestUserModel;
+        });
+        $rucks->before(function () {
+            return null;
+        });
+
+        self::assertTrue($rucks->check('allow', TestUserModel::class));
+        self::assertFalse($rucks->check('deny', TestUserModel::class));
+    }
+
     protected function getRucks()
     {
         return new Rucks($this->app, new Store);
@@ -120,5 +183,15 @@ class TestPolicy
     public function kick()
     {
 
+    }
+
+    public function allow()
+    {
+        return true;
+    }
+
+    public function deny()
+    {
+        return false;
     }
 }

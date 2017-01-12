@@ -285,6 +285,36 @@ class Rucks
     }
 
     /**
+     * Determine if the given ability should be granted for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function check($ability, $model = null, $payload = [])
+    {
+        $user = $this->resolveUser();
+
+        if (!$user) {
+            return false;
+        }
+
+        $args = $this->resolveArgs($ability, $model, $payload);
+
+        $result = $this->callCallbacks($this->beforeCallbacks, $user, $args);
+        if ($result === null) {
+            $result = $this->callAuthCallback($user, $args);
+        }
+
+        $this->callCallbacks($this->afterCallbacks, $user, $args, [$result]);
+
+        return (bool)$result;
+    }
+
+    /**
      * Create the ability callback for a callback string.
      *
      * @param string $callback
@@ -312,5 +342,110 @@ class Rucks
     protected function resolveArgs($ability, $model, $payload = [])
     {
         return new Args($ability, $model, $payload);
+    }
+
+    /**
+     * Determine if arguments correspond to a policy.
+     *
+     * @param \Ethereal\Bastion\Args $args
+     *
+     * @return bool
+     */
+    protected function correspondsToPolicy(Args $args)
+    {
+        if ($args->modelClass() === null) {
+            return false;
+        }
+
+        return $this->hasPolicy($args->modelClass());
+    }
+
+    /**
+     * Call all of the before callbacks and return if result is given.
+     *
+     * @param array $callbacks
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\Args $args
+     * @param array $payload
+     *
+     * @return bool|null
+     */
+    protected function callCallbacks(array $callbacks, $user, Args $args, $payload = [])
+    {
+        $grant = null;
+
+        foreach ($callbacks as $callback) {
+            $result = $callback(...array_merge([$user, $args], $payload));
+
+            if ($result === false) {
+                return $result;
+            } elseif ($result !== null) {
+                $grant = $result;
+            }
+        }
+
+        return $grant;
+    }
+
+    /**
+     * Call auth user callback.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\Args $args
+     *
+     * @return mixed
+     * @throws \InvalidArgumentException
+     */
+    protected function callAuthCallback($user, Args $args)
+    {
+        $callback = null;
+
+        if ($this->correspondsToPolicy($args)) {
+            $callback = $this->resolvePolicyCallback($user, $args);
+        } elseif ($this->hasAbility($args->ability())) {
+            $callback = $this->abilities[$args->ability()];
+        } else {
+            $callback = function () {
+                return false;
+            };
+        }
+
+        return $callback(...array_merge([$user], $args->arguments()));
+    }
+
+    /**
+     * Resolve the callback for a policy check.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $user
+     * @param \Ethereal\Bastion\Args $args
+     *
+     * @return \Closure
+     * @throws \InvalidArgumentException
+     */
+    protected function resolvePolicyCallback($user, Args $args)
+    {
+        return function () use ($user, $args) {
+            $instance = $this->getPolicyFor($args->modelClass());
+
+            if (method_exists($instance, 'before')) {
+                $result = call_user_func_array([$instance, 'before'], [$user, $args]);
+
+                if ($result !== null) {
+                    return $result;
+                }
+            }
+
+            if (!is_callable([$instance, $args->method()])) {
+                return false;
+            }
+
+            $result = $instance->{$args->method()}(...array_merge([$user], $args->arguments()));
+
+            if (method_exists($instance, 'after')) {
+                call_user_func_array([$instance, 'after'], [$user, $args, $result]);
+            }
+
+            return $result;
+        };
     }
 }
