@@ -23,6 +23,19 @@ trait ExtendsRelations
     protected $relationships = [];
 
     /**
+     * Save and link all the models and their relations.
+     *
+     * @param array $options
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function smartPush(array $options = [])
+    {
+        return (new Manager($this, $options))->save();
+    }
+
+    /**
      * Set the specific relationship in the model.
      *
      * @param string $name

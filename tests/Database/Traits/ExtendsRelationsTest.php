@@ -5,6 +5,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ExtendsRelationsTest extends BaseTestCase
 {
+    use UsesDatabase;
+
     /**
      * @test
      * @expectedException \Ethereal\Database\Relations\Exceptions\InvalidTypeException
@@ -82,6 +84,21 @@ class ExtendsRelationsTest extends BaseTestCase
             self::assertEquals($profilesValues[$index], $profile->toArray());
             self::assertEquals($index === 0, $profile->exists);
         }
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_save_and_link_all_relations()
+    {
+        $this->migrate();
+
+        $model = new TestUserModel(['email' => 'john@example.com']);
+        $model->setRelation('profile', ['name' => 'John']);
+        $model->smartPush();
+
+        self::assertTrue($model->exists);
+        self::assertArraySubset(['id' => 1, 'name' => 'John'], $model->profile()->first()->toArray());
     }
 }
 
