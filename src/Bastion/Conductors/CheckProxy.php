@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
 
 class CheckProxy
@@ -117,5 +118,33 @@ class CheckProxy
             ->can($ability, $model);
     }
 
+    /**
+     * Determine if the ability is allowed for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function allowed($ability, $model = null, $payload = [])
+    {
+        return Helper::bastion()->allows($ability, $model, $payload);
+    }
 
+    /**
+     * Determine if the ability is denied for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function denied($ability, $model = null, $payload = [])
+    {
+        return !Helper::bastion()->allows($ability, $model, $payload);
+    }
 }
