@@ -285,6 +285,36 @@ class Rucks
     }
 
     /**
+     * Determine if the ability is allowed for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function allows($ability, $model = null, $payload = [])
+    {
+        return $this->check($ability, $model, $payload);
+    }
+
+    /**
+     * Determine if the ability is denied for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function denies($ability, $model = null, $payload = [])
+    {
+        return !$this->check($ability, $model, $payload);
+    }
+
+    /**
      * Determine if the given ability should be granted for the current user.
      *
      * @param string $ability

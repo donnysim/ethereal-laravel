@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @method policy($model, $policy)
  * @method array policies()
+ * @method bool allows($ability, $model = null, $payload = [])
+ * @method bool denies($ability, $model = null, $payload = [])
  */
 class Bastion
 {
@@ -44,7 +46,7 @@ class Bastion
      *
      * @var array
      */
-    protected $passthrough = ['policy', 'policies'];
+    protected $passthrough = ['policy', 'policies', 'allows', 'denies'];
 
     /**
      * Primary store used to get roles and abilities.

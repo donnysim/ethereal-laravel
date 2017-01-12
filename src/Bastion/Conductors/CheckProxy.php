@@ -116,4 +116,6 @@ class CheckProxy
             ->parent($this->scopeParent)
             ->can($ability, $model);
     }
+
+
 }
