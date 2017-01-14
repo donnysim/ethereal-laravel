@@ -146,6 +146,8 @@ abstract class Handler implements RelationHandler
     }
 
     /**
+     * Validate data types to match expectations of relation.
+     *
      * @param $data
      *
      * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
@@ -155,6 +157,10 @@ abstract class Handler implements RelationHandler
         $list = $data instanceof Collection ? $data : [$data];
 
         foreach ($list as $item) {
+            if (!$item) {
+                continue;
+            }
+
             $class = get_class($item);
 
             if ($this->getModelClass() !== $class) {
