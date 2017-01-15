@@ -12,7 +12,7 @@ class Ethereal extends BaseModel
         Traits\ExtendsRelations;
 
     /**
-     * Database columns. This is used to filter out any
+     * Database columns. This is used to filter out invalid columns.
      *
      * @var string[]
      */
