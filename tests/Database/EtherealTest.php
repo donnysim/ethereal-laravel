@@ -5,6 +5,8 @@ use Illuminate\Database\Eloquent\Collection;
 
 class EtherealTest extends BaseTestCase
 {
+    use UsesDatabase;
+
     /**
      * @test
      */
@@ -192,6 +194,23 @@ class EtherealTest extends BaseTestCase
             'title' => 'new',
             'id' => 2,
         ], $model->getDirty());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refreshes_its_data_from_database()
+    {
+        $this->migrate();
+
+        $oldUser = TestUserModel::create(['email' => 'john@example.com']);
+        $freshUser = $oldUser->fresh();
+
+        $oldUser->update(['email' => 'jane@example.com']);
+        self::assertEquals('john@example.com', $freshUser->email);
+
+        $freshUser->refresh();
+        self::assertEquals('jane@example.com', $freshUser->email);
     }
 }
 

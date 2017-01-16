@@ -154,7 +154,8 @@ class Ethereal extends BaseModel
             if (!array_key_exists($key, $this->original)) {
                 $dirty[$key] = $value;
             } elseif ($value !== $this->original[$key] &&
-                !$this->originalIsNumericallyEquivalent($key)) {
+                !$this->originalIsNumericallyEquivalent($key)
+            ) {
                 $dirty[$key] = $value;
             }
         }
@@ -180,5 +181,24 @@ class Ethereal extends BaseModel
     public function setColumns(array $columns)
     {
         $this->columns = $columns;
+    }
+
+    /**
+     * Refresh model data from database.
+     *
+     * @return $this
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function refresh()
+    {
+        if (!$this->exists) {
+            return $this;
+        }
+
+        /** @var Ethereal $freshModel */
+        $freshModel = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey())->firstOrFail();
+        $this->setRawAttributes($freshModel->getAttributes(), true);
+
+        return $this;
     }
 }
