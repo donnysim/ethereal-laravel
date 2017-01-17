@@ -115,13 +115,13 @@ abstract class Handler implements RelationHandler
         }
 
         if (!is_array($data)) {
-            throw new InvalidTypeException("`{$this->relationName}` relation hydration only accepts array as value.");
+            throw new InvalidTypeException("`{$this->relationName}` relation hydration only accepts array or collection as value.");
         }
 
         $collection = new Collection();
 
         foreach ($data as $attributes) {
-            $collection->add($this->wrapModel($attributes));
+            $collection->add($this->hydrateModel($attributes));
         }
 
         return $collection;

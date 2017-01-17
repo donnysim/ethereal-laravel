@@ -100,6 +100,18 @@ class ExtendsRelationsTest extends BaseTestCase
         self::assertTrue($model->exists);
         self::assertArraySubset(['id' => 1, 'name' => 'John'], $model->profile()->first()->toArray());
     }
+
+    /**
+     * @test
+     */
+    public function it_wraps_array_into_collection_and_keeps_models()
+    {
+        $model = new TestUserModel(['email' => 'john@example.com']);
+        $model->setRelation('profiles', [new TestProfileModel()]);
+
+        self::assertInstanceOf(Collection::class, $model->profiles);
+        self::assertInstanceOf(TestProfileModel::class, $model->profiles->first());
+    }
 }
 
 class ExtendsRelationsEthereal extends Ethereal
