@@ -34,11 +34,13 @@ class HasManyHandler extends Handler
 
         foreach ($collection as $item) {
             if ($this->options & Manager::SAVE) {
-                $this->relation->save($item);
+                if (!$this->relation->save($item)) {
+                    return false;
+                }
             }
 
-            if ($this->options & Manager::DELETE && $item->exists) {
-                $item->delete();
+            if ($this->options & Manager::DELETE && $item->exists && !$item->delete()) {
+                return false;
             }
 
             $exists += (int)$item->exists;

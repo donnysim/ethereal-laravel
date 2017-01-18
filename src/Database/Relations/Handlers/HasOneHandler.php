@@ -32,11 +32,16 @@ class HasOneHandler extends Handler
         $model = $this->build();
 
         if ($this->options & Manager::SAVE) {
-            $this->relation->save($model);
+            if (!$this->relation->save($model)) {
+                return false;
+            }
         }
 
         if ($this->options & Manager::DELETE && $model->exists) {
-            $model->delete();
+            if (!$model->delete()) {
+                return false;
+            }
+
             $model->setAttribute($this->relation->getPlainForeignKey(), null);
         }
 

@@ -32,12 +32,18 @@ class BelongsToHandler extends Handler
         $model = $this->build();
 
         if ($this->options & Manager::SAVE) {
-            $model->save();
+            if (!$model->save()) {
+                return false;
+            }
+
             $this->relation->associate($model);
         }
 
         if ($this->options & Manager::DELETE && $model->exists) {
-            $model->delete();
+            if (!$model->delete()) {
+                return false;
+            }
+            
             $this->relation->dissociate($model);
         }
 

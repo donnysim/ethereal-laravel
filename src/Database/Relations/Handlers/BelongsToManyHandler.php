@@ -53,7 +53,9 @@ class BelongsToManyHandler extends Handler
 
             foreach ($data as $item) {
                 if ($this->options & Manager::SAVE) {
-                    $this->relation->save($item);
+                    if (!$this->relation->save($item)) {
+                        return false;
+                    }
                 }
 
                 if ($this->options & Manager::ATTACH) {
@@ -66,7 +68,9 @@ class BelongsToManyHandler extends Handler
 
                 if ($this->options & Manager::DELETE && $item->exists) {
                     $key = $item->getKey();
-                    $item->delete();
+                    if (!$item->delete()) {
+                        return false;
+                    }
 
                     if ($this->options & Manager::DETACH && !Manager::isSoftDeleting($item)) {
                         $detach[] = $key;
