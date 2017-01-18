@@ -47,6 +47,24 @@ class TranslatableTest extends BaseTestCase
     /**
      * @test
      */
+    public function it_deletes_translations_by_locale()
+    {
+        $this->migrate();
+
+        $model = new TranslatableEthereal;
+        $model->newTrans('gb');
+        $model->newTrans('en');
+
+        $model->smartPush();
+        self::assertEquals(2, $model->translations()->count());
+
+        $model->deleteTrans('en');
+        self::assertEquals(1, $model->translations()->count());
+    }
+
+    /**
+     * @test
+     */
     public function it_makes_new_translation_model_and_adds_to_collection()
     {
         $model = new TranslatableEthereal;
