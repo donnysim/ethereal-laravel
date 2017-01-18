@@ -212,6 +212,25 @@ class EtherealTest extends BaseTestCase
         $freshUser->refresh();
         self::assertEquals('jane@example.com', $freshUser->email);
     }
+
+    /**
+     * @test
+     */
+    public function it_refreshes_only_specific_attributes_from_database()
+    {
+        $this->migrate();
+
+        $oldUser = TestUserModel::create(['email' => 'john@example.com', 'remember_token' => 'random']);
+        $freshUser = $oldUser->fresh();
+
+        $oldUser->update(['email' => 'jane@example.com', 'remember_token' => 'static']);
+        self::assertEquals('john@example.com', $freshUser->email);
+        self::assertEquals('random', $freshUser->remember_token);
+
+        $freshUser->refresh(['email']);
+        self::assertEquals('jane@example.com', $freshUser->email);
+        self::assertEquals('random', $freshUser->remember_token);
+    }
 }
 
 class MorphEthereal extends Ethereal

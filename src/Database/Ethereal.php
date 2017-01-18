@@ -187,18 +187,27 @@ class Ethereal extends BaseModel
     /**
      * Refresh model data from database.
      *
+     * @param array|null $attributes
+     *
      * @return $this
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public function refresh()
+    public function refresh($attributes = null)
     {
         if (!$this->exists) {
             return $this;
         }
 
         /** @var Ethereal $freshModel */
-        $freshModel = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey())->firstOrFail();
-        $this->setRawAttributes($freshModel->getAttributes(), true);
+        $freshModel = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey())->firstOrFail($attributes ?: ['*']);
+
+        if ($attributes) {
+            $this->setRawAttributes(
+                array_merge($this->getAttributes(), Arr::only($freshModel->getAttributes(), $attributes))
+            );
+        } else {
+            $this->setRawAttributes($freshModel->getAttributes(), true);
+        }
 
         return $this;
     }
