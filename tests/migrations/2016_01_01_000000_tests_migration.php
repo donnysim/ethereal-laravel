@@ -20,6 +20,16 @@ class TestsMigration extends Migration
             $table->softDeletes();
         });
 
+        Schema::create('users_translations', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('model_id');
+            $table->string('locale', 6);
+            $table->string('name');
+
+            $table->foreign('model_id')->references('id')->on('users_translations')->onDelete('cascade');
+            $table->unique(['model_id', 'locale']);
+        });
+
         Schema::create('profiles', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('user_id')->nullable()->references('id')->on('users')->onDelete('cascade');

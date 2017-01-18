@@ -165,6 +165,21 @@ class Ethereal extends BaseModel
     }
 
     /**
+     * Get an attribute from the model or it's translation.
+     *
+     * @param string $key
+     * @return mixed
+     */
+    public function getAttribute($key)
+    {
+        if ($this->translatable() && in_array($key, $this->translatable, true)) {
+            return $this->trans()->{$key};
+        }
+
+        return parent::getAttribute($key);
+    }
+
+    /**
      * Get a list of columns this model table contains.
      *
      * @return string[]
@@ -207,7 +222,9 @@ class Ethereal extends BaseModel
             );
 
             foreach ($attributes as $attribute) {
-                $this->syncOriginalAttribute($attribute);
+                if (array_key_exists($attribute, $this->attributes)) {
+                    $this->syncOriginalAttribute($attribute);
+                }
             }
         } else {
             $this->setRawAttributes($freshModel->getAttributes(), true);

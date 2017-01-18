@@ -1,11 +1,22 @@
 <?php
 
 use Ethereal\Database\Ethereal;
+use Ethereal\Locale\BasicLocaleManager;
+use Ethereal\Locale\LocaleManager;
 use Illuminate\Database\Eloquent\Collection;
 
 class EtherealTest extends BaseTestCase
 {
     use UsesDatabase;
+
+    protected function setUp()
+    {
+        parent::setUp();
+
+        $this->app->singleton(LocaleManager::class, function () {
+            return new BasicLocaleManager($this->app);
+        });
+    }
 
     /**
      * @test
@@ -231,11 +242,24 @@ class EtherealTest extends BaseTestCase
         self::assertEquals('jane@example.com', $freshUser->email);
         self::assertEquals('random', $freshUser->remember_token);
     }
+
+    /**
+     * @test
+     */
+    public function it_uses_translation_attribute_if_declared()
+    {
+        $user = new MorphEthereal(['email' => 'john@example.com']);
+        $user->transOrNew('en')->name = 'John';
+
+        self::assertEquals('John', $user->name);
+    }
 }
 
 class MorphEthereal extends Ethereal
 {
     use \Illuminate\Database\Eloquent\SoftDeletes;
+
+    protected $translatable = ['name'];
 
     protected $columns = ['id', 'title'];
 
@@ -255,4 +279,10 @@ class MorphEthereal extends Ethereal
     {
         return $this->hasMany(TestProfileModel::class, 'user_id');
     }
+}
+
+
+class MorphEtherealTranslation extends Ethereal
+{
+
 }

@@ -47,6 +47,17 @@ class TranslatableTest extends BaseTestCase
     /**
      * @test
      */
+    public function it_doesnt_query_database_if_model_does_not_exist()
+    {
+        $model = new TranslatableEthereal;
+        $model->transOrNew('en');
+
+        self::assertEquals(1, $model->translations->count());
+    }
+
+    /**
+     * @test
+     */
     public function it_deletes_translations_by_locale()
     {
         $this->migrate();
@@ -109,13 +120,36 @@ class TranslatableTest extends BaseTestCase
         self::assertInstanceOf(TranslatableEtherealTranslation::class, $translation);
         self::assertEquals('en', $translation->locale);
     }
+
+    /**
+     * @test
+     */
+    public function it_has_with_translation_and_fallback_scope()
+    {
+        $this->migrate();
+
+        $model = TranslatableEthereal::create();
+        $model->transOrNew('en');
+        $model->transOrNew('gb');
+        $model->smartPush();
+
+        $this->app->make(LocaleManager::class)->setLocale('en');
+        $this->app->make(LocaleManager::class)->setFallbackLocale('fr');
+
+        self::assertEquals(1, TranslatableEthereal::withTranslationAndFallback()->find($model->getKey())->translations->count());
+
+        $model->transOrNew('fr');
+        $model->smartPush();
+
+        self::assertEquals(2, TranslatableEthereal::withTranslationAndFallback()->find($model->getKey())->translations->count());
+    }
 }
 
 class TranslatableEthereal extends Ethereal
 {
     protected $table = 'articles';
 
-    protected $translatable = true;
+    protected $translatable = [];
 }
 
 class TranslatableEtherealTranslation extends Ethereal

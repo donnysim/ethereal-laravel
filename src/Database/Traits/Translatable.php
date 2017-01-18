@@ -3,8 +3,12 @@
 namespace Ethereal\Database\Traits;
 
 use Ethereal\Locale\LocaleManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * @property \Illuminate\Database\Eloquent\Collection|null translations
+ */
 trait Translatable
 {
     /**
@@ -79,7 +83,7 @@ trait Translatable
      */
     public function transOrNew($locale)
     {
-        return $this->trans($locale) ?: $this->newTrans($locale);
+        return $this->trans($locale, false) ?: $this->newTrans($locale);
     }
 
     /**
@@ -109,6 +113,10 @@ trait Translatable
         $fallbackLocale = $fallback ?: $this->localeManager()->getFallbackLocale();
 
         $fallbackTrans = null;
+
+        if (!$this->exists && !$this->relationLoaded('translations')) {
+            return null;
+        }
 
         foreach ($this->translations as $translation) {
             if ($translation->getAttribute('locale') === $locale) {
@@ -180,5 +188,25 @@ trait Translatable
         }
 
         return false;
+    }
+
+    /**
+     * Attach current translation and fallback.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string|null $locale
+     *
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function scopeWithTranslationAndFallback(Builder $query, $locale = null)
+    {
+        $locale = $locale ?: $this->localeManager()->getLocale();
+        $fallback = $this->localeManager()->getFallbackLocale();
+
+        return $query->with([
+            'translations' => function ($query) use ($locale, $fallback) {
+                $query->whereIn('locale', array_unique([$locale, $fallback]));
+            },
+        ]);
     }
 }
