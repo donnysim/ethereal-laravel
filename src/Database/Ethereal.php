@@ -205,6 +205,10 @@ class Ethereal extends BaseModel
             $this->setRawAttributes(
                 array_merge($this->getAttributes(), Arr::only($freshModel->getAttributes(), $attributes))
             );
+
+            foreach ($attributes as $attribute) {
+                $this->syncOriginalAttribute($attribute);
+            }
         } else {
             $this->setRawAttributes($freshModel->getAttributes(), true);
         }
