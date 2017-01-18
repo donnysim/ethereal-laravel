@@ -138,16 +138,29 @@ trait Translatable
     }
 
     /**
-     * Make new
+     * Make new translation and add it to translations collection.
      *
      * @param string $locale
+     * @param bool $addToCollection
      *
      * @return \Ethereal\Database\Ethereal
+     * @throws \UnexpectedValueException
+     * @throws \InvalidArgumentException
      */
-    public function newTrans($locale)
+    public function newTrans($locale, $addToCollection = true)
     {
         $class = $this->translationModelClass();
-        return new $class(['locale' => $locale]);
+        $model = new $class(['locale' => $locale]);
+
+        if ($addToCollection) {
+            if (!$this->relationLoaded('translations')) {
+                $this->setRelation('translations', new Collection());
+            }
+
+            $this->translations->add($model);
+        }
+
+        return $model;
     }
 
     /**

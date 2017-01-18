@@ -40,13 +40,14 @@ class TranslatableTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_makes_new_translation_model()
+    public function it_makes_new_translation_model_and_adds_to_collection()
     {
         $model = new TranslatableEthereal;
         $translation = $model->newTrans('gb');
 
         self::assertInstanceOf(TranslatableEtherealTranslation::class, $translation);
         self::assertEquals('gb', $translation->locale);
+        self::assertEquals('gb', $model->translations->first()->locale);
     }
 
     /**
