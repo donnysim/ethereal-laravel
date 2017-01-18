@@ -38,6 +38,20 @@ class TestsMigration extends Migration
 
             $table->primary(['profile_id', 'user_id']);
         });
+
+        Schema::create('articles', function (Blueprint $table) {
+            $table->increments('id');
+            $table->timestamps();
+        });
+
+        Schema::create('articles_translations', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('model_id');
+            $table->string('locale', 6);
+
+            $table->foreign('model_id')->references('id')->on('articles_translations')->onDelete('cascade');
+            $table->unique(['model_id', 'locale']);
+        });
     }
 
     /**

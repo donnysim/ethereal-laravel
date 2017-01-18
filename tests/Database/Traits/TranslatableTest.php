@@ -34,7 +34,14 @@ class TranslatableTest extends BaseTestCase
     {
         $this->migrate();
 
-        //TODO
+        $model = new TranslatableEthereal;
+        $model->newTrans('gb');
+
+        $model->smartPush();
+        self::assertEquals(1, $model->translations()->count());
+
+        $model->deleteTrans();
+        self::assertEquals(0, $model->translations()->count());
     }
 
     /**
@@ -83,17 +90,19 @@ class TranslatableTest extends BaseTestCase
         $translation = $model->transOrNew('en');
         self::assertInstanceOf(TranslatableEtherealTranslation::class, $translation);
         self::assertEquals('en', $translation->locale);
-
-
     }
 }
 
 class TranslatableEthereal extends Ethereal
 {
+    protected $table = 'articles';
+
     protected $translatable = true;
 }
 
 class TranslatableEtherealTranslation extends Ethereal
 {
+    protected $table = 'articles_translations';
 
+    public $timestamps = false;
 }

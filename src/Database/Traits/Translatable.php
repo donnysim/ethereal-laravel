@@ -10,7 +10,7 @@ trait Translatable
     /**
      * State if the model is translatable.
      *
-     * @var bool
+     * @var bool|array
      */
     protected $translatable = false;
 
@@ -28,7 +28,7 @@ trait Translatable
      */
     public function translatable()
     {
-        return $this->translatable;
+        return $this->translatable !== false;
     }
 
     /**
@@ -144,8 +144,6 @@ trait Translatable
      * @param bool $addToCollection
      *
      * @return \Ethereal\Database\Ethereal
-     * @throws \UnexpectedValueException
-     * @throws \InvalidArgumentException
      */
     public function newTrans($locale, $addToCollection = true)
     {
