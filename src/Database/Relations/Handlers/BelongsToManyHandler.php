@@ -126,7 +126,7 @@ class BelongsToManyHandler extends BaseRelationHandler
                 /** @var \Illuminate\Database\Eloquent\Model $item */
 
                 if ($this->relationOptions & Ethereal::OPTION_SAVE) {
-                    $this->relation->save($item);
+                    $item->save();
                 }
 
                 if ($this->relationOptions & Ethereal::OPTION_ATTACH) {
