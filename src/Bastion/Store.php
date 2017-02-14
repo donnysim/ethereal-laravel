@@ -4,7 +4,6 @@ namespace Ethereal\Bastion;
 
 use Illuminate\Contracts\Cache\Store as CacheStore;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Store

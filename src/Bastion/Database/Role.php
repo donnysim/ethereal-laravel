@@ -10,6 +10,11 @@ class Role extends Ethereal
     use Traits\IsRole,
         Traits\HasAbilities;
 
+    /**
+     * Database columns. This is used to filter out invalid columns.
+     *
+     * @var string[]
+     */
     protected $columns = ['id', 'name', 'title', 'system', 'private', 'level', 'created_at', 'updated_at'];
 
     /**

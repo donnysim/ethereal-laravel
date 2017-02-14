@@ -79,7 +79,7 @@ trait IsRole
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param array $attributes
      *
-     * @return static
+     * @return \Ethereal\Bastion\Database\AssignedRole|\Ethereal\Bastion\Database\Traits\IsRole
      * @throws \InvalidArgumentException
      */
     public function createAssignRecord(Model $authority, $attributes = [])

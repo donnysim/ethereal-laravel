@@ -20,6 +20,7 @@ trait CollectsAuthorities
             $authorities = [];
 
             foreach ((array)$ids as $id) {
+                /** @var \Ethereal\Database\Ethereal $model */
                 $model = new $listOrClass;
                 $model->setAttribute($model->getKeyName(), $id);
                 $model->exists = true;

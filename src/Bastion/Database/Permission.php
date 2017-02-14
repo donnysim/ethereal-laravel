@@ -9,6 +9,11 @@ class Permission extends Ethereal
 {
     use Traits\IsPermission;
 
+    /**
+     * Database columns. This is used to filter out invalid columns.
+     *
+     * @var string[]
+     */
     protected $columns = ['ability_id', 'target_id', 'target_type', 'parent_id', 'parent_type', 'forbidden', 'group', 'created_at', 'updated_at'];
 
     /**

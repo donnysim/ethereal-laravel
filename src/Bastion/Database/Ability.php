@@ -17,5 +17,10 @@ class Ability extends Ethereal
 {
     use Traits\IsAbility;
 
+    /**
+     * Database columns. This is used to filter out invalid columns.
+     *
+     * @var string[]
+     */
     protected $columns = ['id', 'name', 'entity_id', 'entity_type', 'created_at', 'updated_at'];
 }

@@ -224,7 +224,7 @@ class Rucks
     /**
      * Get a policy instance for a given class.
      *
-     * @param object|string $class
+     * @param string $class
      * @param bool $throw
      *
      * @return mixed
@@ -275,7 +275,7 @@ class Rucks
     /**
      * Build a policy class instance of the given type.
      *
-     * @param object|string $class
+     * @param string $class
      *
      * @return mixed
      */

@@ -196,7 +196,7 @@ trait Translatable
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param string|null $locale
      *
-     * @return \Illuminate\Database\Eloquent\Builder|static
+     * @return \Ethereal\Database\Traits\Translatable|\Illuminate\Database\Eloquent\Builder
      */
     public function scopeWithTranslationAndFallback(Builder $query, $locale = null)
     {

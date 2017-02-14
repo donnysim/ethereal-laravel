@@ -38,6 +38,7 @@ trait UsesScopes
                 throw new InvalidArgumentException('A valid ID is required.');
             }
 
+            /** @var \Ethereal\Database\Ethereal $model */
             $model = new $model;
             $model->setAttribute($model->getKeyName(), $id);
         }
@@ -81,6 +82,7 @@ trait UsesScopes
             $models = [];
 
             foreach ((array)$ids as $id) {
+                /** @var \Ethereal\Database\Ethereal $model */
                 $model = new $listOrClass;
                 $model->setAttribute($model->getKeyName(), $id);
                 $model->exists = true;

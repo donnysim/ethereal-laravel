@@ -9,7 +9,7 @@ class BasicLocaleManager implements LocaleManager
     /**
      * Main application.
      *
-     * @type \Illuminate\Foundation\Application
+     * @var \Illuminate\Foundation\Application
      */
     protected $application;
 
