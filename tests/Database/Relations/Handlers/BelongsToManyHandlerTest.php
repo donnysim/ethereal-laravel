@@ -128,4 +128,26 @@ class BelongsToManyHandlerTest extends BaseTestCase
 
         self::assertFalse($handler->isWaitingForParent());
     }
+
+    /**
+     * @test
+     */
+    public function it_does_not_attach_model_on_save()
+    {
+        $this->migrate();
+
+        $profile = new TestProfileModel(['name' => 'John or Jane']);
+        $user = new TestUserModel(['email' => 'john@example.com']);
+        $profile->setRelation('users', new Collection([$user]));
+
+        $manager = new Manager($profile, [
+            'relations' => [
+                'users' => Manager::SAVE,
+            ]
+        ]);
+        $manager->save();
+
+        static::assertEquals(0, $profile->users()->count());
+        static::assertTrue($user->exists);
+    }
 }

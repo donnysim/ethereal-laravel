@@ -53,7 +53,7 @@ class BelongsToManyHandler extends Handler
 
             foreach ($data as $item) {
                 if ($this->options & Manager::SAVE) {
-                    if (!$this->relation->save($item)) {
+                    if (!$item->save()) {
                         return false;
                     }
                 }
@@ -90,7 +90,7 @@ class BelongsToManyHandler extends Handler
                 }
 
                 if ($attach) {
-                    $this->relation->sync($detach, false);
+                    $this->relation->sync($attach, false);
                 }
             }
         } elseif ($this->options & Manager::SYNC) {
