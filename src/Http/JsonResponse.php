@@ -32,8 +32,12 @@ class JsonResponse extends Response
      */
     protected $callback;
 
-    // Encode <, >, ', &, and " for RFC4627-compliant JSON, which may also be embedded into HTML.
-    // 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+    /**
+     * Encode <, >, ', &, and " for RFC4627-compliant JSON, which may also be embedded into HTML.
+     * 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+     *
+     * @var int
+     */
     protected $encodingOptions = 0;
 
     /**
@@ -72,6 +76,7 @@ class JsonResponse extends Response
      * @param array $headers
      *
      * @return $this
+     * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
      */
     public static function make($data = null, $status = 200, $headers = [])
