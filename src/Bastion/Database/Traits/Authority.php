@@ -32,4 +32,17 @@ trait Authority
     {
         return Helper::bastion()->check($this)->group($group)->parent($parent);
     }
+
+    /**
+     * Manage authority roles and permissions.
+     *
+     * @param string|null $group
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     *
+     * @return \Ethereal\Bastion\Conductors\ManageProxy
+     */
+    public function manage($group = null, $parent = null)
+    {
+        return Helper::bastion()->manage($this)->group($group)->parent($parent);
+    }
 }
