@@ -3,6 +3,7 @@
 namespace Ethereal\Bastion;
 
 use Ethereal\Cache\TagFileStore;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
@@ -33,5 +34,12 @@ class BastionServiceProvider extends ServiceProvider
         $this->app->singleton(Bastion::class, function ($app) {
             return new Bastion($app, $app->make(Store::class));
         });
+
+        Relation::morphMap([
+            'bastion-ability' => Database\Ability::class,
+            'bastion-assigned-role' => Database\AssignedRole::class,
+            'bastion-permission' => Database\Permission::class,
+            'bastion-role' => Database\Role::class,
+        ], true);
     }
 }
