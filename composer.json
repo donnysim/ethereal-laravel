@@ -20,6 +20,9 @@
         "orchestra/testbench": "~3.2"
     },
     "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
         "psr-4": {
             "Ethereal\\": "src"
         }
