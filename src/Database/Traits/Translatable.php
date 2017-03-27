@@ -77,11 +77,11 @@ trait Translatable
     /**
      * Get translation or new translation instance.
      *
-     * @param string $locale
+     * @param string|null $locale
      *
      * @return \Ethereal\Database\Ethereal
      */
-    public function transOrNew($locale)
+    public function transOrNew($locale = null)
     {
         return $this->trans($locale, false) ?: $this->newTrans($locale);
     }
