@@ -155,6 +155,7 @@ trait Translatable
      */
     public function newTrans($locale, $addToCollection = true)
     {
+        $locale = $locale ?: $this->localeManager()->getLocale();
         $class = $this->translationModelClass();
         $model = new $class(['locale' => $locale]);
 
