@@ -154,6 +154,7 @@ class EtherealTest extends BaseTestCase
             ]),
         ]);
 
+        self::assertFalse($model->hasAttribute('profile'));
         self::assertFalse($model->relationLoaded('user'));
         self::assertTrue($model->relationLoaded('profile'));
         self::assertTrue($model->relationLoaded('profiles'));

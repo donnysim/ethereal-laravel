@@ -35,6 +35,7 @@ class Ethereal extends BaseModel
 
             if ($this->isRelationFillable($key)) {
                 $this->setRelation($key, $value);
+                continue;
             }
 
             $this->setAttribute($key, $value);
