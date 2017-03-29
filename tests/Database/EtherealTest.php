@@ -254,6 +254,17 @@ class EtherealTest extends BaseTestCase
 
         self::assertEquals('John', $user->name);
     }
+
+    /**
+     * @test
+     */
+    public function it_uses_model_attribute_if_available_instead_of_translation_attribute()
+    {
+        $user = new MorphEthereal(['email' => 'john@example.com', 'name' => 'Jane']);
+        $user->transOrNew('en')->name = 'John';
+
+        self::assertEquals('Jane', $user->name);
+    }
 }
 
 class MorphEthereal extends Ethereal

@@ -173,7 +173,7 @@ class Ethereal extends BaseModel
      */
     public function getAttribute($key)
     {
-        if ($this->translatable() && in_array($key, $this->translatable, true)) {
+        if (!$this->hasAttribute($key) && $this->translatable() && in_array($key, $this->translatable, true)) {
             return $this->trans()->{$key};
         }
 
