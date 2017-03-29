@@ -42,7 +42,7 @@ if (!function_exists('data_intersect')) {
 
         foreach ($keys as $field) {
             if (\Illuminate\Support\Arr::has($data, $field)) {
-                \Illuminate\Support\Arr::set($data, $field, \Illuminate\Support\Arr::get($data, $field));
+                \Illuminate\Support\Arr::set($safe, $field, \Illuminate\Support\Arr::get($data, $field));
             }
         }
 
