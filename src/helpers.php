@@ -27,3 +27,25 @@ if (!function_exists('invalid')) {
         return validator(['value' => $value], ['value' => $rules])->fails();
     }
 }
+
+if (!function_exists('data_intersect')) {
+    /**
+     * Get data that intersects using dot notation.
+     *
+     * @param array $data
+     * @param array $keys
+     *
+     * @return array
+     */
+    function data_intersect($data, $keys) {
+        $safe = [];
+
+        foreach ($keys as $field) {
+            if (\Illuminate\Support\Arr::has($data, $field)) {
+                \Illuminate\Support\Arr::set($data, $field, \Illuminate\Support\Arr::get($data, $field));
+            }
+        }
+
+        return $safe;
+    }
+}
