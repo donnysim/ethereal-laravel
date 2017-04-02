@@ -1,5 +1,10 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+
 if (!function_exists('valid')) {
     /**
      * Determine if the given value passes given rules.
@@ -48,7 +53,7 @@ if (!function_exists('data_intersect')) {
         }
 
         foreach ($keys as $field) {
-            if (\Illuminate\Support\Str::contains($field, '*')) {
+            if (Str::contains($field, '*')) {
                 $parts = explode('.', $field);
                 $segment = implode('.', array_slice($parts, 0, array_search('*', $parts, true)));
                 $setSegment = implode('.', array_slice($parts, 0, array_search('*', $parts, true) + 1));
@@ -64,26 +69,57 @@ if (!function_exists('data_intersect')) {
                             continue;
                         }
 
-                        \Illuminate\Support\Arr::set($result, str_replace('*', $index, $setSegment), $intersection);
+                        Arr::set($result, str_replace('*', $index, $setSegment), $intersection);
                     }
 
                     $safe = array_replace_recursive($safe, $result);
                 } else {
-                    $result = data_intersect(\Illuminate\Support\Arr::get($data, $segment), [implode('.', array_slice($parts, array_search('*', $parts, true)))]);
+                    $result = data_intersect(Arr::get($data, $segment), [implode('.', array_slice($parts, array_search('*', $parts, true)))]);
 
                     if (!empty($result)) {
                         $tmp = [];
-                        \Illuminate\Support\Arr::set($tmp, $segment, $result);
+                        Arr::set($tmp, $segment, $result);
                         $safe = array_replace_recursive($safe, $tmp);
                     }
                 }
             } else {
-                if (\Illuminate\Support\Arr::has($data, $field)) {
-                    \Illuminate\Support\Arr::set($safe, $field, \Illuminate\Support\Arr::get($data, $field));
+                if (Arr::has($data, $field)) {
+                    Arr::set($safe, $field, Arr::get($data, $field));
                 }
             }
         }
 
         return $safe;
+    }
+}
+
+if (!function_exists('model_key')) {
+    /**
+     * Get model key.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|int $model
+     * @param bool $throw Throw exception if model does not exist or is invalid value.
+     *
+     * @return number|null
+     */
+    function model_key($model, $throw = true)
+    {
+        if ($model instanceof Model) {
+            if ($throw && !$model->exists) {
+                throw new ModelNotFoundException('Model does not exist.');
+            }
+
+            return $model->getKey();
+        }
+
+        if (!is_numeric($model)) {
+            if ($throw) {
+                throw new InvalidArgumentException('Invalid argument supplied, model must be int or Model.');
+            }
+
+            return null;
+        }
+
+        return $model;
     }
 }
