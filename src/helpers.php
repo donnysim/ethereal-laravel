@@ -31,7 +31,7 @@ if (!function_exists('invalid')) {
      */
     function invalid($value, $rules)
     {
-        return validator(['value' => $value], ['value' => $rules])->fails();
+        return !valid($value, $rules);
     }
 }
 
@@ -54,16 +54,18 @@ if (!function_exists('data_intersect')) {
 
         foreach ($keys as $field) {
             if (Str::contains($field, '*')) {
-                $parts = explode('.', $field);
-                $segment = implode('.', array_slice($parts, 0, array_search('*', $parts, true)));
-                $setSegment = implode('.', array_slice($parts, 0, array_search('*', $parts, true) + 1));
+                $segments = explode('.', $field);
+                $anyIndex = array_search('*', $segments, true);
+
+                $segment = implode('.', array_slice($segments, 0, $anyIndex));
+                $setSegment = implode('.', array_slice($segments, 0, $anyIndex + 1));
 
                 if ($segment === '') {
-                    // The field starts with an asterisk
+                    // The field starts with an asterisk, e.g. *.id
                     $result = [];
 
                     foreach (array_values($data) as $index => $value) {
-                        $intersection = data_intersect($value, [implode('.', array_slice($parts, array_search('*', $parts, true) + 1))]);
+                        $intersection = data_intersect($value, [implode('.', array_slice($segments, $anyIndex + 1))]);
 
                         if (empty($intersection)) {
                             continue;
@@ -74,7 +76,7 @@ if (!function_exists('data_intersect')) {
 
                     $safe = array_replace_recursive($safe, $result);
                 } else {
-                    $result = data_intersect(Arr::get($data, $segment), [implode('.', array_slice($parts, array_search('*', $parts, true)))]);
+                    $result = data_intersect(Arr::get($data, $segment), [implode('.', array_slice($segments, $anyIndex))]);
 
                     if (!empty($result)) {
                         $tmp = [];
