@@ -10,7 +10,8 @@ class Ethereal extends BaseModel
     use Traits\WithoutFillable,
         Traits\Validates,
         Traits\ExtendsRelations,
-        Traits\Translatable;
+        Traits\Translatable,
+        Scopes\QueryModifiers;
 
     /**
      * Database columns. This is used to filter out invalid columns.
