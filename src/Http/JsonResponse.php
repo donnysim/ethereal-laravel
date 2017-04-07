@@ -19,6 +19,13 @@ class JsonResponse extends Response
     use ResponseTrait;
 
     /**
+     * Error resolver.
+     *
+     * @var mixed
+     */
+    protected static $errorResolver;
+
+    /**
      * Response data.
      *
      * @var array
@@ -85,6 +92,29 @@ class JsonResponse extends Response
     }
 
     /**
+     * Sets the response content.
+     * Valid types are array and objects that implement Arrayable.
+     *
+     * @param array|Arrayable $content Content that can be cast to array.
+     *
+     * @return $this
+     */
+    public function setContent($content)
+    {
+        if ($content === null) {
+            $data = [];
+        } elseif ($content instanceof Collection) {
+            $data = $content->toArray();
+        } else {
+            $data = $content;
+        }
+
+        $this->data = $data;
+
+        return $this;
+    }
+
+    /**
      * Get pagination data without details.
      *
      * @param mixed $data
@@ -118,6 +148,16 @@ class JsonResponse extends Response
         }
 
         return Arr::except($data, 'data');
+    }
+
+    /**
+     * Set error resolver.
+     *
+     * @param mixed $resolver
+     */
+    public static function setErrorResolver($resolver)
+    {
+        static::$errorResolver = $resolver;
     }
 
     /**
@@ -270,7 +310,7 @@ class JsonResponse extends Response
     {
         $error = [
             'message' => $this->error,
-            'code' => $this->errorCode,
+            'code' => $this->getErrorCode(),
         ];
 
         if ($this->debug && $this->error instanceof \Exception) {
@@ -278,13 +318,13 @@ class JsonResponse extends Response
         }
 
         if ($this->error instanceof ValidationException) {
-            $error['message'] = $this->getErrorMessage($this->error);
+            $error['message'] = $this->getErrorMessage();
 
             if ($this->error->validator) {
                 $error['fields'] = static::flattenMessageBag($this->error->validator->messages());
             }
         } elseif ($this->error instanceof \Exception) {
-            $error['message'] = $this->getErrorMessage($this->error);
+            $error['message'] = $this->getErrorMessage();
         } elseif ($this->error instanceof Validator) {
             if ($this->error->fails()) {
                 $error['message'] = 'failed';
@@ -299,19 +339,35 @@ class JsonResponse extends Response
     }
 
     /**
-     * Get exception message.
+     * Get exception code.
      *
-     * @param \Exception|int|string $error
+     * @return int
+     */
+    protected function getErrorCode()
+    {
+        if (static::$errorResolver) {
+            return static::$errorResolver->resolveCode($this, $this->error, $this->errorCode);
+        }
+
+        return $this->errorCode;
+    }
+
+    /**
+     * Get exception message.
      *
      * @return string
      */
-    protected function getErrorMessage($error)
+    protected function getErrorMessage()
     {
-        if (is_string($error)) {
-            return $error;
+        if (is_string($this->error)) {
+            return $this->error;
         }
 
-        return $error->getMessage();
+        if (static::$errorResolver) {
+            return static::$errorResolver->resolveMessage($this, $this->error);
+        }
+
+        return $this->error->getMessage();
     }
 
     /**
@@ -352,29 +408,6 @@ class JsonResponse extends Response
     public function setData($data)
     {
         $this->setContent($data);
-
-        return $this;
-    }
-
-    /**
-     * Sets the response content.
-     * Valid types are array and objects that implement Arrayable.
-     *
-     * @param array|Arrayable $content Content that can be cast to array.
-     *
-     * @return $this
-     */
-    public function setContent($content)
-    {
-        if ($content === null) {
-            $data = [];
-        } elseif ($content instanceof Collection) {
-            $data = $content->toArray();
-        } else {
-            $data = $content;
-        }
-
-        $this->data = $data;
 
         return $this;
     }
