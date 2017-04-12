@@ -30,7 +30,7 @@ class EtherealTest extends BaseTestCase
 
         $model->setRelation('test', collect());
 
-        static::assertEquals(['id' => 1], $model->only('id')->toArray());
+        static::assertEquals(['id' => 1], $model->keepOnly('id')->toArray());
     }
 
     /**
@@ -45,7 +45,7 @@ class EtherealTest extends BaseTestCase
 
         $model->setRelation('test', collect());
 
-        static::assertEquals(['id' => 1, 'test' => []], $model->except('email')->toArray());
+        static::assertEquals(['id' => 1, 'test' => []], $model->keepExcept('email')->toArray());
     }
 
     /**
@@ -158,6 +158,28 @@ class EtherealTest extends BaseTestCase
         self::assertFalse($model->relationLoaded('user'));
         self::assertTrue($model->relationLoaded('profile'));
         self::assertTrue($model->relationLoaded('profiles'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_updates_singular_relations_on_fill()
+    {
+        $model = new MorphEthereal([
+            'email_address' => 'jane@doe.com',
+            'profile' => new TestProfileModel(['name' => 'Jane', 'last_name' => 'Doe']),
+        ]);
+
+        $model->fill([
+            'email_address' => 'john@doe.com',
+            'profile' => [
+                'name' => 'John',
+            ]
+        ]);
+
+        self::assertEquals('john@doe.com', $model->email_address);
+        self::assertEquals('John', $model->profile->name);
+        self::assertEquals('Doe', $model->profile->last_name, 'It overrides relation instead of updating it.');
     }
 
     /**

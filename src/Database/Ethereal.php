@@ -35,7 +35,12 @@ class Ethereal extends BaseModel
             $key = $this->removeTableFromKey($key);
 
             if ($this->isRelationFillable($key)) {
-                $this->setRelation($key, $value);
+                if ($this->relationLoaded($key) && $this->getRelation($key) instanceof BaseModel) {
+                    $this->getRelation($key)->fill($value);
+                } else {
+                    $this->setRelation($key, $value);
+                }
+
                 continue;
             }
 
@@ -102,7 +107,7 @@ class Ethereal extends BaseModel
      *
      * @return $this
      */
-    public function only($keep)
+    public function keepOnly($keep)
     {
         if (!is_array($keep)) {
             $keep = func_get_args();
@@ -121,7 +126,7 @@ class Ethereal extends BaseModel
      *
      * @return $this
      */
-    public function except($remove)
+    public function keepExcept($remove)
     {
         if (!is_array($remove)) {
             $remove = func_get_args();
