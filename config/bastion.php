@@ -1,7 +1,7 @@
 <?php
 
 return [
-    /*
+    /**
      * Bastion specific tables.
      */
     'tables' => [
@@ -11,7 +11,7 @@ return [
         'roles' => 'roles',
     ],
 
-    /*
+    /**
      * Application models.
      */
     'models' => [
