@@ -71,7 +71,8 @@ class RemovesRoles
         }
 
         $query->delete();
-        // TODO clear cache
+        $this->store->clearCacheFor($authorities);
+
         return $this;
     }
 }

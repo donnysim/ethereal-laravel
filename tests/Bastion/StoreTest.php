@@ -36,7 +36,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_check_role()
+    public function it_checks_role()
     {
         $this->migrate();
 
@@ -55,7 +55,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_check_if_ability_is_allowed()
+    public function it_checks_if_ability_is_allowed()
     {
         $this->migrate();
 
@@ -73,7 +73,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_check_if_ability_is_allowed_including_model()
+    public function it_checks_if_ability_is_allowed_including_model()
     {
         $this->migrate();
 
@@ -91,7 +91,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_check_if_ability_is_allowed_including_group()
+    public function it_checks_if_ability_is_allowed_including_group()
     {
         $this->migrate();
 
@@ -109,7 +109,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_check_if_ability_is_allowed_including_parent()
+    public function it_checks_if_ability_is_allowed_including_parent()
     {
         $this->migrate();
 
@@ -127,7 +127,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_cache_permissions()
+    public function it_caches_permissions()
     {
         $this->migrate();
 
@@ -154,7 +154,7 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_refresh_permissions_for()
+    public function it_refreshes_permissions_for()
     {
         $this->migrate();
 
@@ -182,5 +182,34 @@ class StoreTest extends BaseTestCase
 
         self::assertEquals(1, $store->getAbilities($user)->count());
         self::assertEquals(2, $store->getAbilities($user2)->count());
+    }
+
+    /**
+     * @test
+     */
+    public function it_clears_cache()
+    {
+        $this->migrate();
+
+        $store = new Store;
+        $store->setCache(new TagFileStore($this->app['files'], __DIR__ . '/../storage'));
+        $bastion = new Bastion($this->app, $store);
+
+        $user = TestUserModel::create(['email' => 'john@example.com']);
+        $bastion->assign('user')->to($user);
+
+        $user2 = TestUserModel::create(['email' => 'john@example.com']);
+        $bastion->assign('admin')->to($user2);
+
+        self::assertTrue($bastion->check($user)->isA('user'));
+        self::assertTrue($bastion->check($user2)->isA('admin'));
+
+        $store->clearCache();
+
+        $bastion->assign('admin')->to($user);
+        $bastion->assign('user')->to($user2);
+
+        self::assertTrue($bastion->check($user)->isAn('admin'));
+        self::assertTrue($bastion->check($user2)->isA('user'));
     }
 }

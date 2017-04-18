@@ -90,7 +90,8 @@ class GivesAbilities
             }
         }
 
-        // TODO clear cache
+        $this->store->clearCache();
+
         return $this;
     }
 

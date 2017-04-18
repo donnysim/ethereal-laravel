@@ -71,7 +71,8 @@ class AssignsRoles
             }
         }
 
-        // TODO clear cache
+        $this->store->clearCacheFor($authorities);
+
         return $this;
     }
 }

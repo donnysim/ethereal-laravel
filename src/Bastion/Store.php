@@ -169,11 +169,19 @@ class Store
     /**
      * Clear authority cache.
      *
-     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param array|\Illuminate\Database\Eloquent\Model $authority
      */
-    public function clearCacheFor(Model $authority)
+    public function clearCacheFor($authority)
     {
-        $this->authorityCache($authority)->forget($this->cacheKey($authority));
+        if (is_array($authority)) {
+            foreach ($authority as $model) {
+                if ($model instanceof Model && $model->exists) {
+                    $this->clearCacheFor($model);
+                }
+            }
+        } else {
+            $this->authorityCache($authority)->forget($this->cacheKey($authority));
+        }
     }
 
     /**
