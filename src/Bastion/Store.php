@@ -163,7 +163,9 @@ class Store
      */
     public function clearCache()
     {
-        $this->cache->flush();
+        if ($cache = $this->getCache()) {
+            $cache->flush();
+        }
     }
 
     /**
@@ -179,8 +181,8 @@ class Store
                     $this->clearCacheFor($model);
                 }
             }
-        } else {
-            $this->authorityCache($authority)->forget($this->cacheKey($authority));
+        } elseif ($cache = $this->authorityCache($authority)) {
+            $cache->forget($this->cacheKey($authority));
         }
     }
 
