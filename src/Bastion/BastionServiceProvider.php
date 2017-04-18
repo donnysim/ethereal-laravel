@@ -15,6 +15,7 @@ class BastionServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/../../config/bastion.php';
         $this->publishes([$configPath => config_path('bastion.php')], 'config');
+        $this->loadMigrationsFrom(__DIR__ . '/../../migrations/bastion');
     }
 
     /**
@@ -22,8 +23,7 @@ class BastionServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $configPath = __DIR__ . '/../../config/bastion.php';
-        $this->mergeConfigFrom($configPath, 'bastion');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/bastion.php', 'bastion');
 
         $this->app->singleton(Store::class, function ($app) {
             $store = new Store();
