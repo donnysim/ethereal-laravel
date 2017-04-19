@@ -5,6 +5,7 @@ namespace Ethereal\Bastion;
 use Illuminate\Contracts\Cache\Store as CacheStore;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Traversable;
 
 class Store
 {
@@ -175,7 +176,7 @@ class Store
      */
     public function clearCacheFor($authority)
     {
-        if (is_array($authority)) {
+        if (is_array($authority) || $authority instanceof Traversable) {
             foreach ($authority as $model) {
                 if ($model instanceof Model && $model->exists) {
                     $this->clearCacheFor($model);
