@@ -34,16 +34,6 @@ class BasicLocaleManager implements LocaleManager
     }
 
     /**
-     * Get application locale.
-     *
-     * @return string
-     */
-    public function getLocale()
-    {
-        return $this->application->getLocale();
-    }
-
-    /**
      * Set application fallback locale.
      *
      * @param string $locale
@@ -64,6 +54,16 @@ class BasicLocaleManager implements LocaleManager
     }
 
     /**
+     * Get application locale.
+     *
+     * @return string
+     */
+    public function getLocale()
+    {
+        return $this->application->getLocale();
+    }
+
+    /**
      * Get available locales list.
      *
      * @return array
@@ -74,5 +74,18 @@ class BasicLocaleManager implements LocaleManager
         $config = $this->application->make('config');
 
         return $config->get('app.locales', array_unique([$config->get('app.locale'), $config->get('fallback_locale', $config->get('app.locale'))]));
+    }
+
+    /**
+     * Get default application locale.
+     *
+     * @return string
+     */
+    public function getDefaultLocale()
+    {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->application->make('config');
+
+        return $config->get('app.locale');
     }
 }

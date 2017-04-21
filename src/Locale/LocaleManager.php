@@ -19,6 +19,13 @@ interface LocaleManager
     public function getLocale();
 
     /**
+     * Get default application locale.
+     *
+     * @return string
+     */
+    public function getDefaultLocale();
+
+    /**
      * Set application fallback locale.
      *
      * @param string $locale
