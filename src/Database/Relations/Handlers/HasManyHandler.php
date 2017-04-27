@@ -52,9 +52,7 @@ class HasManyHandler extends Handler
             } else {
                 $modelKeyName = $collection->first()->getKeyName();
 
-                foreach ($collection->pluck($modelKeyName)->chunk(20) as $chunk) {
-                    $this->relation->whereNotIn($modelKeyName, $chunk->toArray())->delete();
-                }
+                $this->relation->whereNotIn($modelKeyName, $collection->pluck($modelKeyName)->toArray())->delete();
             }
         }
 
