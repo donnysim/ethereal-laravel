@@ -101,14 +101,13 @@ class CheckProxy
     }
 
     /**
-     * Determine if authority does not have one of the roles.
+     * Determine if authority has the ability.
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return bool
      * @throws \InvalidArgumentException
-     * @internal param array|string $role
      */
     public function can($ability, $model = null)
     {
@@ -116,6 +115,20 @@ class CheckProxy
             ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->can($ability, $model);
+    }
+
+    /**
+     * Determine if authority does not have the ability.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function cannot($ability, $model = null)
+    {
+        return !$this->can($ability, $model);
     }
 
     /**
