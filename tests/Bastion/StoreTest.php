@@ -183,15 +183,15 @@ class StoreTest extends BaseTestCase
         $user2 = TestUserModel::create(['email' => 'john@example.com']);
         $bastion->assign('admin')->to($user2);
 
-        self::assertTrue($bastion->check($user)->isA('user'));
-        self::assertTrue($bastion->check($user2)->isA('admin'));
+        self::assertTrue($bastion->is($user)->a('user'));
+        self::assertTrue($bastion->is($user2)->an('admin'));
 
         $store->clearCache();
 
         $bastion->assign('admin')->to($user);
         $bastion->assign('user')->to($user2);
 
-        self::assertTrue($bastion->check($user)->isAn('admin'));
-        self::assertTrue($bastion->check($user2)->isA('user'));
+        self::assertTrue($bastion->is($user)->an('admin'));
+        self::assertTrue($bastion->is($user2)->a('user'));
     }
 }

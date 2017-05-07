@@ -129,18 +129,6 @@ class Bastion
     }
 
     /**
-     * Start a chain to manage authority roles or abilities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Ethereal\Bastion\Conductors\ManageProxy
-     */
-    public function manage(Model $authority)
-    {
-        return new ManageProxy($this->getStore(), $authority);
-    }
-
-    /**
      * Start a chain to permit forbidden abilities from authorities.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
@@ -162,18 +150,6 @@ class Bastion
     public function is(Model $authority)
     {
         return new ChecksRoles($this->getStore(), $authority);
-    }
-
-    /**
-     * Start a chain to check authority role or ability.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Ethereal\Bastion\Conductors\CheckProxy
-     */
-    public function check(Model $authority)
-    {
-        return new CheckProxy($this->getStore(), $authority);
     }
 
     /**
