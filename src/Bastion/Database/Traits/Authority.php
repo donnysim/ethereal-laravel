@@ -78,6 +78,21 @@ trait Authority
     }
 
     /**
+     * Determine if authority does not have the ability.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function cannot($ability, $model = null, $parent = null)
+    {
+        return !$this->can($ability, $model, $parent);
+    }
+
+    /**
      * Determine if authority has the ability.
      *
      * @param string $ability
@@ -92,21 +107,6 @@ trait Authority
         return (new ChecksAbilities(Helper::bastion()->getStore(), $this))
             ->parent($parent)
             ->can($ability, $model);
-    }
-
-    /**
-     * Determine if authority does not have the ability.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function cannot($ability, $model = null, $parent = null)
-    {
-        return !$this->can($ability, $model, $parent);
     }
 
     /**
