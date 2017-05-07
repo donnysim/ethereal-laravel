@@ -85,7 +85,7 @@ trait IsRole
     public function createAssignRecord(Model $authority, $attributes = [])
     {
         if (!$authority->exists) {
-            throw new InvalidArgumentException('Authority must exist assign a role.');
+            throw new InvalidArgumentException('Authority must exist to assign a role.');
         }
 
         /** @var AssignedRole $assignClass */
