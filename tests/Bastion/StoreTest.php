@@ -91,24 +91,6 @@ class StoreTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_checks_if_ability_is_allowed_including_group()
-    {
-        $this->migrate();
-
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->group('employee')->to('kick', $user);
-
-        self::assertFalse($store->hasAbility($user, 'kick', $user));
-        self::assertTrue($store->hasAbility($user, 'kick', $user, 'employee'));
-    }
-
-    /**
-     * @test
-     */
     public function it_checks_if_ability_is_allowed_including_parent()
     {
         $this->migrate();
@@ -118,10 +100,10 @@ class StoreTest extends BaseTestCase
         $user = TestUserModel::create(['email' => 'john@example.com']);
 
         $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->group('employee')->parent($user)->to('kick', $user);
+        $bastion->allow('admin')->parent($user)->to('kick', $user);
 
-        self::assertFalse($store->hasAbility($user, 'kick', $user, 'employee'));
-        self::assertTrue($store->hasAbility($user, 'kick', $user, 'employee', $user));
+        self::assertFalse($store->hasAbility($user, 'kick', $user));
+        self::assertTrue($store->hasAbility($user, 'kick', $user, $user));
     }
 
     /**

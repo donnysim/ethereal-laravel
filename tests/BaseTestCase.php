@@ -1,11 +1,5 @@
 <?php
 
-use Ethereal\Bastion\Rucks;
-use Ethereal\Bastion\Bastion;
-use Ethereal\Bastion\Store\Store;
-use Ethereal\Cache\GroupFileStore;
-use Ethereal\Database\Ethereal;
-use Illuminate\Container\Container;
 use Orchestra\Testbench\TestCase;
 
 class BaseTestCase extends TestCase

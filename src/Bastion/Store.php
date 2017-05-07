@@ -108,19 +108,18 @@ class Store
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|null $model
-     * @param string|null $group
      * @param \Illuminate\Database\Eloquent\Model|null $parent
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function hasAbility(Model $authority, $ability, $model = null, $group = null, $parent = null)
+    public function hasAbility(Model $authority, $ability, $model = null, $parent = null)
     {
         $map = $this->getMap($authority);
 
         /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
         $abilityClass = Helper::getAbilityModelClass();
-        $requested = $abilityClass::compileAbilityIdentifiers($ability, $model, $group, $parent);
+        $requested = $abilityClass::compileAbilityIdentifiers($ability, $model, $parent);
 
         $allows = false;
 

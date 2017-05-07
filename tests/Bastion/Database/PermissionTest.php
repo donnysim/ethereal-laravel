@@ -32,29 +32,26 @@ class PermissionTest extends BaseTestCase
             'target_id' => $user->getKey(),
             'target_type' => $user->getMorphClass(),
             'forbidden' => false,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
 
-        Permission::createPermissionRecord(1, $user, 'employee', true);
+        Permission::createPermissionRecord(1, $user, true);
         self::assertEquals(1, Permission::where([
             'ability_id' => 1,
             'target_id' => $user->getKey(),
             'target_type' => $user->getMorphClass(),
             'forbidden' => true,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
 
-        Permission::createPermissionRecord(1, $user, 'employee', true, $owner);
+        Permission::createPermissionRecord(1, $user, true, $owner);
         self::assertEquals(1, Permission::where([
             'ability_id' => 1,
             'target_id' => $user->getKey(),
             'target_type' => $user->getMorphClass(),
             'forbidden' => true,
-            'group' => 'employee',
             'parent_id' => $owner->getKey(),
             'parent_type' => $owner->getMorphClass(),
         ])->count());

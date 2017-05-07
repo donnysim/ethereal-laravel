@@ -73,7 +73,6 @@ class ManageProxy
     public function allow($abilities, $modelListOrClass = null, $ids = null)
     {
         (new GivesAbilities($this->store, [$this->authority], false))
-            ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->to($abilities, $modelListOrClass, $ids);
     }
@@ -92,7 +91,6 @@ class ManageProxy
     public function disallow($abilities, $modelListOrClass = null, $ids = null)
     {
         (new RemovesAbilities($this->store, [$this->authority], false))
-            ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->to($abilities, $modelListOrClass, $ids);
     }
@@ -110,7 +108,6 @@ class ManageProxy
     public function forbid($abilities, $modelListOrClass = null, $ids = null)
     {
         (new GivesAbilities($this->store, [$this->authority], true))
-            ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->to($abilities, $modelListOrClass, $ids);
     }
@@ -129,7 +126,6 @@ class ManageProxy
     public function permit($abilities, $modelListOrClass = null, $ids = null)
     {
         (new RemovesAbilities($this->store, [$this->authority], true))
-            ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->to($abilities, $modelListOrClass, $ids);
     }

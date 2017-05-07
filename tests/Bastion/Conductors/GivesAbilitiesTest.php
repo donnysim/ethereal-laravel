@@ -25,7 +25,6 @@ class GivesAbilitiesTest extends BaseTestCase
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => false,
-            'group' => null,
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -52,35 +51,6 @@ class GivesAbilitiesTest extends BaseTestCase
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => false,
-            'group' => null,
-            'parent_id' => null,
-            'parent_type' => null,
-        ])->count());
-        self::assertEquals(1, Ability::where([
-            'name' => 'kick',
-            'entity_id' => $user->getKey(),
-            'entity_type' => $user->getMorphClass(),
-        ])->count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_give_ability_on_group()
-    {
-        $this->migrate();
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $owner = TestUserModel::create(['email' => 'jane@example.com']);
-
-        $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->group('employee')->to('kick', $user);
-
-        self::assertEquals(1, Permission::where([
-            'target_id' => $owner->getKey(),
-            'target_type' => $owner->getMorphClass(),
-            'forbidden' => false,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -101,13 +71,12 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->group('employee')->everything();
+        $allow->everything();
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => false,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -129,13 +98,12 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner]);
-        $allow->parent($owner)->group('employee')->to('kick', $user);
+        $allow->parent($owner)->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => false,
-            'group' => 'employee',
             'parent_id' => $owner->getKey(),
             'parent_type' => $owner->getMorphClass(),
         ])->count());
@@ -162,7 +130,6 @@ class GivesAbilitiesTest extends BaseTestCase
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => true,
-            'group' => null,
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -189,35 +156,6 @@ class GivesAbilitiesTest extends BaseTestCase
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => true,
-            'group' => null,
-            'parent_id' => null,
-            'parent_type' => null,
-        ])->count());
-        self::assertEquals(1, Ability::where([
-            'name' => 'kick',
-            'entity_id' => $user->getKey(),
-            'entity_type' => $user->getMorphClass(),
-        ])->count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_forbid_ability_on_group()
-    {
-        $this->migrate();
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $owner = TestUserModel::create(['email' => 'jane@example.com']);
-
-        $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->group('employee')->to('kick', $user);
-
-        self::assertEquals(1, Permission::where([
-            'target_id' => $owner->getKey(),
-            'target_type' => $owner->getMorphClass(),
-            'forbidden' => true,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -238,13 +176,12 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->group('employee')->everything();
+        $allow->everything();
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => true,
-            'group' => 'employee',
             'parent_id' => null,
             'parent_type' => null,
         ])->count());
@@ -266,13 +203,12 @@ class GivesAbilitiesTest extends BaseTestCase
         $owner = TestUserModel::create(['email' => 'jane@example.com']);
 
         $allow = new GivesAbilities(new Store, [$owner], true);
-        $allow->parent($owner)->group('employee')->to('kick', $user);
+        $allow->parent($owner)->to('kick', $user);
 
         self::assertEquals(1, Permission::where([
             'target_id' => $owner->getKey(),
             'target_type' => $owner->getMorphClass(),
             'forbidden' => true,
-            'group' => 'employee',
             'parent_id' => $owner->getKey(),
             'parent_type' => $owner->getMorphClass(),
         ])->count());

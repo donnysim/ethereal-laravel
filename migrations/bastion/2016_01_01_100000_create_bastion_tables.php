@@ -51,7 +51,6 @@ class CreateBastionTables extends Migration
             $table->integer('parent_id')->unsigned()->nullable();
             $table->string('parent_type')->nullable();
             $table->boolean('forbidden')->default(false);
-            $table->string('group')->nullable();
             $table->timestamps();
 
             $table->foreign('ability_id')->references('id')->on(Helper::getAbilityTable())->onUpdate('cascade')->onDelete('cascade');

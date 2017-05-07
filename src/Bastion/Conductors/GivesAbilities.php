@@ -121,7 +121,7 @@ class GivesAbilities
 
             $missingAbilities = $abilityIds->diff($authority->abilities()->whereIn($abilityKeyName, $abilityIds)->pluck('id'));
             foreach ($missingAbilities as $abilityId) {
-                $permissionModelClass::createPermissionRecord($abilityId, $authority, $this->scopeGroup, $this->forbidden, $this->scopeParent);
+                $permissionModelClass::createPermissionRecord($abilityId, $authority, $this->forbidden, $this->scopeParent);
             }
         }
     }

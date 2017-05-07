@@ -112,7 +112,6 @@ class CheckProxy
     public function can($ability, $model = null)
     {
         return (new ChecksAbilities($this->store, $this->authority))
-            ->group($this->scopeGroup)
             ->parent($this->scopeParent)
             ->can($ability, $model);
     }

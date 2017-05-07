@@ -281,39 +281,6 @@ class AbilityTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_has_identifier_with_group_when_retrieved_from_store()
-    {
-        $this->migrate();
-
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-
-        $role = Role::create(['name' => 'admin']);
-        $bastion->allow($role)->group('employee')->to('sit');
-
-        self::assertEquals('sit-employee', $store->getAbilities($role)->first(function ($item) {
-            return $item->name === 'sit';
-        })->identifier);
-
-        $bastion->allow($role)->group('employee')->to('stand', TestUserModel::class);
-        self::assertEquals('stand-testusermodel-employee', $store->getAbilities($role)->first(function ($item) {
-            return $item->name === 'stand';
-        })->identifier);
-
-        $bastion->allow($role)->group('employee')->to('crouch', TestUserModel::class, 1);
-        self::assertEquals('crouch-testusermodel-1-employee', $store->getAbilities($role)->first(function ($item) {
-            return $item->name === 'crouch';
-        })->identifier);
-
-        $bastion->allow($role)->group('employee')->everything();
-        self::assertEquals('*-*-employee', $store->getAbilities($role)->first(function ($item) {
-            return $item->name === '*';
-        })->identifier);
-    }
-
-    /**
-     * @test
-     */
     public function it_has_identifier_with_parent_when_retrieved_from_store()
     {
         $this->migrate();
@@ -322,24 +289,24 @@ class AbilityTest extends BaseTestCase
         $bastion = new Bastion($this->app, $store);
 
         $role = Role::create(['name' => 'admin']);
-        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('sit');
+        $bastion->allow($role)->parent(TestUserModel::class, 2)->to('sit');
 
-        self::assertEquals('sit-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+        self::assertEquals('sit-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
             return $item->name === 'sit';
         })->identifier);
 
-        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('stand', TestUserModel::class);
-        self::assertEquals('stand-testusermodel-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+        $bastion->allow($role)->parent(TestUserModel::class, 2)->to('stand', TestUserModel::class);
+        self::assertEquals('stand-testusermodel-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
             return $item->name === 'stand';
         })->identifier);
 
-        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->to('crouch', TestUserModel::class, 1);
-        self::assertEquals('crouch-testusermodel-1-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+        $bastion->allow($role)->parent(TestUserModel::class, 2)->to('crouch', TestUserModel::class, 1);
+        self::assertEquals('crouch-testusermodel-1-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
             return $item->name === 'crouch';
         })->identifier);
 
-        $bastion->allow($role)->group('employee')->parent(TestUserModel::class, 2)->everything();
-        self::assertEquals('*-*-employee-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
+        $bastion->allow($role)->parent(TestUserModel::class, 2)->everything();
+        self::assertEquals('*-*-testusermodel-2', $store->getAbilities($role)->first(function ($item) {
             return $item->name === '*';
         })->identifier);
     }
@@ -356,19 +323,19 @@ class AbilityTest extends BaseTestCase
             Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]))
         );
         self::assertEquals(
-            ['kick-testusermodel-guest', 'kick-*-guest', '*-testusermodel-guest', '*-*-guest', 'kick-testusermodel-1-guest', '*-testusermodel-1-guest'],
-            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]), 'guest')
+            ['kick-testusermodel', 'kick-*', '*-testusermodel', '*-*', 'kick-testusermodel-1', '*-testusermodel-1'],
+            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]))
         );
         self::assertEquals(
             [
-                'kick-testusermodel-guest-testusermodel-2',
-                'kick-*-guest-testusermodel-2',
-                '*-testusermodel-guest-testusermodel-2',
-                '*-*-guest-testusermodel-2',
-                'kick-testusermodel-1-guest-testusermodel-2',
-                '*-testusermodel-1-guest-testusermodel-2',
+                'kick-testusermodel-testusermodel-2',
+                'kick-*-testusermodel-2',
+                '*-testusermodel-testusermodel-2',
+                '*-*-testusermodel-2',
+                'kick-testusermodel-1-testusermodel-2',
+                '*-testusermodel-1-testusermodel-2',
             ],
-            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]), 'guest', new TestUserModel(['id' => 2]))
+            Ability::compileAbilityIdentifiers('kick', new TestUserModel(['id' => 1]), new TestUserModel(['id' => 2]))
         );
     }
 

@@ -122,7 +122,6 @@ class RemovesAbilities
 
             $query = $authority->abilities()->newPivotStatement()
                 ->where('forbidden', $this->forbidden)
-                ->where('group', $this->scopeGroup)
                 ->whereIn('ability_id', $abilityIds->all());
 
             if ($this->scopeParent) {

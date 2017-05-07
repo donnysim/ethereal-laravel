@@ -22,27 +22,26 @@ trait Authority
     /**
      * Check authority for permissions.
      *
-     * @param string|null $group
      * @param \Illuminate\Database\Eloquent\Model|null $parent
      *
      * @return \Ethereal\Bastion\Conductors\CheckProxy
      * @throws \InvalidArgumentException
      */
-    public function check($group = null, $parent = null)
+    public function check($parent = null)
     {
-        return Helper::bastion()->check($this)->group($group)->parent($parent);
+        return Helper::bastion()->check($this)->parent($parent);
     }
 
     /**
      * Manage authority roles and permissions.
      *
-     * @param string|null $group
      * @param \Illuminate\Database\Eloquent\Model|null $parent
      *
      * @return \Ethereal\Bastion\Conductors\ManageProxy
+     * @throws \InvalidArgumentException
      */
-    public function manage($group = null, $parent = null)
+    public function manage($parent = null)
     {
-        return Helper::bastion()->manage($this)->group($group)->parent($parent);
+        return Helper::bastion()->manage($this)->parent($parent);
     }
 }

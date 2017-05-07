@@ -16,13 +16,6 @@ trait UsesScopes
     protected $scopeParent;
 
     /**
-     * Permission group.
-     *
-     * @var string
-     */
-    protected $scopeGroup;
-
-    /**
      * Set parent scope for permission.
      *
      * @param \Illuminate\Database\Eloquent\Model|string $model
@@ -44,20 +37,6 @@ trait UsesScopes
         }
 
         $this->scopeParent = $model;
-
-        return $this;
-    }
-
-    /**
-     * Set group scope.
-     *
-     * @param string $group
-     *
-     * @return $this
-     */
-    public function group($group)
-    {
-        $this->scopeGroup = $group;
 
         return $this;
     }

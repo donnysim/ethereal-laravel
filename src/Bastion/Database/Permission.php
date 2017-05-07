@@ -14,7 +14,7 @@ class Permission extends Ethereal
      *
      * @var string[]
      */
-    protected $columns = ['ability_id', 'target_id', 'target_type', 'parent_id', 'parent_type', 'forbidden', 'group', 'created_at', 'updated_at'];
+    protected $columns = ['ability_id', 'target_id', 'target_type', 'parent_id', 'parent_type', 'forbidden', 'created_at', 'updated_at'];
 
     /**
      * Create a new Permission model instance.

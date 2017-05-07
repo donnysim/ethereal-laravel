@@ -45,6 +45,6 @@ class ChecksAbilities
      */
     public function can($ability, $model = null)
     {
-        return $this->store->hasAbility($this->authority, $ability, $model, $this->scopeGroup, $this->scopeParent);
+        return $this->store->hasAbility($this->authority, $ability, $model, $this->scopeParent);
     }
 }
