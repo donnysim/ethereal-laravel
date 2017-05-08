@@ -39,14 +39,14 @@ class Map
      *
      * @var int
      */
-    protected $highestRoleLevel = 0;
+    protected $highestRoleLevel = 1000;
 
     /**
      * Lowest role level. Higher is lower.
      *
      * @var int
      */
-    protected $lowestRoleLevel = 0;
+    protected $lowestRoleLevel = 1000;
 
     /**
      * Map constructor.
@@ -58,6 +58,9 @@ class Map
     {
         $this->roles = $roles;
         $this->abilities = $abilities;
+
+        $this->highestRoleLevel = $roles->min('level');
+        $this->lowestRoleLevel = $roles->max('level');
     }
 
     /**
@@ -155,5 +158,25 @@ class Map
     public function getRoles()
     {
         return $this->roles;
+    }
+
+    /**
+     * Get highest role level.
+     *
+     * @return int
+     */
+    public function getHighestRoleLevel()
+    {
+        return $this->highestRoleLevel;
+    }
+
+    /**
+     * Get lowest role level.
+     *
+     * @return int
+     */
+    public function getLowestRoleLevel()
+    {
+        return $this->lowestRoleLevel;
     }
 }
