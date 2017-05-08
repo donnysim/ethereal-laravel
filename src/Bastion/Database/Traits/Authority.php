@@ -142,6 +142,20 @@ trait Authority
     }
 
     /**
+     * Remove all roles and assign the given roles to authority.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @throws \InvalidArgumentException
+     */
+    public function reassign($roles)
+    {
+        $this->roles()->detach();
+        (new AssignsRoles(Helper::bastion()->getStore(), is_array($roles) ? $roles : func_get_args()))->to($this);
+    }
+
+    /**
      * Remove the given role from authority.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $roles
