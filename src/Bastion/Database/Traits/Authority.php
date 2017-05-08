@@ -234,11 +234,12 @@ trait Authority
      * @param string $name
      * @param string|bool|int $value
      *
+     * @return bool
      * @throws \InvalidArgumentException
      */
     public function hasRoleWith($name, $value)
     {
-        $this->permissions()->has($name, $value);
+        return $this->permissions()->has($name, $value);
     }
 
     /**
