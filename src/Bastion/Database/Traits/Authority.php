@@ -15,17 +15,6 @@ trait Authority
     use HasRoles, HasAbilities;
 
     /**
-     * Get authority permissions.
-     *
-     * @return \Ethereal\Bastion\Map
-     * @throws \InvalidArgumentException
-     */
-    public function permissions()
-    {
-        return Helper::bastion()->permissions($this);
-    }
-
-    /**
      * Alias to a method.
      *
      * @param array|string $role
@@ -239,4 +228,27 @@ trait Authority
             ->to($abilities, $modelListOrClass, $ids);
     }
 
+    /**
+     * Check if any of the available roles have an option.
+     *
+     * @param string $name
+     * @param string|bool|int $value
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function hasRoleWith($name, $value)
+    {
+        $this->permissions()->has($name, $value);
+    }
+
+    /**
+     * Get authority permissions.
+     *
+     * @return \Ethereal\Bastion\Map
+     * @throws \InvalidArgumentException
+     */
+    public function permissions()
+    {
+        return Helper::bastion()->permissions($this);
+    }
 }
