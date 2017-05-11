@@ -36,10 +36,10 @@ class BastionServiceProvider extends ServiceProvider
         });
 
         Relation::morphMap([
-            'bastion-ability' => Database\Ability::class,
-            'bastion-assigned-role' => Database\AssignedRole::class,
-            'bastion-permission' => Database\Permission::class,
-            'bastion-role' => Database\Role::class,
+            'bastion-ability' => Helper::getAbilityModelClass(),
+            'bastion-assigned-role' => Helper::getAssignedRoleModelClass(),
+            'bastion-permission' => Helper::getPermissionModelClass(),
+            'bastion-role' => Helper::getRoleModelClass(),
         ], true);
     }
 }
