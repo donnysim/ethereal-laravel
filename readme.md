@@ -2,7 +2,7 @@
 
 This package extends and changes some laravel functionalities.
 
-> Minimum required laravel version is 5.3.
+> Minimum required laravel version is 5.4.
  
 - [Model](#model)
  
