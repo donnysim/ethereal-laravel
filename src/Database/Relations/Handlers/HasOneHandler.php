@@ -42,7 +42,7 @@ class HasOneHandler extends Handler
                 return false;
             }
 
-            $model->setAttribute($this->relation->getPlainForeignKey(), null);
+            $model->setAttribute($this->relation->getForeignKeyName(), null);
         }
 
         return true;

@@ -2,11 +2,13 @@
 
 trait UsesDatabase
 {
+    use \Orchestra\Testbench\Traits\WithLoadMigrationsFrom;
+
     protected function migrate()
     {
+        $this->loadMigrationsFrom(__DIR__ . '/migrations');
         $this->artisan('migrate', [
             '--database' => 'ethereal',
-            '--realpath' => __DIR__ . '/migrations',
         ]);
     }
 
@@ -23,5 +25,10 @@ trait UsesDatabase
             'database' => ':memory:',
             'prefix' => '',
         ]);
+    }
+
+    protected function getPackageProviders($app)
+    {
+        return [\Orchestra\Database\ConsoleServiceProvider::class];
     }
 }

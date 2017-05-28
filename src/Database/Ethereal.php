@@ -221,18 +221,12 @@ class Ethereal extends BaseModel
         }
 
         /** @var Ethereal $freshModel */
-        $freshModel = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey())->firstOrFail($attributes ?: ['*']);
+        $freshModel = $this->newQueryWithoutScopes()->findOrFail($this->getKey(), $attributes ?: ['*']);
 
         if ($attributes) {
             $this->setRawAttributes(
                 array_merge($this->getAttributes(), Arr::only($freshModel->getAttributes(), $attributes))
             );
-
-            foreach ($attributes as $attribute) {
-                if (array_key_exists($attribute, $this->attributes)) {
-                    $this->syncOriginalAttribute($attribute);
-                }
-            }
         } else {
             $this->setRawAttributes($freshModel->getAttributes(), true);
         }
