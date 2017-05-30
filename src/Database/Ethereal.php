@@ -233,16 +233,4 @@ class Ethereal extends BaseModel
 
         return $this;
     }
-
-    /**
-     * Determine if the attribute is present in model.
-     *
-     * @param string $key
-     *
-     * @return bool
-     */
-    public function hasAttribute($key)
-    {
-        return array_key_exists($key, $this->attributes);
-    }
 }
