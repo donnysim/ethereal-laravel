@@ -2,27 +2,20 @@
 
 namespace Ethereal\Bastion\Database;
 
-use Ethereal\Bastion\Helper;
 use Ethereal\Database\Ethereal;
+use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @method rolesForAuthority(array $roleIds, Model $authority)
+ */
 class AssignedRole extends Ethereal
 {
-    /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
-     */
-    public $timestamps = false;
+    use Traits\IsAssignedRole;
 
     /**
-     * Create a new Permission model instance.
+     * Database columns. This is used to filter out invalid columns.
      *
-     * @param array $attributes
+     * @var string[]
      */
-    public function __construct(array $attributes = [])
-    {
-        $this->table = Helper::getAssignedRoleTable();
-
-        parent::__construct($attributes);
-    }
+    protected $columns = ['role_id', 'target_id', 'target_type', 'created_at', 'updated_at'];
 }

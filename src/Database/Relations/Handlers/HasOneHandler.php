@@ -2,58 +2,47 @@
 
 namespace Ethereal\Database\Relations\Handlers;
 
-use Ethereal\Database\Ethereal;
+use Ethereal\Database\Relations\Manager;
 
-class HasOneHandler extends BaseRelationHandler
+class HasOneHandler extends Handler
 {
-    /**
-     * @var \Illuminate\Database\Eloquent\Relations\HasOne
-     */
-    protected $relation;
-
     /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
      */
     public function build()
     {
-        $this->boxModel()->validate();
+        $model = $this->hydrateModel($this->data);
+        $this->validateType($model);
 
-        return $this->data;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $this->validateClass($this->data);
+        return $model;
     }
 
     /**
      * Save relation data.
      *
      * @return bool
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
      * @throws \Exception
      */
     public function save()
     {
-        if ($this->relationOptions & Ethereal::OPTION_SAVE) {
-            $this->relation->save($this->data);
+        $model = $this->build();
+
+        if ($this->options & Manager::SAVE) {
+            if (!$this->relation->save($model)) {
+                return false;
+            }
         }
 
-        if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-            if ($this->data->exists && !$this->data->delete()) {
+        if ($this->options & Manager::DELETE && $model->exists) {
+            if (!$model->delete()) {
                 return false;
             }
 
-            if ($this->shouldRemoveAfterDelete()) {
-                $this->removeModelRelation();
-            }
+            $model->setAttribute($this->relation->getForeignKeyName(), null);
         }
 
         return true;
@@ -66,10 +55,10 @@ class HasOneHandler extends BaseRelationHandler
      */
     public function isWaitingForParent()
     {
-        if ($this->relationOptions === Ethereal::OPTION_DELETE) {
+        if ($this->options === Manager::DELETE) {
             return false;
         }
 
-        return !$this->parent->exists;
+        return !$this->relation->getParent()->exists;
     }
 }

@@ -2,54 +2,176 @@
 
 namespace Ethereal\Database\Relations\Handlers;
 
-use Ethereal\Database\Ethereal;
-use Ethereal\Database\Relations\RelationManager;
+use Ethereal\Database\Relations\Exceptions\InvalidTypeException;
+use Ethereal\Database\Relations\Manager;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use InvalidArgumentException;
 
-class BelongsToManyHandler extends BaseRelationHandler
+class BelongsToManyHandler extends Handler
 {
     const NORMAL = 1;
     const SYNC = 2;
 
     /**
-     * Collection type.
-     *
-     * @var int
-     */
-    protected $type;
-
-    /**
-     * @var \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     */
-    protected $relation;
-
-    /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
      */
     public function build()
     {
         $type = static::getArrayType($this->data);
 
         if ($type === static::NORMAL) {
-            $this->boxCollection();
-        } elseif ($type === static::SYNC) {
-            $this->data = new EloquentCollection($this->data);
+            $data = $this->hydrateCollection($this->data);
+        } else {
+            $data = new Collection($this->data);
         }
 
-        $this->validate();
+        $this->validate($data);
 
-        return $this->data;
+        return $data;
     }
 
     /**
-     * Check if the list is a normal relations array.
+     * Save relation data.
+     *
+     * @return bool
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
+     */
+    public function save()
+    {
+        $data = $this->build();
+        $type = static::getArrayType($data);
+
+        if ($type === static::NORMAL) {
+            $attach = [];
+            $detach = [];
+            $sync = [];
+
+            foreach ($data as $item) {
+                if ($this->options & Manager::SAVE) {
+                    if (!$item->save()) {
+                        return false;
+                    }
+                }
+
+                if ($this->options & Manager::ATTACH) {
+                    $attach[$item->getKey()] = $this->getPivotAttributes($item);
+                }
+
+                if ($this->options & Manager::DETACH) {
+                    $detach[] = $item->getKey();
+                }
+
+                if ($this->options & Manager::DELETE && $item->exists) {
+                    $key = $item->getKey();
+                    if (!$item->delete()) {
+                        return false;
+                    }
+
+                    if ($this->options & Manager::DETACH && !Manager::isSoftDeleting($item)) {
+                        $detach[] = $key;
+                    }
+                }
+
+                if ($item->exists) {
+                    $sync[$item->getKey()] = $this->getPivotAttributes($item);
+                }
+            }
+
+            if ($this->options & Manager::SYNC) {
+                $this->relation->sync($sync);
+            } else {
+                if ($detach) {
+                    $this->relation->detach($detach);
+                }
+
+                if ($attach) {
+                    $this->relation->sync($attach, false);
+                }
+            }
+        } elseif ($this->options & Manager::SYNC) {
+            $this->relation->sync($this->data);
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if the relation is waiting for parent model to be saved.
+     *
+     * @return bool
+     */
+    public function isWaitingForParent()
+    {
+        return !$this->relation->getParent()->exists;
+    }
+
+    /**
+     * Validate data depending on it's type.
+     *
+     * @param \Illuminate\Database\Eloquent\Collection|\Illuminate\Database\Eloquent\Model $data
+     *
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
+     */
+    public function validate($data)
+    {
+        $type = static::getArrayType($this->data);
+
+        if ($type === static::NORMAL) {
+            $this->validateType($data);
+        } else {
+            if ($data->has(0)) {
+                throw new InvalidTypeException("`{$this->relationName}` relation in sync mode cannot contain index of 0.");
+            }
+
+            foreach ($this->data as $key => $item) {
+                if (!is_numeric($key)) {
+                    throw new InvalidTypeException("`{$this->relationName}` relation in sync mode key can only be numeric.");
+                }
+
+                if (!is_numeric($item) && !is_array($item)) {
+                    throw new InvalidTypeException("`{$this->relationName}` relation in sync mode can only consist of int and array.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Get model pivot keys.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $item
+     *
+     * @return array
+     */
+    protected function getPivotAttributes(Model $item)
+    {
+        $attr = [];
+
+        if ($item->relationLoaded('pivot')) {
+            $attr = array_except($item->getRelation('pivot')->getAttributes(), [$this->getOtherKeyName()]);
+
+            return $attr;
+        }
+
+        return $attr;
+    }
+
+    /**
+     * Return foreign key column name.
+     *
+     * @return string
+     */
+    public function getOtherKeyName()
+    {
+        return last(explode('.', $this->relation->getOtherKey()));
+    }
+
+    /**
+     * Determine if the list is a normal relations array.
      *
      * @param \Illuminate\Support\Collection|array $list
      *
@@ -57,12 +179,7 @@ class BelongsToManyHandler extends BaseRelationHandler
      */
     public static function getArrayType($list)
     {
-        if ($list instanceof Arrayable) {
-            $isAssoc = Arr::isAssoc($list->toArray());
-        } else {
-            $isAssoc = Arr::isAssoc($list);
-        }
-
+        $isAssoc = $list instanceof Arrayable ? Arr::isAssoc($list->toArray()) : Arr::isAssoc($list);
         $allArrays = true;
 
         foreach ($list as $item) {
@@ -80,135 +197,5 @@ class BelongsToManyHandler extends BaseRelationHandler
         }
 
         return static::NORMAL;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $type = static::getArrayType($this->data);
-
-        if ($type === static::NORMAL) {
-            $this->validateClass($this->data);
-        } elseif ($type === static::SYNC) {
-
-            if ($this->data->has(0)) {
-                throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode cannot contain index of 0.");
-            }
-
-            foreach ($this->data as $key => $item) {
-                if (!is_numeric($key)) {
-                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode key can only be numeric.");
-                }
-
-                if (!is_numeric($item) && !is_array($item)) {
-                    throw new InvalidArgumentException("`{$this->relationName}` relation in sync mode can only consist of int and array.");
-                }
-            }
-        }
-    }
-
-    /**
-     * Save relation data.
-     *
-     * @return bool
-     * @throws \Exception
-     */
-    public function save()
-    {
-        $type = static::getArrayType($this->data);
-
-        if ($type === static::NORMAL) {
-            foreach ($this->data as $item) {
-                /** @var \Illuminate\Database\Eloquent\Model $item */
-
-                if ($this->relationOptions & Ethereal::OPTION_SAVE) {
-                    $this->relation->save($item);
-                }
-
-                if ($this->relationOptions & Ethereal::OPTION_ATTACH) {
-                    $this->relation->sync([$item->getKey() => $this->getPivotAttributes($item)], false);
-                }
-
-                if ($this->relationOptions & Ethereal::OPTION_DETACH) {
-                    $this->relation->detach($item);
-                }
-
-                if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-                    if ($item->exists && !$item->delete()) {
-                        return false;
-                    }
-
-                    if (!($this->relationOptions & Ethereal::OPTION_DETACH) && !RelationManager::isSoftDeleting($item)) {
-                        $this->relation->detach($item);
-                    }
-
-                    if ($this->shouldRemoveAfterDelete()) {
-                        $this->removeCollectionRelation($item);
-                    }
-                }
-            }
-
-            if ($this->relationOptions & Ethereal::OPTION_SYNC) {
-                $sync = [];
-
-                foreach ($this->data as $item) {
-                    /** @var \Illuminate\Database\Eloquent\Model $item */
-
-                    $sync[$item->getKey()] = $this->getPivotAttributes($item);
-                }
-
-                $this->relation->sync($sync);
-            }
-        } elseif ($type === static::SYNC) {
-            if ($this->relationOptions & Ethereal::OPTION_SYNC) {
-                $this->relation->sync($this->data);
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Get model pivot keys.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $item
-     *
-     * @return array
-     */
-    protected function getPivotAttributes(Model $item)
-    {
-        $attrs = [];
-
-        if ($item->relationLoaded('pivot')) {
-            $attrs = array_except($item->getRelation('pivot')->getAttributes(), [$this->getOtherKeyName()]);
-
-            return $attrs;
-        }
-
-        return $attrs;
-    }
-
-    /**
-     * Return foreign key column name.
-     *
-     * @return string
-     */
-    public function getOtherKeyName()
-    {
-        return explode('.', $this->relation->getOtherKey())[1];
-    }
-
-    /**
-     * Check if the relation is waiting for parent model to be saved.
-     *
-     * @return bool
-     */
-    public function isWaitingForParent()
-    {
-        return !$this->parent->exists;
     }
 }

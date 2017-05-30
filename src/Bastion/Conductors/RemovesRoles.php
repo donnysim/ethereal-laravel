@@ -3,76 +3,76 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
-use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
 class RemovesRoles
 {
-    use Traits\ClearsCache;
+    use Traits\CollectsAuthorities;
 
     /**
-     * List of roles to remove from authority.
+     * Roles to remove from the authority.
      *
-     * @var array|string
+     * @var array
      */
-    protected $roles;
+    protected $roles = [];
 
     /**
      * Permission store.
      *
-     * @var \Ethereal\Bastion\Store\Store
+     * @var \Ethereal\Bastion\Store
      */
     protected $store;
 
     /**
-     * AssignsRole constructor.
+     * RemovesRoles constructor.
      *
-     * @param \Ethereal\Bastion\Store\Store $store
-     * @param string|int|array $roles
+     * @param \Ethereal\Bastion\Store $store
+     * @param array $roles
      */
-    public function __construct($store, $roles)
+    public function __construct($store, array $roles)
     {
         $this->roles = $roles;
         $this->store = $store;
     }
 
     /**
-     * Remove roles from provided authorities.
+     * Remove roles to one or more authorities.
      *
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
+     * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
+     * @param array $ids
      *
+     * @return $this
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function from($authority)
+    public function from($authorities, array $ids = [])
     {
-        $authorities = is_array($authority) ? $authority : func_get_args();
+        $authorities = $this->collectAuthorities($authorities, $ids);
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
         $roles = $roleClass::collectRoles($this->roles)->keys()->all();
 
-        $assignedModel = Helper::getAssignedRoleModel();
-        $query = $assignedModel->newQuery();
+        if (empty($roles)) {
+            return $this;
+        }
 
-        foreach ($authorities as $auth) {
-            /** @var \Illuminate\Database\Eloquent\Model $auth */
-            if (!$auth instanceof Model || !$auth->exists) {
+        $query = Helper::getAssignedRoleModel()->newQuery();
+
+        foreach ($authorities as $authority) {
+            /** @var \Illuminate\Database\Eloquent\Model $authority */
+            if (!$authority->exists) {
                 throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
             }
 
-            $query->orWhere(function ($query) use ($assignedModel, $auth, $roles) {
-                /** @var \Illuminate\Database\Query\Builder $query */
-                // TODO move to model?
-                $query
-                    ->whereIn("{$assignedModel->getTable()}.role_id", $roles)
-                    ->where("{$assignedModel->getTable()}.entity_id", $auth->getKey())
-                    ->where("{$assignedModel->getTable()}.entity_type", $auth->getMorphClass());
+            $query->orWhere(function ($query) use ($roles, $authority) {
+                $query->rolesForAuthority($roles, $authority);
             });
         }
 
-        $this->clearCache($this->store, false, $authorities);
-
-        // TODO what if too many auth users?
         $query->delete();
+        $this->store->clearCacheFor($authorities);
+
+        return $this;
     }
 }

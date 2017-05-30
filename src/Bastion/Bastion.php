@@ -2,112 +2,76 @@
 
 namespace Ethereal\Bastion;
 
+use BadMethodCallException;
 use Ethereal\Bastion\Conductors\AssignsRoles;
+use Ethereal\Bastion\Conductors\CheckProxy;
 use Ethereal\Bastion\Conductors\ChecksRoles;
-use Ethereal\Bastion\Conductors\DeniesAbilities;
 use Ethereal\Bastion\Conductors\GivesAbilities;
-use Ethereal\Bastion\Conductors\PermitsAbilities;
+use Ethereal\Bastion\Conductors\ManageProxy;
 use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
-use Ethereal\Bastion\Store\Store;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @method policy($model, $policy)
+ * @method array policies()
+ * @method bool allows($ability, $model = null, $payload = [])
+ * @method bool denies($ability, $model = null, $payload = [])
+ */
 class Bastion
 {
     /**
-     * The store instance.
+     * Default rucks type to use.
      *
-     * @var \Ethereal\Bastion\Store\Store
+     * @var string
+     */
+    protected static $type = 'user';
+
+    /**
+     * The container instance.
+     *
+     * @var \Illuminate\Contracts\Container\Container
+     */
+    protected $container;
+
+    /**
+     * Initiated ruck instances.
+     *
+     * @var array
+     */
+    protected $rucks = [];
+
+    /**
+     * Pass these methods to Rucks.
+     *
+     * @var array
+     */
+    protected $passthrough = ['policy', 'policies', 'allows', 'denies'];
+
+    /**
+     * Primary store used to get roles and abilities.
+     *
+     * @var \Ethereal\Bastion\Store
      */
     protected $store;
 
     /**
-     * The access at rucks instance.
+     * Create a new rucks instance.
      *
-     * @var \Ethereal\Bastion\Rucks
+     * @param \Illuminate\Contracts\Container\Container $container
+     * @param \Ethereal\Bastion\Store $store
      */
-    protected $rucks;
-
-    /**
-     * Bastion constructor.
-     *
-     * @param \Ethereal\Bastion\Rucks $rucks
-     * @param \Ethereal\Bastion\Store\Store $store
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function __construct(Rucks $rucks, Store $store)
+    public function __construct(Container $container, $store)
     {
-        $this->rucks = $rucks;
+        $this->container = $container;
         $this->store = $store;
     }
 
     /**
-     * Start a chain, to allow the given authority an ability.
+     * Start a chain to assign the given role to authority.
      *
-     * @param mixed $authorities
-     *
-     * @return \Ethereal\Bastion\Conductors\GivesAbilities
-     */
-    public function allow($authorities)
-    {
-        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
-    }
-
-    /**
-     * Get roles and permissions store.
-     *
-     * @return \Ethereal\Bastion\Store\Store
-     */
-    public function getStore()
-    {
-        return $this->store;
-    }
-
-    /**
-     * Get ability and role map.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Ethereal\Bastion\Store\StoreMap
-     * @throws \InvalidArgumentException
-     */
-    public function getMap(Model $authority)
-    {
-        return $this->getStore()->getMap($authority);
-    }
-
-    /**
-     * Determine if the given authority has the given ability.
-     * This does not check policies or defined abilities.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function can($ability, $model = null)
-    {
-        return $this->getStore()->check($this->getRucks()->resolveUser(), $ability, $model);
-    }
-
-    /**
-     * Start a chain, to disallow the given authority an ability.
-     *
-     * @param mixed $authorities
-     *
-     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
-     */
-    public function disallow($authorities)
-    {
-        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
-    }
-
-    /**
-     * Start a chain, to assign the given role to a authority.
-     *
-     * @param mixed $roles
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
      * @return \Ethereal\Bastion\Conductors\AssignsRoles
      */
@@ -117,31 +81,67 @@ class Bastion
     }
 
     /**
-     * Start a chain, to forbid the given authority an ability.
+     * Start a chain to remove the given role from authority.
      *
-     * @param mixed $authorities
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
-     * @return \Ethereal\Bastion\Conductors\DeniesAbilities
+     * @return \Ethereal\Bastion\Conductors\RemovesRoles
+     */
+    public function retract($roles)
+    {
+        return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
+    }
+
+    /**
+     * Start a chain to give abilities to authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\GivesAbilities
+     */
+    public function allow($authorities)
+    {
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
+    }
+
+    /**
+     * Start a chain to remove abilities from authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     */
+    public function disallow($authorities)
+    {
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
+    }
+
+    /**
+     * Start a chain to forbid abilities to authorities.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\GivesAbilities
      */
     public function forbid($authorities)
     {
-        return new DeniesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
     }
 
     /**
-     * Start a chain, to forbid the given authority an ability.
+     * Start a chain to permit forbidden abilities from authorities.
      *
-     * @param mixed $authorities
+     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
      *
-     * @return \Ethereal\Bastion\Conductors\PermitsAbilities
+     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
      */
     public function permit($authorities)
     {
-        return new PermitsAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args());
+        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
     }
 
     /**
-     * Start a chain, to check if the given authority has a certain role.
+     * Start a chain to check role of authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
@@ -153,65 +153,59 @@ class Bastion
     }
 
     /**
-     * Start a chain, to retract the given role from a authority.
+     * Get authority roles.
      *
-     * @param mixed $roles
+     * @param \Illuminate\Database\Eloquent\Model $authority
      *
-     * @return \Ethereal\Bastion\Conductors\RemovesRoles
-     */
-    public function retract($roles)
-    {
-        return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
-    }
-
-    /**
-     * Determine if the given ability should be granted for the current authority.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param array $payload
-     *
-     * @return bool
+     * @return \Illuminate\Support\Collection
      * @throws \InvalidArgumentException
      */
-    public function allows($ability, $model = null, $payload = [])
+    public function roles(Model $authority)
     {
-        return $this->getRucks()->allows($ability, $model, $payload);
+        return $this->getStore()->getRoles($authority);
     }
 
     /**
-     * Get rucks instance.
+     * Get authority abilities.
      *
-     * @return \Ethereal\Bastion\Rucks
-     */
-    public function getRucks()
-    {
-        return $this->rucks;
-    }
-
-    /**
-     * Set rucks instance.
+     * @param \Illuminate\Database\Eloquent\Model $authority
      *
-     * @param \Ethereal\Bastion\Rucks $rucks
-     */
-    public function setRucks($rucks)
-    {
-        $this->rucks = $rucks;
-    }
-
-    /**
-     * Determine if the given ability should be denied for the current authority.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param array $payload
-     *
-     * @return bool
+     * @return \Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
-    public function denies($ability, $model = null, $payload = [])
+    public function abilities(Model $authority)
     {
-        return $this->getRucks()->denies($ability, $model, $payload);
+        return $this->getStore()->getAbilities($authority);
+    }
+
+    /**
+     * Set default rucks type.
+     *
+     * @param string $type
+     */
+    public function useType($type)
+    {
+        static::$type = $type;
+    }
+
+    /**
+     * Get store.
+     *
+     * @return \Ethereal\Bastion\Store
+     */
+    public function getStore()
+    {
+        return $this->store;
+    }
+
+    /**
+     * Set store.
+     *
+     * @param \Ethereal\Bastion\Store $store
+     */
+    public function setStore($store)
+    {
+        $this->store = $store;
     }
 
     /**
@@ -219,7 +213,7 @@ class Bastion
      */
     public function enableCache()
     {
-        $this->store->enableCache();
+        $this->getStore()->enableCache();
     }
 
     /**
@@ -227,7 +221,7 @@ class Bastion
      */
     public function disableCache()
     {
-        $this->store->disableCache();
+        $this->getStore()->disableCache();
     }
 
     /**
@@ -235,7 +229,7 @@ class Bastion
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      */
-    public function refreshFor(Model $authority)
+    public function clearCacheFor(Model $authority)
     {
         $this->getStore()->clearCacheFor($authority);
     }
@@ -249,60 +243,52 @@ class Bastion
     }
 
     /**
-     * Define a new ability using a callback.
+     * Get authority permissions map.
      *
-     * @param string $ability
-     * @param callable|string $callback
+     * @param \Illuminate\Database\Eloquent\Model $authority
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Map
      * @throws \InvalidArgumentException
      */
-    public function define($ability, $callback)
+    public function permissions(Model $authority)
     {
-        $this->getRucks()->define($ability, $callback);
-
-        return $this;
+        return $this->getStore()->getMap($authority);
     }
 
     /**
-     * Register a callback to run before all checks.
+     * Passthrough methods directly to rucks.
      *
-     * @param callable $callback
-     * @param bool $prepend
+     * @param string $name
+     * @param array $arguments
      *
-     * @return $this
+     * @throws \BadMethodCallException
      */
-    public function before(callable $callback, $prepend = false)
+    public function __call($name, $arguments)
     {
-        $this->getRucks()->before($callback, $prepend);
+        if (in_array($name, $this->passthrough, true)) {
+            return $this->rucks()->{$name}(...$arguments);
+        }
 
-        return $this;
+        throw new BadMethodCallException("Method {$name} is not defined.");
     }
 
     /**
-     * Register a callback to run after all checks.
+     * Get or initiate a new Rucks instance.
      *
-     * @param callable $callback
+     * @param string|null $type
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function after(callable $callback)
+    public function rucks($type = null)
     {
-        $this->getRucks()->after($callback);
+        if (!$type) {
+            $type = static::$type;
+        }
 
-        return $this;
-    }
+        if (!isset($this->rucks[$type])) {
+            $this->rucks[$type] = new Rucks($this->container, $this->store);
+        }
 
-    /**
-     * Get bastion instance for checking other user.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $user
-     *
-     * @return static
-     * @throws \InvalidArgumentException
-     */
-    public function forUser($user)
-    {
-        return new static($this->rucks->forUser($user), $this->store);
+        return $this->rucks[$type];
     }
 }

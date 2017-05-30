@@ -2,238 +2,234 @@
 
 namespace Ethereal\Database;
 
-use Illuminate\Database\Eloquent\MassAssignmentException;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 
-class Ethereal extends Model
+class Ethereal extends BaseModel
 {
-    use HandlesRelations, Validates;
-
-    const OPTION_SKIP = 1;
-    const OPTION_SAVE = 2;
-    const OPTION_DELETE = 4;
-    const OPTION_ATTACH = 8;
-    const OPTION_SYNC = 16;
-    const OPTION_DETACH = 32;
+    use Traits\WithoutFillable,
+        Traits\Validates,
+        Traits\ExtendsRelations,
+        Traits\Translatable,
+        Scopes\QueryModifiers;
 
     /**
-     * Fillable relations.
+     * Database columns. This is used to filter out invalid columns.
      *
      * @var string[]
      */
-    protected $fillableRelations = [];
+    protected $columns = [];
 
     /**
-     * Save a new model and return the instance.
+     * Fill the model with an array of attributes.
      *
      * @param array $attributes
      *
      * @return $this
+     * @throws \UnexpectedValueException
      * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
      */
-    public static function smartNew(array $attributes = [])
+    public function fill(array $attributes)
     {
-        $model = new static;
-        $model->smartFill($attributes);
-
-        return $model;
-    }
-
-    /**
-     * Fill attributes and relations.
-     *
-     * @param array $attributes
-     *
-     * @return $this
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
-     */
-    public function smartFill(array $attributes)
-    {
-        $totallyGuarded = $this->totallyGuarded();
-
-        foreach ($this->fillableFromArray($attributes) as $key => $value) {
+        foreach ($attributes as $key => $value) {
             $key = $this->removeTableFromKey($key);
 
-            // The developers may choose to place some attributes in the "fillable"
-            // array, which means only those attributes may be set through mass
-            // assignment to the model, and all others will just be ignored.
-            if ($this->isFillable($key)) {
-                $this->setAttribute($key, $value);
-            } elseif ($totallyGuarded) {
-                throw new MassAssignmentException($key);
-            } elseif (in_array($key, $this->fillableRelations, true)) {
-                $this->setRelation($key, $value);
+            if ($this->isRelationFillable($key)) {
+                if ($this->relationLoaded($key) && $this->getRelation($key) instanceof BaseModel) {
+                    $this->getRelation($key)->fill($value);
+                } else {
+                    $this->setRelation($key, $value);
+                }
+
+                continue;
             }
+
+            $this->setAttribute($key, $value);
         }
 
         return $this;
     }
 
     /**
-     * Get the fillable attributes of a given array.
+     * Set model key value.
      *
-     * @param array $attributes
-     *
-     * @return array
+     * @param string|int $value
      */
-    protected function fillableFromArray(array $attributes)
+    public function setKey($value)
     {
-        if (count($this->getFillable()) > 0 && !static::$unguarded) {
-            return array_intersect_key($attributes, array_flip(array_merge($this->getFillable(), $this->getFillableRelations())));
-        }
-
-        return $attributes;
+        $this->setAttribute($this->getKeyName(), $value);
     }
 
     /**
-     * Get fillable relations array.
+     * Determine if an attribute is present in the attributes list.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function hasAttribute($name)
+    {
+        return array_key_exists($name, $this->attributes);
+    }
+
+    /**
+     * Determine if all ony any of the attributes are present.
+     *
+     * @param array $attributes
+     * @param bool $all
+     *
+     * @return bool
+     */
+    public function hasAttributes(array $attributes, $all = true)
+    {
+        if ($all) {
+            return count(array_intersect_key(array_flip($attributes), $this->attributes)) === count($attributes);
+        }
+
+        return count(array_intersect_key(array_flip($attributes), $this->attributes)) > 0;
+    }
+
+    /**
+     * Set attribute value without morphing.
+     *
+     * @param string $name
+     * @param mixed $value
+     */
+    public function setRawAttribute($name, $value)
+    {
+        $this->attributes[$name] = $value;
+    }
+
+    /**
+     * Keep only specific attributes and relations.
+     *
+     * @param array|string $keep
+     *
+     * @return $this
+     */
+    public function keepOnly($keep)
+    {
+        if (!is_array($keep)) {
+            $keep = func_get_args();
+        }
+
+        $this->attributes = Arr::only($this->attributes, $keep);
+        $this->relations = Arr::only($this->relations, $keep);
+
+        return $this;
+    }
+
+    /**
+     * Keep all attributes and relations except specific ones.
+     *
+     * @param array|string $remove
+     *
+     * @return $this
+     */
+    public function keepExcept($remove)
+    {
+        if (!is_array($remove)) {
+            $remove = func_get_args();
+        }
+
+        $this->attributes = Arr::except($this->attributes, $remove);
+        $this->relations = Arr::except($this->relations, $remove);
+
+        return $this;
+    }
+
+    /**
+     * Determine if the model is soft deleting.
+     *
+     * @return bool
+     */
+    public function isSoftDeleting()
+    {
+        return method_exists($this, 'bootSoftDeletes');
+    }
+
+    /**
+     * Get the attributes that have been changed since last sync.
+     *
+     * @return array
+     */
+    public function getDirty()
+    {
+        $dirty = [];
+        $columns = empty($this->columns) ? $this->attributes : Arr::only($this->attributes, $this->getColumns());
+
+        foreach ($columns as $key => $value) {
+            if (!array_key_exists($key, $this->original)) {
+                $dirty[$key] = $value;
+            } elseif ($value !== $this->original[$key] &&
+                !$this->originalIsNumericallyEquivalent($key)
+            ) {
+                $dirty[$key] = $value;
+            }
+        }
+
+        return $dirty;
+    }
+
+    /**
+     * Get an attribute from the model or it's translation.
+     *
+     * @param string $key
+     * @return mixed
+     */
+    public function getAttribute($key)
+    {
+        if (!$this->hasAttribute($key) && $this->translatable() && in_array($key, $this->translatable, true)) {
+            return $this->trans()->{$key};
+        }
+
+        return parent::getAttribute($key);
+    }
+
+    /**
+     * Get a list of columns this model table contains.
      *
      * @return string[]
      */
-    public function getFillableRelations()
+    public function getColumns()
     {
-        return $this->fillableRelations;
+        return $this->columns;
     }
 
     /**
-     * Determine if the given attribute may be mass assigned.
+     * Set a list of columns this model table contains.
      *
-     * @param string $key
-     *
-     * @return bool
+     * @param array $columns
      */
-    public function isFillable($key)
+    public function setColumns(array $columns)
     {
-        if (in_array($key, $this->fillableRelations, true)) {
-            return false;
+        $this->columns = $columns;
+    }
+
+    /**
+     * Refresh model data from database.
+     *
+     * @param array|null $attributes
+     *
+     * @return $this
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function refresh($attributes = null)
+    {
+        if (!$this->exists) {
+            return $this;
         }
 
-        return parent::isFillable($key);
-    }
+        /** @var Ethereal $freshModel */
+        $freshModel = $this->newQueryWithoutScopes()->findOrFail($this->getKey(), $attributes ?: ['*']);
 
-    /**
-     * Save a new model and return the instance.
-     *
-     * @param array $attributes
-     *
-     * @return $this
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
-     */
-    public static function smartCreate(array $attributes = [])
-    {
-        $model = new static;
-        $model->smartFill($attributes);
-        $model->smartPush();
-
-        return $model;
-    }
-
-    /**
-     * Save model and relations. When saving relations, they are linked to this model.
-     *
-     * @param array $options
-     *
-     * @return bool
-     */
-    public function smartPush($options = [])
-    {
-        return $this->saveRelations($options);
-    }
-
-    /**
-     * Set attribute ignoring setters.
-     *
-     * @param string $attribute
-     * @param mixed $value
-     */
-    public function setRawAttribute($attribute, $value)
-    {
-        $this->attributes[$attribute] = $value;
-    }
-
-    /**
-     * Convert model into plain array without any morphing.
-     *
-     * @param bool $withRelations
-     *
-     * @return array
-     */
-    public function toPlainArray($withRelations = true)
-    {
-        $attributes = $this->attributes;
-
-        if ($withRelations) {
-            foreach ($this->relations as $relation => $data) {
-                if ($data === null) {
-                    $attributes[$relation] = null;
-                    continue;
-                }
-
-                if ($data instanceof Ethereal) {
-                    $attributes[$relation] = $data->toPlainArray();
-                } elseif ($data instanceof Model) {
-                    $attributes[$relation] = $data->toArray();
-                } elseif (is_array($data) || $data instanceof Collection) {
-                    foreach ($data as $model) {
-                        if ($model instanceof Ethereal) {
-                            $attributes[$relation][] = $model->toPlainArray();
-                        } elseif ($data instanceof Model) {
-                            $attributes[$relation][] = $model->toArray();
-                        }
-                    }
-                }
-            }
+        if ($attributes) {
+            $this->setRawAttributes(
+                array_merge($this->getAttributes(), Arr::only($freshModel->getAttributes(), $attributes))
+            );
+        } else {
+            $this->setRawAttributes($freshModel->getAttributes(), true);
         }
-
-        return $attributes;
-    }
-
-    /**
-     * Keep only attributes and relations.
-     *
-     * @param array $keep
-     *
-     * @return $this
-     */
-    public function keepOnly(array $keep)
-    {
-        $this->keepOnlyAttributes($keep);
-        $this->keepOnlyRelations($keep);
-
-        return $this;
-    }
-
-    /**
-     * Keep only a subset of the attributes from the given array.
-     * Does not modify relations.
-     *
-     * @param array $keep
-     *
-     * @return $this
-     */
-    public function keepOnlyAttributes(array $keep)
-    {
-        $this->attributes = Arr::only($this->attributes, $keep);
-
-        return $this;
-    }
-
-    /**
-     * Keep only a subset of the relations from the given array.
-     * Does not modify attributes.
-     *
-     * @param array $keep
-     *
-     * @return $this
-     */
-    public function keepOnlyRelations(array $keep)
-    {
-        $this->relations = Arr::only($this->relations, $keep);
 
         return $this;
     }

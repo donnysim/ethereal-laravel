@@ -2,30 +2,29 @@
 
 namespace Ethereal\Bastion\Database;
 
-use Ethereal\Bastion\Database\Contracts\RoleContract;
-use Ethereal\Bastion\Database\Traits\HasAbilities;
-use Ethereal\Bastion\Database\Traits\IsRole;
+use Ethereal\Bastion\Helper;
 use Ethereal\Database\Ethereal;
 
-class Role extends Ethereal implements RoleContract
+class Role extends Ethereal
 {
-    use IsRole, HasAbilities;
+    use Traits\IsRole,
+        Traits\HasAbilities;
 
     /**
-     * The attributes that are mass assignable.
+     * Database columns. This is used to filter out invalid columns.
      *
-     * @var array
+     * @var string[]
      */
-    protected $fillable = ['name', 'title'];
+    protected $columns = ['id', 'name', 'title', 'system', 'private', 'level', 'created_at', 'updated_at'];
 
     /**
-     * Create a new Permission model instance.
+     * Create a new Role model instance.
      *
      * @param array $attributes
      */
     public function __construct(array $attributes = [])
     {
-        $this->table = config('bastion.tables.roles', 'roles');
+        $this->table = Helper::getRoleTable();
 
         parent::__construct($attributes);
     }

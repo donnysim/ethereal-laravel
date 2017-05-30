@@ -2,80 +2,44 @@
 
 namespace Ethereal\Bastion;
 
-use Ethereal\Bastion\Rucks;
-use Ethereal\Bastion\Store\Store;
-use Ethereal\Cache\GroupFileStore;
+use Ethereal\Cache\TagFileStore;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
 class BastionServiceProvider extends ServiceProvider
 {
     /**
-     * Register the service provider.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function register()
-    {
-        $this->registerStore();
-        $this->registerRucks();
-        $this->registerBastion();
-    }
-
-    /**
-     * Register singleton Store instance.
-     */
-    protected function registerStore()
-    {
-        $this->app->singleton(Store::class, function () {
-            return new Store(new GroupFileStore($this->app['files'], storage_path('cache/bastion')));
-        });
-    }
-
-    /**
-     * Register bastion instance.
-     *
-     * @throws \InvalidArgumentException
-     */
-    protected function registerBastion()
-    {
-        $this->app->singleton(Bastion::class, function () {
-            $bastion = new Bastion(
-                $this->app->make(Rucks::class),
-                $this->app->make(Store::class)
-            );
-
-            $bastion->getStore()->registerAt($bastion->getRucks());
-
-            return $bastion;
-        });
-    }
-
-    /**
-     * Register bastion at rucks.
+     * Boot the application services.
      */
     public function boot()
     {
-        $this->registerAtRucks();
+        $configPath = __DIR__ . '/../../config/bastion.php';
+        $this->publishes([$configPath => config_path('bastion.php')], 'config');
+        $this->loadMigrationsFrom(__DIR__ . '/../../migrations/bastion');
     }
 
     /**
-     * Register bastion at rucks.
+     * Register the service provider.
      */
-    protected function registerAtRucks()
+    public function register()
     {
-        $store = $this->app->make(Store::class);
-        $store->registerAt($this->app->make(Rucks::class));
-    }
+        $this->mergeConfigFrom(__DIR__ . '/../../config/bastion.php', 'bastion');
 
-    /**
-     * Register the access rucks service.
-     */
-    protected function registerRucks()
-    {
-        $this->app->singleton(Rucks::class, function ($app) {
-            return new Rucks($app, function () use ($app) {
-                return call_user_func($app['auth']->userResolver());
-            });
+        $this->app->singleton(Store::class, function ($app) {
+            $store = new Store();
+            $store->setCache(new TagFileStore($app['files'], storage_path('cache/bastion')));
+            return $store;
         });
+
+        $this->app->singleton(Bastion::class, function ($app) {
+            return new Bastion($app, $app->make(Store::class));
+        });
+
+        Relation::morphMap([
+            'bastion-ability' => Helper::getAbilityModelClass(),
+            'bastion-assigned-role' => Helper::getAssignedRoleModelClass(),
+            'bastion-permission' => Helper::getPermissionModelClass(),
+            'bastion-role' => Helper::getRoleModelClass(),
+        ], true);
     }
 }

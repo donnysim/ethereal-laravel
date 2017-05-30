@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion\Database\Traits;
 
-use Ethereal\Bastion\Bastion;
+use Ethereal\Bastion\Database\AssignedRole;
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -11,11 +11,11 @@ use InvalidArgumentException;
 trait IsRole
 {
     /**
-     * Get roles assigned to authority.
+     * Get all roles assigned to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
      *
-     * @return \Illuminate\Support\Collection
+     * @return \Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
     public static function getRoles(Model $authority)
@@ -24,98 +24,79 @@ trait IsRole
             throw new InvalidArgumentException('Authority must exist to retrieve assigned roles.');
         }
 
+        /** @var \Ethereal\Bastion\Database\Role $role */
         $role = new static;
-        $query = $role->newQuery();
+        $query = $role->newQueryWithoutScopes();
 
-        return $query->whereIn($role->getKeyName(), function ($query) use ($role, $authority) {
+        return $query->whereIn($role->getKeyName(), function ($query) use ($authority) {
             $query
                 ->select('role_id')
                 ->from(Helper::getAssignedRoleTable())
-                ->where('entity_id', $authority->getKey())
-                ->where('entity_type', $authority->getMorphClass());
+                ->where('target_id', $authority->getKey())
+                ->where('target_type', $authority->getMorphClass());
         })->get()->keyBy('id');
     }
 
     /**
-     * Get or create roles based on provided list.
+     * Collect various roles from a list.
      *
      * @param array $roles
      *
-     * @return Collection
-     * @throws \InvalidArgumentException
+     * @return \Illuminate\Support\Collection
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      */
-    public static function collectRoles($roles)
+    public static function collectRoles(array $roles)
     {
-        $rolesList = collect([]);
+        $rolesList = new Collection();
 
-        foreach ($roles as $role) {
+        foreach ($roles as $key => $role) {
             if ($role instanceof Model) {
                 if (!$role->exists) {
-                    throw new InvalidArgumentException('Provided role model does not existing. Did you forget to save it?');
+                    $role->save();
                 }
 
                 $rolesList->push($role);
-            } elseif (is_numeric($role)) {
-                $rolesList->push(static::findOrFail($role));
             } elseif (is_string($role)) {
                 $rolesList->push(static::firstOrCreate([
                     'name' => $role,
                 ]));
-            } elseif (is_array($role)) {
-                $rolesList->push(static::forceCreate($role));
+            } elseif (is_string($key) && is_array($role)) {
+                $model = static::firstOrNew(['name' => $key]);
+                $model->fill($role)->save();
+
+                $rolesList->push($model);
+            } elseif (is_numeric($role)) {
+                $rolesList->push(static::findOrFail($role));
             }
         }
 
-        return $rolesList->keyBy('id');
+        return $rolesList->keyBy((new static)->getKeyName());
     }
 
     /**
-     * Get role level.
-     *
-     * @return int
-     */
-    public function getLevel()
-    {
-        return $this->attributes['level'];
-    }
-
-    /**
-     * Create assign role record.
+     * Create role assign record.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param array $attributes
      *
-     * @return array
+     * @return \Ethereal\Bastion\Database\AssignedRole|\Ethereal\Bastion\Database\Traits\IsRole
+     * @throws \InvalidArgumentException
      */
-    public function createAssignRecord(Model $authority)
+    public function createAssignRecord(Model $authority, $attributes = [])
     {
-        return [
-            'role_id' => $this->getKey(),
-            'entity_id' => $authority->getKey(),
-            'entity_type' => $authority->getMorphClass(),
-        ];
-    }
+        if (!$authority->exists) {
+            throw new InvalidArgumentException('Authority must exist to assign a role.');
+        }
 
-    /**
-     * Start a chain, to assign the given role to a authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
-     *
-     * @return \Ethereal\Bastion\Conductors\AssignsRoles
-     */
-    public function assignTo($authority)
-    {
-        return app(Bastion::class)->assign($this)->to(is_array($authority) ? $authority : func_get_args());
-    }
+        /** @var AssignedRole $assignClass */
+        $assignClass = Helper::getAssignedRoleModelClass();
 
-    /**
-     * Start a chain, to retract the given role from a authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Model[] $authority
-     *
-     * @return \Ethereal\Bastion\Conductors\AssignsRoles
-     */
-    public function retractFrom($authority)
-    {
-        return app(Bastion::class)->retract($this)->from(is_array($authority) ? $authority : func_get_args());
+        return $assignClass::create(
+            array_merge([
+                'role_id' => $this->getKey(),
+                'target_id' => $authority->getKey(),
+                'target_type' => $authority->getMorphClass(),
+            ], $attributes)
+        );
     }
 }

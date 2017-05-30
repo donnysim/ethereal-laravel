@@ -3,36 +3,47 @@
 namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 trait IsAbility
 {
     /**
-     * Compile a list of ability identifiers that match the provided parameters.
+     * Compile possible ability identifiers.
+     * The minimum compiled format is the following:
+     * {ability|*}-{morph|*}-{id|*}
+     * If parent is specified -{parentMorph}-{parentId} is added.
      *
      * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string $model
+     * @param \Illuminate\Database\Eloquent\Model|null $model
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
      *
      * @return array
      */
-    public static function compileAbilityIdentifiers($ability, $model)
+    public static function compileAbilityIdentifiers($ability, $model = null, Model $parent = null)
     {
         $ability = strtolower($ability);
 
-        if ($model === null) {
-            return [$ability, '*-*', '*'];
+        $identifiers = [$ability, '*-*', '*'];
+        if ($model) {
+            $identifiers = static::compileModelAbilityIdentifiers($ability, $model);
         }
 
-        return static::compileModelAbilityIdentifiers($ability, $model);
+        if ($parent) {
+            foreach ($identifiers as &$identifier) {
+                $identifier .= strtolower("-{$parent->getMorphClass()}-{$parent->getKey()}");
+            }
+        }
+
+        return $identifiers;
     }
 
     /**
-     * Compile a list of ability identifiers that match the given model.
+     * Compile possible ability identifiers for model.
      *
      * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string $model
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return array
      */
@@ -43,31 +54,30 @@ trait IsAbility
         }
 
         $model = $model instanceof Model ? $model : new $model;
-
-        $type = strtolower($model->getMorphClass());
+        $morph = strtolower($model->getMorphClass());
 
         $abilities = [
-            "{$ability}-{$type}",
+            "{$ability}-{$morph}",
             "{$ability}-*",
-            "*-{$type}",
+            "*-{$morph}",
             '*-*',
         ];
 
-        if ($model->exists) {
-            $abilities[] = "{$ability}-{$type}-{$model->getKey()}";
-            $abilities[] = "*-{$type}-{$model->getKey()}";
+        if ($model->getKey()) {
+            $abilities[] = "{$ability}-{$morph}-{$model->getKey()}";
+            $abilities[] = "*-{$morph}-{$model->getKey()}";
         }
 
         return $abilities;
     }
 
     /**
-     * Get abilities assigned to authority.
+     * Get all abilities of authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param \Illuminate\Database\Eloquent\Collection|null $roles
+     * @param \Illuminate\Support\Collection $roles
      *
-     * @return \Illuminate\Support\Collection
+     * @return \Illuminate\Database\Eloquent\Collection
      * @throws \InvalidArgumentException
      */
     public static function getAbilities(Model $authority, Collection $roles = null)
@@ -77,83 +87,96 @@ trait IsAbility
         }
 
         $ability = new static;
-        /** @var \Illuminate\Database\Query\Builder $query */
+        /** @var \Illuminate\Database\Query\Builder|static $query */
         $query = $ability->newQuery();
-
         $permissionTable = Helper::getPermissionTable();
 
-        $query
-            // Join permissions
-            ->join($permissionTable, "{$permissionTable}.ability_id", '=', $ability->getQualifiedKeyName())
-            // Apply authority constraints
-            ->where(function ($query) use ($permissionTable, $authority) {
-                /** @var \Illuminate\Database\Query\Builder $query */
-                $query
-                    ->where("{$permissionTable}.entity_id", $authority->getKey())
-                    ->where("{$permissionTable}.entity_type", $authority->getMorphClass());
-            });
-
-        // Apply roles constraints
-        if ($roles !== null && !$roles->isEmpty()) {
-            $query->orWhere(function ($query) use ($permissionTable, $authority, $roles) {
-                /** @var \Illuminate\Database\Query\Builder $query */
-                $role = Helper::getRoleModel();
-
-                $query
-                    ->whereIn("{$permissionTable}.entity_id", $roles->pluck($role->getKeyName()))
-                    ->where("{$permissionTable}.entity_type", $role->getMorphClass());
-            });
-        }
-
-        return $query->get(['abilities.*', "{$permissionTable}.forbidden"]);
+        return $query
+            ->joinPermissions()
+            ->forAuthority($authority)
+            ->ofRoles($roles, 'or')
+            ->get(['abilities.*', "{$permissionTable}.forbidden", "{$permissionTable}.parent_id", "{$permissionTable}.parent_type"]);
     }
 
     /**
-     * Collect abilities for authority.
+     * Collection abilities.
      *
-     * @param $abilities
-     * @param string|\Illuminate\Database\Eloquent\Model|null $model
-     * @param bool $create
+     * @param array $abilities
+     * @param \Illuminate\Database\Eloquent\Model|null $model
      *
      * @return \Illuminate\Support\Collection
-     * @throws \InvalidArgumentException
      */
-    public static function collectAbilities($abilities, $model = null, $create = true)
+    public static function collectAbilities($abilities, $model = null)
     {
-        $abilitiesList = collect([]);
+        $abilitiesList = new Collection();
 
-        foreach ($abilities as $ability) {
+        foreach ($abilities as $key => $ability) {
             if ($ability instanceof Model) {
                 if (!$ability->exists) {
-                    throw new InvalidArgumentException('Provided ability model does not existing. Did you forget to save it?');
+                    $ability->save();
                 }
 
                 $abilitiesList->push($ability);
             } elseif (is_numeric($ability)) {
                 $abilitiesList->push(static::findOrFail($ability));
+            } elseif (is_string($key) && is_array($ability)) {
+                $abilitiesList->push(
+                    static::findAbility($key, $model) ?: static::createAbilityRecord($key, $model, null, $ability)
+                );
             } elseif (is_string($ability)) {
-                $entityType = null;
-                if (is_string($model)) {
-                    $entityType = Helper::getMorphClassName($model);
-                } elseif ($model instanceof Model) {
-                    $entityType = $model->getMorphClass();
-                }
-
-                $instance = static::query()
-                    ->where('name', $ability)
-                    ->where('entity_id', $model instanceof Model && $model->exists ? $model->getKey() : null)
-                    ->where('entity_type', $entityType)
-                    ->first();
-
-                if ($instance) {
-                    $abilitiesList[] = $instance;
-                } elseif ($create) {
-                    $abilitiesList[] = static::createAbility($ability, $model);
-                }
+                $abilitiesList->push(
+                    static::findAbility($ability, $model) ?: static::createAbilityRecord($ability, $model)
+                );
             }
         }
 
-        return $abilitiesList;
+        return $abilitiesList->keyBy((new static)->getKeyName());
+    }
+
+    /**
+     * Find ability by name.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|int|null $id
+     *
+     * @return \Illuminate\Database\Eloquent\Model|null|static
+     */
+    public static function findAbility($ability, $model = null, $id = null)
+    {
+        list($modelType, $modelId) = static::getModelTypeAndId($model, $id);
+
+        return static::query()
+            ->where('name', $ability)
+            ->where('entity_id', $modelId)
+            ->where('entity_type', $modelType)
+            ->first();
+    }
+
+    /**
+     * Get model type and id.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|int|null $id
+     *
+     * @return array
+     */
+    protected static function getModelTypeAndId($model, $id)
+    {
+        $modelType = null;
+        $modelId = null;
+
+        if (is_string($model)) {
+            $modelType = Helper::getMorphOfClass($model);
+            $modelId = $id;
+            return [$modelType, $modelId];
+        } elseif ($model instanceof Model) {
+            $modelType = $model->getMorphClass();
+            $modelId = $model->getKey();
+            return [$modelType, $modelId];
+        }
+
+        return [$modelType, $modelId];
     }
 
     /**
@@ -161,57 +184,30 @@ trait IsAbility
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|int|null $id
+     * @param array $attributes
      *
      * @return mixed
      */
-    public static function createAbility($ability, $model = null)
+    public static function createAbilityRecord($ability, $model = null, $id = null, array $attributes = [])
     {
-        if ($model === null) {
-            return static::forceCreate([
-                'name' => $ability,
-            ]);
-        }
+        list($modelType, $modelId) = static::getModelTypeAndId($model, $id);
 
-        if ($model === '*') {
-            return static::forceCreate([
+        return static::create(
+            array_merge([
                 'name' => $ability,
-                'entity_type' => '*',
-            ]);
-        }
-
-        return static::forceCreate([
-            'name' => $ability,
-            'entity_id' => $model instanceof Model && $model->exists ? $model->getKey() : null,
-            'entity_type' => is_string($model) ? Helper::getMorphClassName($model) : $model->getMorphClass(),
-        ]);
+                'entity_id' => $modelId,
+                'entity_type' => $modelType,
+            ], $attributes)
+        );
     }
 
     /**
-     * Get status if the ability forbids permission.
-     *
-     * @return bool
-     */
-    public function isForbidden()
-    {
-        return (bool)$this->attributes['forbidden'];
-    }
-
-    /**
-     * Get the ability's "slug" attribute.
+     * Get ability identifier.
      *
      * @return string
      */
-    public function getSlugAttribute()
-    {
-        return $this->getIdentifierAttribute();
-    }
-
-    /**
-     * Get the identifier for this ability.
-     *
-     * @return string
-     */
-    final public function getIdentifierAttribute()
+    public function getIdentifierAttribute()
     {
         $slug = $this->attributes['name'];
 
@@ -223,6 +219,73 @@ trait IsAbility
             $slug .= "-{$this->attributes['entity_id']}";
         }
 
+        if (isset($this->attributes['parent_id'])) {
+            $slug .= "-{$this->attributes['parent_type']}-{$this->attributes['parent_id']}";
+        }
+
         return strtolower($slug);
+    }
+
+    /**
+     * Join permissions table.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     *
+     * @return \Ethereal\Bastion\Database\Ability|\Illuminate\Database\Query\Builder
+     */
+    public function scopeJoinPermissions($query)
+    {
+        $permissionTable = Helper::getPermissionTable();
+
+        return $query->join($permissionTable, "{$permissionTable}.ability_id", '=', (new static)->getQualifiedKeyName());
+    }
+
+    /**
+     * Apply permission authority constraint.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param string $boolean
+     *
+     * @return \Ethereal\Bastion\Database\Ability|\Illuminate\Database\Query\Builder
+     * @throws \InvalidArgumentException
+     */
+    public function scopeForAuthority($query, Model $authority, $boolean = 'and')
+    {
+        return $query->where(function ($query) use ($authority) {
+            /** @var \Illuminate\Database\Query\Builder $query */
+            $permissionTable = Helper::getPermissionTable();
+
+            $query
+                ->where("{$permissionTable}.target_id", $authority->getKey())
+                ->where("{$permissionTable}.target_type", $authority->getMorphClass());
+        }, null, null, $boolean);
+    }
+
+    /**
+     * Apply roles constraint.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     * @param \Illuminate\Support\Collection $roles
+     * @param string $boolean
+     *
+     * @return \Ethereal\Bastion\Database\Ability|\Illuminate\Database\Query\Builder
+     * @throws \InvalidArgumentException
+     */
+    public function scopeOfRoles($query, Collection $roles = null, $boolean = 'and')
+    {
+        if (!$roles || $roles->isEmpty()) {
+            return $query;
+        }
+
+        return $query->where(function ($query) use ($roles) {
+            /** @var \Illuminate\Database\Query\Builder $query */
+            $permissionTable = Helper::getPermissionTable();
+            $role = Helper::getRoleModel();
+
+            $query
+                ->whereIn("{$permissionTable}.target_id", $roles->pluck($role->getKeyName()))
+                ->where("{$permissionTable}.target_type", $role->getMorphClass());
+        }, null, null, $boolean);
     }
 }

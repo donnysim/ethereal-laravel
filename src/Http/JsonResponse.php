@@ -83,7 +83,6 @@ class JsonResponse extends Response
      * @param array $headers
      *
      * @return $this
-     * @throws \InvalidArgumentException
      */
     public static function make($data = null, $status = 200, $headers = [])
     {
@@ -99,7 +98,6 @@ class JsonResponse extends Response
      * @param array|Arrayable $content Content that can be cast to array.
      *
      * @return $this
-     * @throws \UnexpectedValueException
      */
     public function setContent($content)
     {
@@ -165,7 +163,7 @@ class JsonResponse extends Response
     /**
      * Check if data is paginated.
      *
-     * @param $data
+     * @param mixed $data
      *
      * @return bool
      */
@@ -188,7 +186,7 @@ class JsonResponse extends Response
 
         // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
         // in order to not overwrite a custom definition.
-        elseif (!$this->headers->has('Content-Type') || 'text/javascript' === $this->headers->get('Content-Type')) {
+        elseif (!$this->headers->has('Content-Type') || $this->headers->get('Content-Type') === 'text/javascript') {
             $this->headers->set('Content-Type', 'application/json');
         } else {
             $this->headers->set('Content-Type', 'application/json');

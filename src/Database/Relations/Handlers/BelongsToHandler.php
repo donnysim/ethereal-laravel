@@ -2,69 +2,49 @@
 
 namespace Ethereal\Database\Relations\Handlers;
 
-use Ethereal\Database\Ethereal;
-use Ethereal\Database\Relations\RelationManager;
+use Ethereal\Database\Relations\Manager;
 
-class BelongsToHandler extends BaseRelationHandler
+class BelongsToHandler extends Handler
 {
-    /**
-     * @var \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    protected $relation;
-
     /**
      * Wrap data into model or collection of models based on relation type.
      *
-     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Database\Ethereal|\Illuminate\Database\Eloquent\Collection
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
      */
     public function build()
     {
-        $this->boxModel()->validate();
+        $model = $this->hydrateModel($this->data);
+        $this->validateType($model);
 
-        return $this->data;
-    }
-
-    /**
-     * Validate relation data.
-     *
-     * @throws \InvalidArgumentException
-     */
-    public function validate()
-    {
-        $this->validateClass($this->data);
+        return $model;
     }
 
     /**
      * Save relation data.
      *
      * @return bool
+     * @throws \Ethereal\Database\Relations\Exceptions\InvalidTypeException
      * @throws \Exception
      */
     public function save()
     {
-        if ($this->relationOptions & Ethereal::OPTION_SAVE) {
-            $this->data->save();
+        $model = $this->build();
 
-            if ($this->data->exists) {
-                $this->parent[$this->relation->getForeignKey()] = $this->data->getKey();
-            } else {
+        if ($this->options & Manager::SAVE) {
+            if (!$model->save()) {
                 return false;
             }
+
+            $this->relation->associate($model);
         }
 
-        if ($this->relationOptions & Ethereal::OPTION_DELETE) {
-            if ($this->data->exists && !$this->data->delete()) {
+        if ($this->options & Manager::DELETE && $model->exists) {
+            if (!$model->delete()) {
                 return false;
             }
-
-            if ($this->shouldRemoveAfterDelete()) {
-                $this->removeModelRelation();
-            }
-
-            if (!RelationManager::isSoftDeleting($this->data)) {
-                $this->parent[$this->relation->getForeignKey()] = null;
-            }
+            
+            $this->relation->dissociate($model);
         }
 
         return true;

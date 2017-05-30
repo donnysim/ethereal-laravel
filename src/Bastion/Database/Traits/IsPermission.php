@@ -7,21 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 trait IsPermission
 {
     /**
-     * Create ability permission record.
+     * Create a new permission record.
      *
-     * @param int $abilityId
+     * @param string|int $abilityId
      * @param \Illuminate\Database\Eloquent\Model $authority
      * @param bool $forbids
+     * @param \Illuminate\Database\Eloquent\Model|null $parent
      *
-     * @return array
+     * @return static
      */
-    public static function createPermissionRecord($abilityId, Model $authority, $forbids = false)
+    public static function createPermissionRecord($abilityId, Model $authority, $forbids = false, Model $parent = null)
     {
-        return [
+        return static::create([
             'ability_id' => $abilityId,
-            'entity_id' => $authority->exists ? $authority->getKey() : null,
-            'entity_type' => $authority->getMorphClass(),
+            'target_id' => $authority->getKey(),
+            'target_type' => $authority->getMorphClass(),
             'forbidden' => $forbids,
-        ];
+            'parent_id' => $parent ? $parent->getKey() : null,
+            'parent_type' => $parent ? $parent->getMorphClass() : null,
+        ]);
     }
 }

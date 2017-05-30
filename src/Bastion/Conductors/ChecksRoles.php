@@ -2,11 +2,17 @@
 
 namespace Ethereal\Bastion\Conductors;
 
-use Ethereal\Bastion\Store\Store;
 use Illuminate\Database\Eloquent\Model;
 
 class ChecksRoles
 {
+    /**
+     * Permission store.
+     *
+     * @var \Ethereal\Bastion\Store
+     */
+    protected $store;
+
     /**
      * The authority against which to check for roles.
      *
@@ -15,96 +21,85 @@ class ChecksRoles
     protected $authority;
 
     /**
-     * Bastion store.
+     * ChecksRoles constructor.
      *
-     * @var \Ethereal\Bastion\Store\Store
-     */
-    protected $store;
-
-    /**
-     * Constructor.
-     *
-     * @param \Ethereal\Bastion\Store\Store $store
+     * @param \Ethereal\Bastion\Store $store
      * @param \Illuminate\Database\Eloquent\Model $authority
      */
-    public function __construct(Store $store, Model $authority)
+    public function __construct($store, Model $authority)
     {
-        $this->authority = $authority;
         $this->store = $store;
+        $this->authority = $authority;
     }
 
     /**
-     * Check if the authority has any of the given roles.
+     * Determine if authority has one of the roles.
      *
-     * @param string $role
+     * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
     public function a($role)
     {
-        $roles = func_get_args();
+        $roles = is_array($role) ? $role : func_get_args();
 
-        return $this->store->checkRole($this->authority, $roles, 'or');
+        return $this->store->hasRole($this->authority, $roles, 'or');
     }
 
     /**
-     * Check if the authority doesn't have any of the given roles.
+     * Alias to a method.
      *
-     * @param string $role
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function notA($role)
-    {
-        $roles = func_get_args();
-
-        return $this->store->checkRole($this->authority, $roles, 'not');
-    }
-
-    /**
-     * Alias to the "a" method.
-     *
-     * @param string $role
+     * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
     public function an($role)
     {
-        $roles = func_get_args();
-
-        return $this->store->checkRole($this->authority, $roles, 'or');
+        return $this->a(is_array($role) ? $role : func_get_args());
     }
 
     /**
-     * Alias to the "notA" method.
+     * Determine if authority does not have one of the roles.
      *
-     * @param string $role
+     * @param array|string $role
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function notA($role)
+    {
+        $roles = is_array($role) ? $role : func_get_args();
+
+        return $this->store->hasRole($this->authority, $roles, 'not');
+    }
+
+    /**
+     * Alias to notA method.
+     *
+     * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
     public function notAn($role)
     {
-        $roles = func_get_args();
-
-        return $this->store->checkRole($this->authority, $roles, 'not');
+        return $this->notA(is_array($role) ? $role : func_get_args());
     }
 
     /**
-     * Check if the authority has all of the given roles.
+     * Determine if authority has all of the roles.
      *
-     * @param string $role
+     * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
     public function all($role)
     {
-        $roles = func_get_args();
+        $roles = is_array($role) ? $role : func_get_args();
 
-        return $this->store->checkRole($this->authority, $roles, 'and');
+        return $this->store->hasRole($this->authority, $roles, 'and');
     }
 }

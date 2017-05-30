@@ -2,77 +2,139 @@
 
 namespace Ethereal\Bastion\Conductors;
 
-use Ethereal\Bastion\Database\Contracts\RoleContract;
 use Ethereal\Bastion\Helper;
+use UnexpectedValueException;
 
 class RemovesAbilities
 {
-    use Traits\ClearsCache;
+    use Traits\CollectsAuthorities,
+        Traits\UsesScopes;
 
     /**
-     * List of authorities to remove abilities from.
+     * Authorities to remove abilities from.
      *
-     * @var array|string
+     * @var array
      */
-    protected $authorities;
+    protected $authorities = [];
 
     /**
      * Permission store.
      *
-     * @var \Ethereal\Bastion\Store\Store
+     * @var \Ethereal\Bastion\Store
      */
     protected $store;
 
     /**
-     * AssignsRole constructor.
+     * Determine if the removed ability is forbidden.
      *
-     * @param \Ethereal\Bastion\Store\Store $store
-     * @param string|int|array $authorities
+     * @var bool
      */
-    public function __construct($store, $authorities)
+    protected $forbidden = false;
+
+    /**
+     * RemovesAbilities constructor.
+     *
+     * @param \Ethereal\Bastion\Store $store
+     * @param array $authorities
+     * @param bool $forbidden
+     */
+    public function __construct($store, array $authorities, $forbidden = false)
     {
         $this->authorities = $authorities;
         $this->store = $store;
+        $this->forbidden = $forbidden;
     }
 
     /**
-     * Give abilities to authorities.
+     * Set whether the given abilities should forbid.
      *
-     * @param \Illuminate\Database\Eloquent\Model|array|string|int $abilities
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param bool $value
+     */
+    public function forbidden($value = true)
+    {
+        $this->forbidden = $value;
+    }
+
+    /**
+     * Disallow everything.
      *
+     * @return $this
+     * @throws \UnexpectedValueException
+     * @throws \InvalidArgumentException
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function everything()
+    {
+        return $this->to('*', '*');
+    }
+
+    /**
+     * Remove abilities from authorities.
+     *
+     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
+     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
+     * @param array|string|int|null $ids
+     *
+     * @return $this
+     * @throws \UnexpectedValueException
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function to($abilities, $model = null)
+    public function to($abilities, $modelListOrClass = null, $ids = null)
     {
         /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
         $abilityClass = Helper::getAbilityModelClass();
-        /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
-        $roleModelClass = Helper::getRoleModelClass();
 
-        $clearAll = false;
-        $abilityIds = $abilityClass::collectAbilities((array)$abilities, $model)->pluck('id');
+        if ($modelListOrClass === null && $ids === null) {
+            $this->removePermissionsFromAuthority($abilityClass::collectAbilities((array)$abilities)->keys());
+        } else {
+            foreach ($this->getTargets($modelListOrClass, $ids) as $target) {
+                $this->removePermissionsFromAuthority($abilityClass::collectAbilities((array)$abilities, $target)->keys());
+            }
+        }
 
+        $this->store->clearCache();
+
+        return $this;
+    }
+
+    /**
+     * Create permissions for authorities.
+     *
+     * @param \Illuminate\Support\Collection $abilityIds
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    protected function removePermissionsFromAuthority($abilityIds)
+    {
         if ($abilityIds->isEmpty()) {
             return;
         }
 
+        /** @var \Ethereal\Bastion\Database\Role $roleModelClass */
+        $roleModelClass = Helper::getRoleModelClass();
+
         foreach ($this->authorities as $authority) {
             if (is_string($authority)) {
-                $authority = $roleModelClass::where('name', $authority)->first();
-
-                if (!$authority) {
-                    continue;
-                }
+                /** @var \Ethereal\Bastion\Database\Traits\HasAbilities $authority */
+                $authority = $roleModelClass::collectRoles([$authority])->first();
             }
 
-            if ($authority instanceof RoleContract) {
-                $clearAll = true;
+            $query = $authority->abilities()->newPivotStatement()
+                ->where('forbidden', $this->forbidden)
+                ->whereIn('ability_id', $abilityIds->all());
+
+            if ($this->scopeParent) {
+                $query
+                    ->where('parent_id', $this->scopeParent->getKey())
+                    ->where('parent_type', $this->scopeParent->getMorphClass());
+            } else {
+                $query
+                    ->whereNull('parent_id')
+                    ->whereNull('parent_type');
             }
 
-            $authority->abilities()->detach($abilityIds->all());
+            $query->delete();
         }
-
-        $this->clearCache($this->store, $clearAll, $this->authorities);
     }
 }

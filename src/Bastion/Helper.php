@@ -33,19 +33,6 @@ class Helper
     }
 
     /**
-     * Get application config.
-     *
-     * @param string $key
-     * @param mixed $default
-     *
-     * @return \Illuminate\Config\Repository
-     */
-    protected static function getConfig($key, $default = null)
-    {
-        return app('config')->get($key, $default);
-    }
-
-    /**
      * Get abilities table.
      *
      * @return string
@@ -168,7 +155,7 @@ class Helper
      *
      * @return string
      */
-    public static function getMorphClassName($classPath)
+    public static function getMorphOfClass($classPath)
     {
         $morphMap = Relation::morphMap();
 
@@ -179,5 +166,18 @@ class Helper
         }
 
         return $classPath;
+    }
+
+    /**
+     * Get application config.
+     *
+     * @param string $key
+     * @param mixed $default
+     *
+     * @return \Illuminate\Config\Repository
+     */
+    protected static function getConfig($key, $default = null)
+    {
+        return app('config')->get($key, $default);
     }
 }

@@ -2,29 +2,25 @@
 
 namespace Ethereal\Bastion\Database;
 
-use Ethereal\Bastion\Database\Traits\IsAbility;
+use Ethereal\Bastion\Helper;
 use Ethereal\Database\Ethereal;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
+/**
+ * @method Ability joinPermissions()
+ * @method Ability forAuthority(Model $authority, $method = 'where')
+ * @method Ability ofRoles(Model $authority, $method = 'where')
+ */
 class Ability extends Ethereal
 {
-    use IsAbility;
+    use Traits\IsAbility;
 
     /**
-     * The attributes that are mass assignable.
+     * Database columns. This is used to filter out invalid columns.
      *
-     * @var array
+     * @var string[]
      */
-    protected $fillable = ['name', 'title'];
-
-    /**
-     * Create a new Permission model instance.
-     *
-     * @param array $attributes
-     */
-    public function __construct(array $attributes = [])
-    {
-        $this->table = config('bastion.tables.abilities', 'abilities');
-
-        parent::__construct($attributes);
-    }
+    protected $columns = ['id', 'name', 'entity_id', 'entity_type', 'created_at', 'updated_at'];
 }
