@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -123,5 +125,57 @@ if (!function_exists('model_key')) {
         }
 
         return $model;
+    }
+}
+
+if (!function_exists('pagination_data')) {
+    /**
+     * Get main data from pagination.
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    function pagination_data($data)
+    {
+        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
+            $pagination = $data->toArray();
+
+            return $pagination['data'];
+        }
+
+        return $data['data'];
+    }
+}
+
+if (!function_exists('pagination_meta')) {
+    /**
+     * Get pagination meta data like page, total, etc..
+     *
+     * @param mixed $data
+     *
+     * @return mixed
+     */
+    function pagination_meta($data)
+    {
+        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
+            return Arr::except($data->toArray(), 'data');
+        }
+
+        return Arr::except($data, 'data');
+    }
+}
+
+if (!function_exists('is_paginated')) {
+    /**
+     * Check if data is paginated.
+     *
+     * @param mixed $data
+     *
+     * @return bool
+     */
+    function is_paginated($data)
+    {
+        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
     }
 }

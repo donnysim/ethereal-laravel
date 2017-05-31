@@ -2,9 +2,9 @@
 
 namespace Ethereal\Http;
 
+use Exception;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
-use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
@@ -19,18 +19,18 @@ class JsonResponse extends Response
     use ResponseTrait;
 
     /**
-     * Error resolver.
-     *
-     * @var mixed
-     */
-    protected static $errorResolver;
-
-    /**
      * Response data.
      *
      * @var array
      */
     protected $data;
+
+    /**
+     * Response meta data.
+     *
+     * @var mixed
+     */
+    protected $meta;
 
     /**
      * JSONP callback.
@@ -50,14 +50,14 @@ class JsonResponse extends Response
     /**
      * Response message.
      *
-     * @var null|string
+     * @var string|null
      */
     protected $message;
 
     /**
      * Response error.
      *
-     * @var \Exception|\Illuminate\Validation\ValidationException|string
+     * @var \Exception|\Illuminate\Validation\ValidationException|string|null
      */
     protected $error;
 
@@ -69,11 +69,11 @@ class JsonResponse extends Response
     protected $errorCode;
 
     /**
-     * Debug mode - shows original exception messages.
+     * Error type.
      *
-     * @var bool
+     * @var string|null
      */
-    protected $debug = false;
+    protected $errorType;
 
     /**
      * Create a new json response.
@@ -115,61 +115,17 @@ class JsonResponse extends Response
     }
 
     /**
-     * Get pagination data without details.
+     * Set response meta data.
      *
      * @param mixed $data
      *
-     * @return array
+     * @return $this
      */
-    public static function getPaginationData($data)
+    public function setMeta($data)
     {
-        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
-            $pagination = $data->toArray();
+        $this->meta = $data;
 
-            return $pagination['data'];
-        }
-
-        return $data['data'];
-    }
-
-    /**
-     * Get pagination details without data.
-     *
-     * @param array|\Illuminate\Contracts\Support\Arrayable|\Illuminate\Pagination\AbstractPaginator $data
-     *
-     * @return array
-     */
-    public static function getPagination($data)
-    {
-        if ($data instanceof Arrayable && $data instanceof AbstractPaginator) {
-            $pagination = $data->toArray();
-
-            return Arr::except($pagination, 'data');
-        }
-
-        return Arr::except($data, 'data');
-    }
-
-    /**
-     * Set error resolver.
-     *
-     * @param mixed $resolver
-     */
-    public static function setErrorResolver($resolver)
-    {
-        static::$errorResolver = $resolver;
-    }
-
-    /**
-     * Check if data is paginated.
-     *
-     * @param mixed $data
-     *
-     * @return bool
-     */
-    public static function isPaginated($data)
-    {
-        return $data !== null && (($data instanceof Arrayable && $data instanceof AbstractPaginator) || (is_array($data) && isset($data['current_page'])));
+        return $this;
     }
 
     /**
@@ -196,20 +152,6 @@ class JsonResponse extends Response
     }
 
     /**
-     * Enable or disable debug mode.
-     *
-     * @param boolean $value
-     *
-     * @return $this
-     */
-    public function debug($value)
-    {
-        $this->debug = $value;
-
-        return $this;
-    }
-
-    /**
      * Set json response message.
      *
      * @param string $message
@@ -227,14 +169,14 @@ class JsonResponse extends Response
      * Response error.
      *
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
-     * @param int|null $code
+     * @param string|null $type
      *
      * @return $this
      */
-    public function error($error, $code = null)
+    public function error($error, $type = null)
     {
         $this->error = $error;
-        $this->errorCode = $code;
+        $this->errorType = $type ?: class_basename($error);
 
         return $this;
     }
@@ -288,7 +230,7 @@ class JsonResponse extends Response
             'success' => $this->isSuccessful(),
         ];
 
-        if ($this->error && (!$this->isSuccessful())) {
+        if ($this->error && !$this->isSuccessful()) {
             $responseData['error'] = $this->getErrorData();
         }
 
@@ -304,18 +246,15 @@ class JsonResponse extends Response
     /**
      * Get error as data.
      *
-     * @return array
+     * @return mixed
      */
     protected function getErrorData()
     {
         $error = [
             'message' => $this->error,
+            'type' => $this->getErrorType(),
             'code' => $this->getErrorCode(),
         ];
-
-        if ($this->debug && $this->error instanceof \Exception) {
-            $error['original'] = $this->error->getMessage() . ' at ' . substr($this->error->getFile(), strlen(base_path())) . ' line ' . $this->error->getLine();
-        }
 
         if ($this->error instanceof ValidationException) {
             $error['message'] = $this->getErrorMessage();
@@ -323,19 +262,27 @@ class JsonResponse extends Response
             if ($this->error->validator) {
                 $error['fields'] = static::flattenMessageBag($this->error->validator->messages());
             }
-        } elseif ($this->error instanceof \Exception) {
+        } elseif ($this->error instanceof Exception) {
             $error['message'] = $this->getErrorMessage();
-        } elseif ($this->error instanceof Validator) {
-            if ($this->error->fails()) {
-                $error['message'] = 'failed';
-                $error['fields'] = static::flattenMessageBag($this->error->messages());
-            }
-        } elseif ($this->error instanceof MessageBag) {
-            $error['message'] = 'failed';
-            $error['fields'] = static::flattenMessageBag($this->error);
+        } else {
+            return $this->error;
         }
 
         return $error;
+    }
+
+    /**
+     * Get exception type.
+     *
+     * @return string|null
+     */
+    protected function getErrorType()
+    {
+        if (is_object($this->error) && $this->error instanceof Validator || $this->error instanceof MessageBag) {
+            return class_basename(ValidationException::class);
+        }
+
+        return $this->errorType;
     }
 
     /**
@@ -345,10 +292,6 @@ class JsonResponse extends Response
      */
     protected function getErrorCode()
     {
-        if (static::$errorResolver) {
-            return static::$errorResolver->resolveCode($this, $this->error, $this->errorCode);
-        }
-
         return $this->errorCode;
     }
 
@@ -361,10 +304,6 @@ class JsonResponse extends Response
     {
         if (is_string($this->error)) {
             return $this->error;
-        }
-
-        if (static::$errorResolver) {
-            return static::$errorResolver->resolveMessage($this, $this->error);
         }
 
         return $this->error->getMessage();
@@ -408,6 +347,30 @@ class JsonResponse extends Response
     public function setData($data)
     {
         $this->setContent($data);
+
+        return $this;
+    }
+
+    /**
+     * Add payload data to response.
+     *
+     * @param string|array $key
+     * @param mixed $value This value will be used only if key is a string.
+     *
+     * @return $this
+     * @throws \UnexpectedValueException
+     */
+    public function meta($key, $value = null)
+    {
+        if (!$this->meta) {
+            $this->meta = [];
+        }
+
+        if (is_string($key)) {
+            Arr::set($this->meta, $key, $value);
+        } else {
+            $this->meta = array_merge_recursive($this->meta, $key);
+        }
 
         return $this;
     }
