@@ -26,6 +26,13 @@ class JsonResponse extends Response
     protected $data;
 
     /**
+     * Additional json fields.
+     *
+     * @var array
+     */
+    protected $fields;
+
+    /**
      * Response meta data.
      *
      * @var mixed
@@ -93,23 +100,14 @@ class JsonResponse extends Response
 
     /**
      * Sets the response content.
-     * Valid types are array and objects that implement Arrayable.
      *
-     * @param array|Arrayable $content Content that can be cast to array.
+     * @param mixed $content
      *
      * @return $this
      */
     public function setContent($content)
     {
-        if ($content === null) {
-            $data = [];
-        } elseif ($content instanceof Collection) {
-            $data = $content->toArray();
-        } else {
-            $data = $content;
-        }
-
-        $this->data = $data;
+        $this->data = $content;
 
         return $this;
     }
@@ -228,6 +226,7 @@ class JsonResponse extends Response
     {
         $responseData = [
             'success' => $this->isSuccessful(),
+            'data' => $this->data,
         ];
 
         if ($this->error && !$this->isSuccessful()) {
@@ -238,7 +237,7 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
-        $responseData = array_merge_recursive($responseData, $this->data);
+        $responseData += $this->fields;
 
         return $responseData;
     }
@@ -352,7 +351,7 @@ class JsonResponse extends Response
     }
 
     /**
-     * Add payload data to response.
+     * Add meta data to response.
      *
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
@@ -376,7 +375,7 @@ class JsonResponse extends Response
     }
 
     /**
-     * Add payload data to response.
+     * Add field to response.
      *
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
@@ -384,66 +383,34 @@ class JsonResponse extends Response
      * @return $this
      * @throws \UnexpectedValueException
      */
-    public function payload($key, $value = null)
+    public function add($key, $value = null)
     {
+        if (!$this->fields) {
+            $this->fields = [];
+        }
+
         if (is_string($key)) {
-            $this->data([
-                'data' => [
-                    $key => $value,
-                ],
-            ]);
+            $this->fields[$key] = $value;
         } else {
-            $this->data([
-                'data' => $key,
-            ]);
+            $this->fields = array_merge($this->fields, $key);
         }
 
         return $this;
     }
 
     /**
-     * Add data to response.
-     * Valid types are array and objects that implement Arrayable.
+     * Set response data.
      *
-     * @param array|\Illuminate\Contracts\Support\Arrayable $data
+     * @param mixed $data
      *
      * @return $this
      * @throws \UnexpectedValueException
      */
     public function data($data)
     {
-        $this->setContent(array_merge_recursive($this->data, $data));
+        $this->setContent($data);
 
         return $this;
-    }
-
-    /**
-     * Add payload data to response.
-     *
-     * @param array $payload
-     *
-     * @return $this
-     * @throws \UnexpectedValueException
-     */
-    public function setPayload($payload)
-    {
-        $this->data['data'] = $payload;
-
-        return $this;
-    }
-
-    /**
-     * Get response payload.
-     *
-     * @return array|null
-     */
-    public function getPayload()
-    {
-        if (!isset($this->data['data'])) {
-            return null;
-        }
-
-        return $this->data['data'];
     }
 
     /**
