@@ -251,7 +251,7 @@ class FluentController extends Controller
     protected function throwValidationException(Request $request, $validator)
     {
         if ($request->expectsJson()) {
-            $response = JsonResponse::make(null, 422)->error($validator);
+            $response = JsonResponse::make(null, 422)->error(new ValidationException($validator));
         } else {
             $response = redirect()->back()->withInput($request->input())->withErrors($validator->messages());
         }
