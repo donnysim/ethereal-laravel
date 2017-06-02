@@ -237,7 +237,7 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
-        $responseData += $this->fields;
+        $responseData += ($this->fields ?: []);
 
         return $responseData;
     }
