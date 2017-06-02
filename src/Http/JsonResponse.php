@@ -71,7 +71,7 @@ class JsonResponse extends Response
     /**
      * Error code.
      *
-     * @var int
+     * @var mixed
      */
     protected $errorCode;
 
@@ -167,13 +167,15 @@ class JsonResponse extends Response
      * Response error.
      *
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
+     * @param mixed $code
      * @param string|null $type
      *
      * @return $this
      */
-    public function error($error, $type = null)
+    public function error($error, $code = null, $type = null)
     {
         $this->error = $error;
+        $this->errorCode = $code;
         $this->errorType = $type ?: class_basename($error);
 
         return $this;
