@@ -3,10 +3,8 @@
 namespace Ethereal\Http;
 
 use Exception;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
@@ -239,6 +237,10 @@ class JsonResponse extends Response
             $responseData['message'] = $this->message;
         }
 
+        if (!empty($this->meta)) {
+            $responseData['meta'] = $this->meta;
+        }
+
         $responseData += ($this->fields ?: []);
 
         return $responseData;
@@ -370,7 +372,9 @@ class JsonResponse extends Response
         if (is_string($key)) {
             Arr::set($this->meta, $key, $value);
         } else {
-            $this->meta = array_merge_recursive($this->meta, $key);
+            foreach ($key as $metaKey => $metaValue) {
+                $this->meta[$metaKey] = $metaValue;
+            }
         }
 
         return $this;
