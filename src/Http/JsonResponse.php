@@ -205,7 +205,7 @@ class JsonResponse extends Response
     public function getContent()
     {
         if ($this->isInformational() || $this->isEmpty()) {
-            return null;
+            return '';
         }
 
         $content = json_encode($this->getResponseData(), $this->encodingOptions);
