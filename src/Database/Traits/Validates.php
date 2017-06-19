@@ -233,7 +233,7 @@ trait Validates
      */
     public function collectValidationData($full = false)
     {
-        $data = $this->getAttributes();
+        $data = $this->getValidationAttributes();
 
         if (!$full) {
             return $data;
@@ -264,5 +264,15 @@ trait Validates
         }
 
         return $data;
+    }
+
+    /**
+     * Get attributes required for model validation.
+     *
+     * @return array
+     */
+    protected function getValidationAttributes()
+    {
+        return $this->attributesToArray() + $this->getAttributes();
     }
 }
