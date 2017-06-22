@@ -67,6 +67,19 @@ trait ExtendsRelations
     }
 
     /**
+     * Set the specific relationship in the model.
+     *
+     * @param string $name
+     * @param mixed $value
+     *
+     * @return $this
+     */
+    public function setRawRelation($name, $value)
+    {
+        return parent::setRelation($name, $value);
+    }
+
+    /**
      * Determine if specific relation is fillable.
      *
      * @param string $name
