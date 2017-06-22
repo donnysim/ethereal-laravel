@@ -97,6 +97,61 @@ if (!function_exists('data_intersect')) {
     }
 }
 
+if (!function_exists('data_pluck')) {
+    /**
+     * Pluck values using dot notation.
+     *
+     * @param string $data
+     * @param string $key
+     *
+     * @return array
+     */
+    function data_pluck($data, $key)
+    {
+        $safe = [];
+
+        if (!$data) {
+            return $safe;
+        }
+
+        if (Str::contains($key, '*')) {
+            $segments = explode('.', $key);
+            $anyIndex = array_search('*', $segments, true);
+
+            $segment = implode('.', array_slice($segments, 0, $anyIndex));
+
+            if ($segment === '') {
+                // The field starts with an asterisk, e.g. *.id
+                $result = [];
+
+                foreach (array_values($data) as $index => $value) {
+                    $plucked = data_pluck($value, implode('.', array_slice($segments, $anyIndex + 1)));
+
+                    if (empty($plucked)) {
+                        continue;
+                    }
+
+                    $safe = array_merge($safe, $plucked);
+                }
+
+                $safe = array_replace_recursive($safe, $result);
+            } else {
+                $result = data_pluck(Arr::get($data, $segment), implode('.', array_slice($segments, $anyIndex)));
+
+                if (!empty($result)) {
+                    $safe = array_merge($safe, $result);
+                }
+            }
+        } else {
+            if (Arr::has($data, $key)) {
+                $safe[] = $data[$key];
+            }
+        }
+
+        return $safe;
+    }
+}
+
 if (!function_exists('model_key')) {
     /**
      * Get model key.
