@@ -80,6 +80,24 @@ trait ExtendsRelations
     }
 
     /**
+     * Remove relation from model.
+     *
+     * @param string|array $name
+     *
+     * @return $this
+     */
+    public function unsetRelation($name)
+    {
+        $relations = is_string($name) ? func_get_args() : $name;
+
+        foreach ($relations as $relation) {
+            unset($this->relations[$relation]);
+        }
+
+        return $this;
+    }
+
+    /**
      * Determine if specific relation is fillable.
      *
      * @param string $name
