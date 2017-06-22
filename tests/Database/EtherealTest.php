@@ -287,6 +287,17 @@ class EtherealTest extends BaseTestCase
 
         self::assertEquals('Jane', $user->name);
     }
+
+    /**
+     * @test
+     */
+    public function it_saves_only_column_fields_when_creating_a_model()
+    {
+        $this->migrate();
+
+        $model = TestArticleModel::create(['title' => 'Jane', 'email' => 'john@example.com']);
+        self::assertTrue($model->exists);
+    }
 }
 
 class MorphEthereal extends Ethereal
@@ -314,7 +325,6 @@ class MorphEthereal extends Ethereal
         return $this->hasMany(TestProfileModel::class, 'user_id');
     }
 }
-
 
 class MorphEtherealTranslation extends Ethereal
 {

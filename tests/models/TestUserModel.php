@@ -19,14 +19,4 @@ class TestUserModel extends Ethereal
     {
         return $this->hasMany(TestProfileModel::class, 'user_id');
     }
-
-//    public function comments()
-//    {
-//        return $this->hasMany(TestCommentModel::class, 'user_id');
-//    }
-//
-//    public function rawRoles()
-//    {
-//        return $this->belongsToMany(TestRoleModel::class, 'role_user', 'user_id', 'role_id');
-//    }
 }

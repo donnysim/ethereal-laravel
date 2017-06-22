@@ -51,6 +51,7 @@ class TestsMigration extends Migration
 
         Schema::create('articles', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('title');
             $table->timestamps();
         });
 
