@@ -2,7 +2,8 @@
 
 namespace Ethereal\Database;
 
-use Illuminate\Database\Eloquent\Builder;
+use Ethereal\Database\Builder as EtherealBuilder;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
 
@@ -236,13 +237,25 @@ class Ethereal extends BaseModel
     }
 
     /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     *
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new EtherealBuilder($query);
+    }
+
+    /**
      * Perform a model insert operation.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      *
      * @return bool
      */
-    protected function performInsert(Builder $query)
+    protected function performInsert(EloquentBuilder $query)
     {
         if ($this->fireModelEvent('creating') === false) {
             return false;
