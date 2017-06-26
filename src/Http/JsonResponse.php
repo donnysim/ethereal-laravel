@@ -272,7 +272,7 @@ class JsonResponse extends Response
         } elseif ($this->error instanceof Exception) {
             $error['message'] = $this->getErrorMessage();
         } else {
-            return $this->error;
+            $error['message'] = null;
         }
 
         return $error;
