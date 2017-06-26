@@ -2,7 +2,6 @@
 
 namespace Ethereal\Database;
 
-use Ethereal\Database\Builder as EtherealBuilder;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
@@ -234,18 +233,6 @@ class Ethereal extends BaseModel
         }
 
         return $this;
-    }
-
-    /**
-     * Create a new Eloquent query builder for the model.
-     *
-     * @param \Illuminate\Database\Query\Builder $query
-     *
-     * @return \Illuminate\Database\Eloquent\Builder|static
-     */
-    public function newEloquentBuilder($query)
-    {
-        return new EtherealBuilder($query);
     }
 
     /**

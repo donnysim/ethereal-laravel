@@ -295,7 +295,7 @@ class EtherealTest extends BaseTestCase
     {
         $this->migrate();
 
-        $model = TestArticleModel::create(['title' => 'Jane', 'email' => 'john@example.com']);
+        $model = TestArticleModel::create(['author_name' => 'Jane', 'author_last_name' => 'Doe', 'email' => 'john@example.com']);
         self::assertTrue($model->exists);
     }
 }

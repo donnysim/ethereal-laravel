@@ -9,5 +9,5 @@ class TestArticleModel extends Ethereal
 
     protected $table = 'articles';
 
-    protected $columns = ['id', 'title', 'created_at', 'updated_at'];
+    protected $columns = ['id', 'created_at', 'updated_at'];
 }
