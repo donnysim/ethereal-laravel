@@ -174,7 +174,12 @@ class JsonResponse extends Response
     {
         $this->error = $error;
         $this->errorCode = $code;
-        $this->errorType = $type ?: class_basename($error);
+
+        if ($type) {
+            $this->errorType = $type;
+        } elseif (is_object($error)) {
+            $this->errorType = class_basename($error);
+        }
 
         return $this;
     }
@@ -271,7 +276,7 @@ class JsonResponse extends Response
             }
         } elseif ($this->error instanceof Exception) {
             $error['message'] = $this->getErrorMessage();
-        } else {
+        } elseif (!is_string($error['message'])) {
             $error['message'] = null;
         }
 
