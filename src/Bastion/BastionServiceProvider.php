@@ -16,6 +16,72 @@ class BastionServiceProvider extends ServiceProvider
         $configPath = __DIR__ . '/../../config/bastion.php';
         $this->publishes([$configPath => config_path('bastion.php')], 'config');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations/bastion');
+        $this->registerBladeDirectives();
+    }
+
+    /**
+     * Register blade directives.
+     */
+    protected function registerBladeDirectives()
+    {
+        /** @var \Illuminate\View\Compilers\BladeCompiler $compiler */
+        $compiler = $this->app['view']->getEngineResolver()->resolve('blade')->getCompiler();
+
+        $compiler->directive('can', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->can({$expression})) : ?>";
+        });
+
+        $compiler->directive('cannot', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->cannot({$expression})) : ?>";
+        });
+
+        $compiler->directive('is', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->isA({$expression})) : ?>";
+        });
+
+        $compiler->directive('isnot', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->isNotA({$expression})) : ?>";
+        });
+
+        $compiler->directive('allowed', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->allowed({$expression})) : ?>";
+        });
+
+        $compiler->directive('denied', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->denied({$expression})) : ?>";
+        });
+
+        $compiler->directive('rolewith', function ($expression) {
+            return "<?php if (auth()->check() && auth()->user()->hasRoleWith({$expression})) : ?>";
+        });
+
+        $compiler->directive('endcan', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('endcannot', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('endis', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('endisnot', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('endallowed', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('enddenied', function ($expression) {
+            return '<?php endif; ?>';
+        });
+
+        $compiler->directive('endrolewith', function ($expression) {
+            return '<?php endif; ?>';
+        });
     }
 
     /**
@@ -40,6 +106,6 @@ class BastionServiceProvider extends ServiceProvider
             'bastion-assigned-role' => Helper::getAssignedRoleModelClass(),
             'bastion-permission' => Helper::getPermissionModelClass(),
             'bastion-role' => Helper::getRoleModelClass(),
-        ], true);
+        ]);
     }
 }
