@@ -53,8 +53,14 @@ trait IsAbility
             return ["{$ability}-*", '*-*'];
         }
 
-        $model = $model instanceof Model ? $model : new $model;
-        $morph = strtolower($model->getMorphClass());
+        if ($model instanceof Model) {
+            $morph = strtolower($model->getMorphClass());
+        } elseif (is_string($model) && class_exists($model)) {
+            $morph = strtolower(Helper::getMorphOfClass($model));
+            $model = new $model;
+        } else {
+            $morph = strtolower((string)$model);
+        }
 
         $abilities = [
             "{$ability}-{$morph}",
@@ -63,7 +69,7 @@ trait IsAbility
             '*-*',
         ];
 
-        if ($model->getKey()) {
+        if ($model instanceof Model && $model->getKey()) {
             $abilities[] = "{$ability}-{$morph}-{$model->getKey()}";
             $abilities[] = "*-{$morph}-{$model->getKey()}";
         }
