@@ -105,6 +105,21 @@ trait Authority
      * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
      * @param array $payload
      *
+     * @return \Ethereal\Bastion\Policy\PolicyResult
+     * @throws \InvalidArgumentException
+     */
+    public function check($ability, $model = null, $payload = [])
+    {
+        return Helper::bastion()->rucks()->check($ability, $model, $payload);
+    }
+
+    /**
+     * Determine if the ability is allowed for the current user.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
+     * @param array $payload
+     *
      * @return bool
      * @throws \InvalidArgumentException
      */
