@@ -86,4 +86,14 @@ class PolicyResult
     {
         return !$this->passed;
     }
+
+    /**
+     * Action reason.
+     *
+     * @return null|string
+     */
+    public function reason()
+    {
+        return $this->reason;
+    }
 }
