@@ -510,7 +510,7 @@ class Rucks
                 if ($result !== null) {
                     $granted = PolicyResult::accessGranted($result) ? 'granted' : 'denied';
                     $callable = get_class($instance) . '@' . $args->method();
-                    $policyResult = new PolicyResult($result, "{$callable} {$granted} access.");
+                    $policyResult = PolicyResult::fromResult($result, "{$callable} {$granted} access.");
                 }
             }
 
