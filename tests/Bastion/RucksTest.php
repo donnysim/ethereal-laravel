@@ -8,6 +8,18 @@ class RucksTest extends BaseTestCase
     /**
      * @test
      */
+    public function it_fails_when_user_is_not_authenticated()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return null;
+        });
+        self::assertFalse($rucks->check('anything')->allowed());
+    }
+
+    /**
+     * @test
+     */
     public function it_can_change_and_resolve_user()
     {
         $rucks = $this->getRucks();
@@ -119,7 +131,7 @@ class RucksTest extends BaseTestCase
             return new TestUserModel;
         });
 
-        self::assertFalse($rucks->check('kick', TestUserModel::class));
+        self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
     }
 
     /**
@@ -135,7 +147,7 @@ class RucksTest extends BaseTestCase
             return true;
         });
 
-        self::assertTrue($rucks->check('kick', TestUserModel::class));
+        self::assertTrue($rucks->check('kick', TestUserModel::class)->allowed());
     }
 
     /**
@@ -151,13 +163,13 @@ class RucksTest extends BaseTestCase
             return false;
         });
 
-        self::assertFalse($rucks->check('kick', TestUserModel::class));
+        self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
     }
 
     /**
      * @test
      */
-    public function it_checks_policy_if_before_returns_null()
+    public function it_checks_policy_if_before_callbacks_returns_null()
     {
         $rucks = $this->getRucks();
         $rucks->policy(TestUserModel::class, TestPolicy::class);
@@ -168,8 +180,25 @@ class RucksTest extends BaseTestCase
             return null;
         });
 
-        self::assertTrue($rucks->check('allow', TestUserModel::class));
-        self::assertFalse($rucks->check('deny', TestUserModel::class));
+        self::assertTrue($rucks->check('allow', TestUserModel::class)->allowed());
+        self::assertTrue($rucks->check('deny', TestUserModel::class)->denied());
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_if_no_policies_could_determine_access()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy(TestUserModel::class, TestPolicy::class);
+        $rucks->setUserResolver(function () {
+            return new TestUserModel;
+        });
+        $rucks->before(function () {
+            return null;
+        });
+
+        self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
     }
 
     protected function getRucks()

@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion;
 
+use Ethereal\Bastion\Policy\PolicyResult;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -80,13 +81,13 @@ class Rucks
      */
     public function define($ability, $callback)
     {
-        if (is_string($callback) && Str::contains($callback, '@')) {
-            $callback = $this->buildAbilityCallback($callback);
-        } elseif (!is_callable($callback)) {
+        if (is_callable($callback)) {
+            $this->abilities[$ability] = $callback;
+        } elseif (is_string($callback) && Str::contains($callback, '@')) {
+            $this->abilities[$ability] = $this->buildAbilityCallback($callback);
+        } else {
             throw new InvalidArgumentException("Callback must be a callable or a 'Class@method' string.");
         }
-
-        $this->abilities[$ability] = $callback;
 
         return $this;
     }
@@ -108,10 +109,14 @@ class Rucks
      *
      * @param string $model
      * @param string $policy
+     *
+     * @return $this
      */
     public function policy($model, $policy)
     {
         $this->policies[$model] = $policy;
+
+        return $this;
     }
 
     /**
@@ -236,15 +241,21 @@ class Rucks
             $class = get_class($class);
         }
 
-        if (!isset($this->policies[$class])) {
-            if ($throw) {
-                throw new InvalidArgumentException("Policy not defined for [{$class}].");
-            }
-
+        if (!is_string($class)) {
             return null;
         }
 
-        return $this->resolvePolicy($this->policies[$class]);
+        if (isset($this->policies[$class])) {
+            return $this->resolvePolicy($this->policies[$class]);
+        }
+
+        foreach ($this->policies as $expected => $policy) {
+            if (is_subclass_of($class, $expected)) {
+                return $this->resolvePolicy($policy);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -294,9 +305,9 @@ class Rucks
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function allows($ability, $model = null, $payload = [])
+    public function allows($ability, $model = null, array $payload = [])
     {
-        return $this->check($ability, $model, $payload);
+        return $this->check($ability, $model, $payload)->allowed();
     }
 
     /**
@@ -309,9 +320,9 @@ class Rucks
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function denies($ability, $model = null, $payload = [])
+    public function denies($ability, $model = null, array $payload = [])
     {
-        return !$this->check($ability, $model, $payload);
+        return $this->check($ability, $model, $payload)->denied();
     }
 
     /**
@@ -321,27 +332,44 @@ class Rucks
      * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
      * @param array $payload
      *
-     * @return bool
+     * @return \Ethereal\Bastion\Policy\PolicyResult
      * @throws \InvalidArgumentException
      */
-    public function check($ability, $model = null, $payload = [])
+    public function check($ability, $model = null, array $payload = [])
     {
         $user = $this->resolveUser();
 
         if (!$user) {
-            return false;
+            return new PolicyResult(false, 'User is not authenticated.');
         }
 
         $args = $this->resolveArgs($ability, $model, $payload);
+        $policyResult = null;
 
+        // Check before callbacks
         $result = $this->callCallbacks($this->beforeCallbacks, $user, $args);
-        if ($result === null) {
-            $result = $this->callAuthCallback($user, $args);
+        if ($result !== null) {
+            $policyResult = PolicyResult::fromResult($result,
+                PolicyResult::accessGranted($result)
+                    ? 'Allowed by one of the before callbacks.'
+                    : 'Denied by one of the before callbacks.'
+            );
         }
 
-        $this->callCallbacks($this->afterCallbacks, $user, $args, [$result]);
+        // Check main callbacks
+        if (!$policyResult) {
+            $result = $this->callAuthCallback($user, $args);
+            if ($result !== null) {
+                $policyResult = PolicyResult::fromResult($result, '');
+            }
+        }
 
-        return (bool)$result;
+        if (!$policyResult) {
+            $policyResult = new PolicyResult(false, 'Access denied because no policies could determine the outcome.');
+        }
+
+        $this->callCallbacks($this->afterCallbacks, $user, $args, [$policyResult]);
+        return $policyResult;
     }
 
     /**
@@ -365,7 +393,7 @@ class Rucks
      *
      * @param string $ability
      * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
-     * @param array $payload
+     * @param array|null $payload
      *
      * @return \Ethereal\Bastion\Args
      */
@@ -400,14 +428,14 @@ class Rucks
      *
      * @return bool|null
      */
-    protected function callCallbacks(array $callbacks, $user, Args $args, $payload = [])
+    protected function callCallbacks(array $callbacks, $user, Args $args, array $payload = [])
     {
         $grant = null;
 
         foreach ($callbacks as $callback) {
             $result = $callback(...array_merge([$user, $args], $payload));
 
-            if ($result === false) {
+            if (PolicyResult::accessDenied($result)) {
                 return $result;
             } elseif ($result !== null) {
                 $grant = $result;
@@ -440,7 +468,12 @@ class Rucks
             };
         }
 
-        return $callback(...array_merge([$user], $args->arguments()));
+        $result = $callback(...array_merge([$user], $args->arguments()));
+        if ($result !== null && !$result instanceof PolicyResult) {
+            return PolicyResult::fromResult($result, $args->ability() . ' ability ' . (PolicyResult::accessGranted($result) ? 'granted' : 'denied') . ' access.');
+        }
+
+        return $result;
     }
 
     /**
@@ -456,26 +489,38 @@ class Rucks
     {
         return function () use ($user, $args) {
             $instance = $this->getPolicyFor($args->modelClass());
+            $policyResult = null;
 
             if (method_exists($instance, 'before')) {
                 $result = call_user_func_array([$instance, 'before'], [$user, $args]);
 
                 if ($result !== null) {
-                    return $result;
+                    $granted = PolicyResult::accessGranted($result);
+                    $callable = get_class($instance) . '@before';
+
+                    $policyResult = PolicyResult::fromResult($result, $callable . ($granted ? ' granted access.' : ' denied access.'));
                 }
             }
 
-            if (!is_callable([$instance, $args->method()])) {
-                return false;
+            if ($policyResult === null && !is_callable([$instance, $args->method()])) {
+                $callable = get_class($instance) . '@' . $args->method();
+                $policyResult = new PolicyResult(false, 'Access denied because method ' . $callable . ' does not exist.');
             }
 
-            $result = $instance->{$args->method()}(...array_merge([$user], $args->arguments()));
+            if ($policyResult === null) {
+                $result = $instance->{$args->method()}(...array_merge([$user], $args->arguments()));
+                if ($result !== null) {
+                    $granted = PolicyResult::accessGranted($result) ? 'granted' : 'denied';
+                    $callable = get_class($instance) . '@' . $args->method();
+                    $policyResult = new PolicyResult($result, "{$callable} {$granted} access.");
+                }
+            }
 
             if (method_exists($instance, 'after')) {
-                call_user_func_array([$instance, 'after'], [$user, $args, $result]);
+                call_user_func_array([$instance, 'after'], [$user, $args, $policyResult]);
             }
 
-            return $result;
+            return $policyResult;
         };
     }
 }
