@@ -13,7 +13,7 @@ trait Policy
      */
     protected function allow($reason = null)
     {
-        return new PolicyResult(false, $reason);
+        return new PolicyResult(true, $reason);
     }
 
     /**
