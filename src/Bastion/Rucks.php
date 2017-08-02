@@ -463,9 +463,7 @@ class Rucks
         } elseif ($this->hasAbility($args->ability())) {
             $callback = $this->abilities[$args->ability()];
         } else {
-            $callback = function () {
-                return false;
-            };
+            return PolicyResult::fromResult(false, 'No auth callbacks defined.');
         }
 
         $result = $callback(...array_merge([$user], $args->arguments()));
