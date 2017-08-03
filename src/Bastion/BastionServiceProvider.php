@@ -15,7 +15,6 @@ class BastionServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/../../config/bastion.php';
         $this->publishes([$configPath => config_path('bastion.php')], 'config');
-        $this->loadMigrationsFrom(__DIR__ . '/../../migrations/bastion');
         $this->registerBladeDirectives();
     }
 
