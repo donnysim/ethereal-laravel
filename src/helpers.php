@@ -101,7 +101,7 @@ if (!function_exists('data_pluck')) {
     /**
      * Pluck values using dot notation.
      *
-     * @param array $data
+     * @param string $data
      * @param string $key
      *
      * @return array

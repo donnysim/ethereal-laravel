@@ -10,11 +10,11 @@ use Traversable;
 class Store
 {
     /**
-     * The tag used for caching.
+     * Cache status.
      *
-     * @var string
+     * @var bool
      */
-    protected $tag = 'bastion';
+    protected static $cacheEnabled = true;
 
     /**
      * The cache store.
@@ -24,138 +24,36 @@ class Store
     protected $cache;
 
     /**
-     * Use cache to store query results.
+     * Guard this store is working with.
      *
-     * @var bool
+     * @var string
      */
-    protected $useCache = true;
+    protected $guard;
 
     /**
-     * Get authority permissions map.
+     * Store constructor.
      *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Ethereal\Bastion\Map
-     * @throws \InvalidArgumentException
+     * @param string $guard
      */
-    public function getMap(Model $authority)
+    public function __construct($guard)
     {
-        return $this->sear($authority, function () use ($authority) {
-            /** @var \Ethereal\Bastion\Database\Role $class */
-            $class = Helper::getRoleModelClass();
-            $roles = $class::getRoles($authority);
-
-            /** @var \Ethereal\Bastion\Database\Ability $class */
-            $class = Helper::getAbilityModelClass();
-            $abilities = $class::getAbilities($authority, $roles);
-
-            return new Map($roles, $abilities);
-        });
+        $this->guard = $guard;
     }
 
     /**
-     * Get authority roles.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Illuminate\Support\Collection
-     * @throws \InvalidArgumentException
+     * Disable cache.
      */
-    public function getRoles(Model $authority)
+    public static function disableCache()
     {
-        return $this->getMap($authority)->getRoles();
+        static::$cacheEnabled = false;
     }
 
     /**
-     * Get authority abilities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     * @throws \InvalidArgumentException
+     * Enable cache.
      */
-    public function getAbilities(Model $authority)
+    public static function enableCache()
     {
-        return $this->getMap($authority)->getAbilities();
-    }
-
-    /**
-     * Check if authority has role.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param array|string $roles
-     * @param string $boolean
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function hasRole(Model $authority, $roles, $boolean = 'or')
-    {
-        $available = $this->getMap($authority)->getRoleNames()->intersect($roles);
-
-        if ($boolean === 'or') {
-            return $available->count() > 0;
-        } elseif ($boolean === 'not') {
-            return $available->isEmpty();
-        }
-
-        return $available->count() === count((array)$roles);
-    }
-
-    /**
-     * Check if authority has ability.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|null $model
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function hasAbility(Model $authority, $ability, $model = null, $parent = null)
-    {
-        $map = $this->getMap($authority);
-
-        /** @var \Ethereal\Bastion\Database\Ability $abilityClass */
-        $abilityClass = Helper::getAbilityModelClass();
-        $requested = $abilityClass::compileAbilityIdentifiers($ability, $model, $parent);
-
-        $allows = false;
-
-        foreach ($requested as $identifier) {
-            if ($map->isForbidden($identifier)) {
-                return false;
-            } elseif (!$allows && $map->isAllowed($identifier)) {
-                $allows = true;
-            }
-        }
-
-        return $allows;
-    }
-
-    /**
-     * Get the cache instance.
-     *
-     * @return \Illuminate\Contracts\Cache\Store
-     */
-    public function getCache()
-    {
-        return $this->cache;
-    }
-
-    /**
-     * Set the cache instance.
-     *
-     * @param \Illuminate\Contracts\Cache\Store $cache
-     *
-     * @return $this
-     */
-    public function setCache(CacheStore $cache)
-    {
-        $this->cache = $cache;
-
-        return $this;
+        static::$cacheEnabled = true;
     }
 
     /**
@@ -175,53 +73,76 @@ class Store
      */
     public function clearCacheFor($authority)
     {
-        if (is_array($authority) || $authority instanceof Traversable) {
+        if (\is_array($authority) || $authority instanceof Traversable) {
             foreach ($authority as $model) {
                 if ($model instanceof Model && $model->exists) {
                     $this->clearCacheFor($model);
                 }
             }
-        } elseif ($cache = $this->authorityCache($authority)) {
+        } elseif ($cache = $this->getCache()) {
             $cache->forget($this->cacheKey($authority));
         }
     }
 
     /**
-     * Enable cache.
-     */
-    public function enableCache()
-    {
-        $this->useCache = true;
-    }
-
-    /**
-     * Disable cache.
-     */
-    public function disableCache()
-    {
-        $this->useCache = false;
-    }
-
-    /**
-     * Get specific authority cache.
+     * Get the cache instance.
      *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Illuminate\Contracts\Cache\Store|null
+     * @return \Illuminate\Contracts\Cache\Store
      */
-    protected function authorityCache(Model $authority)
+    public function getCache()
     {
-        $cache = $this->getCache();
-
-        if (!$cache) {
+        if (!static::$cacheEnabled) {
             return null;
         }
 
-        if (method_exists($cache, 'tags')) {
-            $cache->tags([$this->tag, $authority->getMorphClass(), $authority->getKey()]);
-        }
+        return $this->cache;
+    }
 
-        return $cache;
+    /**
+     * Get guard.
+     *
+     * @return string
+     */
+    public function getGuard()
+    {
+        return $this->guard;
+    }
+
+    /**
+     * Get authority permissions map.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Ethereal\Bastion\Map
+     * @throws \InvalidArgumentException
+     */
+    public function getMap(Model $authority)
+    {
+        return $this->sear($authority, function () use ($authority) {
+            /** @var \Ethereal\Bastion\Database\Role $class */
+            $class = Helper::getRoleModelClass();
+            $roles = $class::ofAuthority($authority, $this->guard);
+
+            /** @var \Ethereal\Bastion\Database\Permission $class */
+            $class = Helper::getPermissionModelClass();
+            $permissions = $class::ofAuthority($authority, $roles, $this->guard);
+
+            return new Map($this->guard, $roles, $permissions);
+        });
+    }
+
+    /**
+     * Set the cache instance.
+     *
+     * @param \Illuminate\Contracts\Cache\Store $cache
+     *
+     * @return $this
+     */
+    public function setCache(CacheStore $cache)
+    {
+        $this->cache = $cache;
+
+        return $this;
     }
 
     /**
@@ -233,7 +154,7 @@ class Store
      */
     protected function cacheKey(Model $authority)
     {
-        return strtolower(Str::slug($authority->getMorphClass() . '-' . $authority->getKey()));
+        return \strtolower(Str::slug($this->guard . '-' . $authority->getMorphClass() . '-' . $authority->getKey()));
     }
 
     /**
@@ -246,12 +167,7 @@ class Store
      */
     protected function sear(Model $authority, callable $callback)
     {
-        if (!$this->useCache) {
-            return $callback();
-        }
-
-        $cache = $this->authorityCache($authority);
-
+        $cache = $this->getCache();
         if (!$cache) {
             return $callback();
         }

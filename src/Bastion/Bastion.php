@@ -2,31 +2,29 @@
 
 namespace Ethereal\Bastion;
 
-use BadMethodCallException;
+use Ethereal\Bastion\Conductors\AssignsPermissions;
 use Ethereal\Bastion\Conductors\AssignsRoles;
-use Ethereal\Bastion\Conductors\CheckProxy;
 use Ethereal\Bastion\Conductors\ChecksRoles;
-use Ethereal\Bastion\Conductors\GivesAbilities;
-use Ethereal\Bastion\Conductors\ManageProxy;
-use Ethereal\Bastion\Conductors\RemovesAbilities;
+use Ethereal\Bastion\Conductors\RemovesPermissions;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @method policy($model, $policy)
- * @method array policies()
- * @method bool allows($ability, $model = null, $payload = [])
- * @method bool denies($ability, $model = null, $payload = [])
- */
 class Bastion
 {
     /**
-     * Default rucks type to use.
+     * Default guard.
      *
      * @var string
      */
-    protected static $type = 'user';
+    protected static $useGuard = 'default';
+
+    /**
+     * Permissions cache.
+     *
+     * @var \Illuminate\Contracts\Cache\Store
+     */
+    protected $cache;
 
     /**
      * The container instance.
@@ -36,36 +34,69 @@ class Bastion
     protected $container;
 
     /**
-     * Initiated ruck instances.
+     * Guard to use by default.
+     *
+     * @var string
+     */
+    protected $guard;
+
+    /**
+     * Ruck instances.
      *
      * @var array
      */
     protected $rucks = [];
 
     /**
-     * Pass these methods to Rucks.
-     *
-     * @var array
-     */
-    protected $passthrough = ['policy', 'policies', 'allows', 'denies'];
-
-    /**
-     * Primary store used to get roles and abilities.
-     *
-     * @var \Ethereal\Bastion\Store
-     */
-    protected $store;
-
-    /**
      * Create a new rucks instance.
      *
      * @param \Illuminate\Contracts\Container\Container $container
-     * @param \Ethereal\Bastion\Store $store
+     * @param \Illuminate\Contracts\Cache\Store $cache
+     * @param string|null $guard
      */
-    public function __construct(Container $container, $store)
+    public function __construct(Container $container, $cache, $guard = null)
     {
         $this->container = $container;
-        $this->store = $store;
+        $this->cache = $cache;
+        $this->guard = $guard ?: static::$useGuard;
+    }
+
+    /**
+     * Disable cache.
+     */
+    public static function disableCache()
+    {
+        Store::disableCache();
+    }
+
+    /**
+     * Enable cache.
+     */
+    public static function enableCache()
+    {
+        Store::enableCache();
+    }
+
+    /**
+     * Set the guard Bastion should use.
+     *
+     * @param string $guard
+     */
+    public static function shouldUse($guard)
+    {
+        static::$useGuard = $guard ?: 'default';
+    }
+
+    /**
+     * Start a chain to assign the given role to authority.
+     *
+     * @param array|\Illuminate\Database\Eloquent\Model $authorities
+     *
+     * @return \Ethereal\Bastion\Conductors\AssignsPermissions
+     */
+    public function allow($authorities)
+    {
+        return new AssignsPermissions($this->getStore(), \is_array($authorities) ? $authorities : \func_get_args());
     }
 
     /**
@@ -77,67 +108,57 @@ class Bastion
      */
     public function assign($roles)
     {
-        return new AssignsRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
+        return new AssignsRoles($this->getStore(), \is_array($roles) ? $roles : \func_get_args());
     }
 
     /**
-     * Start a chain to remove the given role from authority.
-     *
-     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
-     *
-     * @return \Ethereal\Bastion\Conductors\RemovesRoles
-     */
-    public function retract($roles)
-    {
-        return new RemovesRoles($this->getStore(), is_array($roles) ? $roles : func_get_args());
-    }
-
-    /**
-     * Start a chain to give abilities to authorities.
+     * Start a chain to remove permissions from authorities.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
      *
-     * @return \Ethereal\Bastion\Conductors\GivesAbilities
-     */
-    public function allow($authorities)
-    {
-        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
-    }
-
-    /**
-     * Start a chain to remove abilities from authorities.
-     *
-     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
-     *
-     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     * @return \Ethereal\Bastion\Conductors\RemovesPermissions
      */
     public function disallow($authorities)
     {
-        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), false);
+        return new RemovesPermissions($this->getStore(), \is_array($authorities) ? $authorities : \func_get_args());
     }
 
     /**
-     * Start a chain to forbid abilities to authorities.
+     * Bastion instance for specific guard.
      *
-     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
+     * @param string $guard
      *
-     * @return \Ethereal\Bastion\Conductors\GivesAbilities
+     * @return \Ethereal\Bastion\Bastion
      */
-    public function forbid($authorities)
+    public function forGuard($guard)
     {
-        return new GivesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
+        return new static($this->container, $this->cache, $guard);
     }
 
     /**
-     * Start a chain to permit forbidden abilities from authorities.
+     * Return currently used guard.
      *
-     * @param array|string|\Illuminate\Database\Eloquent\Model $authorities
-     *
-     * @return \Ethereal\Bastion\Conductors\RemovesAbilities
+     * @return string
      */
-    public function permit($authorities)
+    public function getGuard()
     {
-        return new RemovesAbilities($this->getStore(), is_array($authorities) ? $authorities : func_get_args(), true);
+        return $this->guard;
+    }
+
+    /**
+     * Get store.
+     *
+     * @param string|null $guard
+     *
+     * @return \Ethereal\Bastion\Store
+     */
+    public function getStore($guard = null)
+    {
+        $guard = $guard ?: $this->guard;
+
+        return \tap(new Store($guard), function (Store $store) {
+            $store->setCache($this->cache);
+        });
     }
 
     /**
@@ -153,142 +174,34 @@ class Bastion
     }
 
     /**
-     * Get authority roles.
+     * Start a chain to remove the given role from authority.
      *
-     * @param \Illuminate\Database\Eloquent\Model $authority
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
-     * @return \Illuminate\Support\Collection
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Bastion\Conductors\RemovesRoles
      */
-    public function roles(Model $authority)
+    public function retract($roles)
     {
-        return $this->getStore()->getRoles($authority);
-    }
-
-    /**
-     * Get authority abilities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     * @throws \InvalidArgumentException
-     */
-    public function abilities(Model $authority)
-    {
-        return $this->getStore()->getAbilities($authority);
-    }
-
-    /**
-     * Set default rucks type.
-     *
-     * @param string $type
-     */
-    public function useType($type)
-    {
-        static::$type = $type;
-    }
-
-    /**
-     * Get store.
-     *
-     * @return \Ethereal\Bastion\Store
-     */
-    public function getStore()
-    {
-        return $this->store;
-    }
-
-    /**
-     * Set store.
-     *
-     * @param \Ethereal\Bastion\Store $store
-     */
-    public function setStore($store)
-    {
-        $this->store = $store;
-    }
-
-    /**
-     * Enable cache.
-     */
-    public function enableCache()
-    {
-        $this->getStore()->enableCache();
-    }
-
-    /**
-     * Disable cache.
-     */
-    public function disableCache()
-    {
-        $this->getStore()->disableCache();
-    }
-
-    /**
-     * Clear cached data for authority.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     */
-    public function clearCacheFor(Model $authority)
-    {
-        $this->getStore()->clearCacheFor($authority);
-    }
-
-    /**
-     * Clear cached data.
-     */
-    public function clearCache()
-    {
-        $this->getStore()->clearCache();
-    }
-
-    /**
-     * Get authority permissions map.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $authority
-     *
-     * @return \Ethereal\Bastion\Map
-     * @throws \InvalidArgumentException
-     */
-    public function permissions(Model $authority)
-    {
-        return $this->getStore()->getMap($authority);
-    }
-
-    /**
-     * Passthrough methods directly to rucks.
-     *
-     * @param string $name
-     * @param array $arguments
-     *
-     * @throws \BadMethodCallException
-     */
-    public function __call($name, $arguments)
-    {
-        if (in_array($name, $this->passthrough, true)) {
-            return $this->rucks()->{$name}(...$arguments);
-        }
-
-        throw new BadMethodCallException("Method {$name} is not defined.");
+        return new RemovesRoles($this->getStore(), \is_array($roles) ? $roles : \func_get_args());
     }
 
     /**
      * Get or initiate a new Rucks instance.
      *
-     * @param string|null $type
+     * @param string|null $guard
      *
      * @return \Ethereal\Bastion\Rucks
      */
-    public function rucks($type = null)
+    public function rucks($guard = null)
     {
-        if (!$type) {
-            $type = static::$type;
+        if (!$guard) {
+            $guard = static::$useGuard;
         }
 
-        if (!isset($this->rucks[$type])) {
-            $this->rucks[$type] = new Rucks($this->container, $this->store);
+        if (!isset($this->rucks[$guard])) {
+            $this->rucks[$guard] = new Rucks($this->container, $this->getStore($guard));
         }
 
-        return $this->rucks[$type];
+        return $this->rucks[$guard];
     }
 }

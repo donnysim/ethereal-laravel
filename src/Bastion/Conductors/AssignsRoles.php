@@ -40,34 +40,28 @@ class AssignsRoles
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
-     * @param array $assignAttributes
      *
      * @return $this
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function to($authorities, array $ids = [], array $assignAttributes = [])
+    public function to($authorities, array $ids = [])
     {
         $authorities = $this->collectAuthorities($authorities, $ids);
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
-        $roles = $roleClass::collectRoles($this->roles);
+        $roles = $roleClass::ensureRoles($this->roles, $this->store->getGuard());
 
         if ($roles->isEmpty()) {
             return $this;
         }
 
         foreach ($authorities as $authority) {
-            /** @var \Illuminate\Database\Eloquent\Model $authority */
-            if (!$authority->exists) {
-                throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
-            }
+            $missingRolesKeys = $roles->keys()->diff($roleClass::ofAuthority($authority)->keys());
 
-            $missingRolesIds = $roles->keys()->diff($roleClass::getRoles($authority)->keys());
-
-            foreach ($missingRolesIds as $missingRoleId) {
-                $roles->get($missingRoleId)->createAssignRecord($authority, $assignAttributes);
+            foreach ($missingRolesKeys as $missingRoleId) {
+                $roles->get($missingRoleId)->assignTo($authority, $this->store->getGuard());
             }
         }
 

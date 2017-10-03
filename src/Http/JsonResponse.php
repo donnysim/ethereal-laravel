@@ -2,17 +2,13 @@
 
 namespace Ethereal\Http;
 
-use Exception;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Support\Arr;
-use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Validator;
-use InvalidArgumentException;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse as BaseJsonResponse;
 use UnexpectedValueException;
 
-class JsonResponse extends Response
+class JsonResponse extends BaseJsonResponse
 {
     use ResponseTrait;
 
@@ -24,40 +20,11 @@ class JsonResponse extends Response
     protected $data;
 
     /**
-     * Additional json fields.
+     * Add debug information to exceptions.
      *
-     * @var array
+     * @var bool
      */
-    protected $fields;
-
-    /**
-     * Response meta data.
-     *
-     * @var mixed
-     */
-    protected $meta;
-
-    /**
-     * JSONP callback.
-     *
-     * @var string
-     */
-    protected $callback;
-
-    /**
-     * Encode <, >, ', &, and " for RFC4627-compliant JSON, which may also be embedded into HTML.
-     * 15 === JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
-     *
-     * @var int
-     */
-    protected $encodingOptions = 0;
-
-    /**
-     * Response message.
-     *
-     * @var string|null
-     */
-    protected $message;
+    protected $debug = false;
 
     /**
      * Response error.
@@ -67,18 +34,32 @@ class JsonResponse extends Response
     protected $error;
 
     /**
-     * Error code.
-     *
-     * @var mixed
-     */
-    protected $errorCode;
-
-    /**
      * Error type.
      *
      * @var string|null
      */
     protected $errorType;
+
+    /**
+     * Additional json fields.
+     *
+     * @var array
+     */
+    protected $fields;
+
+    /**
+     * Response message.
+     *
+     * @var string|null
+     */
+    protected $message;
+
+    /**
+     * Response meta data.
+     *
+     * @var mixed
+     */
+    protected $meta;
 
     /**
      * Create a new json response.
@@ -89,7 +70,7 @@ class JsonResponse extends Response
      *
      * @return $this
      */
-    public static function make($data = null, $status = 200, $headers = [])
+    public static function make($data = null, $status = 200, array $headers = [])
     {
         $instance = new static(null, $status, $headers);
 
@@ -97,66 +78,69 @@ class JsonResponse extends Response
     }
 
     /**
-     * Sets the response content.
+     * Add field to response.
      *
-     * @param mixed $content
+     * @param string|array $key
+     * @param mixed $value This value will be used only if key is a string.
      *
      * @return $this
+     * @throws \UnexpectedValueException
      */
-    public function setContent($content)
+    public function add($key, $value = null)
     {
-        $this->data = $content;
+        if (!$this->fields) {
+            $this->fields = [];
+        }
+
+        if (\is_string($key)) {
+            $this->fields[$key] = $value;
+        } else {
+            $this->fields = \array_merge($this->fields, $key);
+        }
 
         return $this;
     }
 
     /**
-     * Set response meta data.
+     * Set response status code.
+     *
+     * @param int $code
+     *
+     * @return $this
+     * @throws \InvalidArgumentException
+     */
+    public function code($code)
+    {
+        $this->setStatusCode($code);
+
+        return $this;
+    }
+
+    /**
+     * Set response data.
      *
      * @param mixed $data
      *
      * @return $this
+     * @throws \UnexpectedValueException
      */
-    public function setMeta($data)
+    public function data($data)
     {
-        $this->meta = $data;
+        $this->setContent($data);
 
         return $this;
     }
 
     /**
-     * Sends HTTP headers.
+     * Add debugging information to exception response.
      *
-     * @return \Ethereal\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
-     */
-    public function sendHeaders()
-    {
-        if ($this->callback !== null) {
-            // Not using application/javascript for compatibility reasons with older browsers.
-            $this->headers->set('Content-Type', 'text/javascript');
-        }
-
-        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
-        // in order to not overwrite a custom definition.
-        elseif (!$this->headers->has('Content-Type') || $this->headers->get('Content-Type') === 'text/javascript') {
-            $this->headers->set('Content-Type', 'application/json');
-        } else {
-            $this->headers->set('Content-Type', 'application/json');
-        }
-
-        return parent::sendHeaders();
-    }
-
-    /**
-     * Set json response message.
-     *
-     * @param string $message
+     * @param bool $value
      *
      * @return $this
      */
-    public function message($message)
+    public function debug($value = true)
     {
-        $this->message = $message;
+        $this->debug = $value;
 
         return $this;
     }
@@ -165,36 +149,13 @@ class JsonResponse extends Response
      * Response error.
      *
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
-     * @param mixed $code
      * @param string|null $type
      *
      * @return $this
      */
-    public function error($error, $code = null, $type = null)
+    public function error($error, $type = null)
     {
         $this->error = $error;
-        $this->errorCode = $code;
-
-        if ($type) {
-            $this->errorType = $type;
-        } elseif (is_object($error)) {
-            $this->errorType = class_basename($error);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Sends content for the current web response.
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
-     * @throws \UnexpectedValueException
-     * @throws \Exception
-     * @throws \InvalidArgumentException
-     */
-    public function sendContent()
-    {
-        echo $this->getContent();
 
         return $this;
     }
@@ -213,14 +174,14 @@ class JsonResponse extends Response
             return '';
         }
 
-        $content = json_encode($this->getResponseData(), $this->encodingOptions);
+        $content = \json_encode($this->getResponseData(), $this->encodingOptions);
 
-        if ($content === false || json_last_error() !== JSON_ERROR_NONE) {
+        if ($content === false || \json_last_error() !== \JSON_ERROR_NONE) {
             throw new UnexpectedValueException('Could not convert data to json.');
         }
 
         if ($this->callback !== null) {
-            return sprintf('/**/%s(%s);', $this->callback, $content);
+            return \sprintf('/**/%s(%s);', $this->callback, $content);
         }
 
         return $content;
@@ -256,109 +217,15 @@ class JsonResponse extends Response
     }
 
     /**
-     * Get error as data.
+     * Set json response message.
      *
-     * @return mixed
-     */
-    protected function getErrorData()
-    {
-        $error = [
-            'message' => $this->error,
-            'type' => $this->getErrorType(),
-            'code' => $this->getErrorCode(),
-        ];
-
-        if ($this->error instanceof ValidationException) {
-            $error['message'] = $this->getErrorMessage();
-
-            if ($this->error->validator) {
-                $error['fields'] = static::flattenMessageBag($this->error->validator->messages());
-            }
-        } elseif ($this->error instanceof Exception) {
-            $error['message'] = $this->getErrorMessage();
-        } elseif (!is_string($error['message'])) {
-            $error['message'] = null;
-        }
-
-        return $error;
-    }
-
-    /**
-     * Get exception type.
-     *
-     * @return string|null
-     */
-    protected function getErrorType()
-    {
-        if (is_object($this->error) && $this->error instanceof Validator || $this->error instanceof MessageBag) {
-            return class_basename(ValidationException::class);
-        }
-
-        return $this->errorType;
-    }
-
-    /**
-     * Get exception code.
-     *
-     * @return int
-     */
-    protected function getErrorCode()
-    {
-        return $this->errorCode;
-    }
-
-    /**
-     * Get exception message.
-     *
-     * @return string
-     */
-    protected function getErrorMessage()
-    {
-        if (is_string($this->error)) {
-            return $this->error;
-        }
-
-        return $this->error->getMessage();
-    }
-
-    /**
-     * Flatten validator messages.
-     *
-     * @param \Illuminate\Support\MessageBag|array $messages
-     *
-     * @return array
-     */
-    public static function flattenMessageBag($messages)
-    {
-        $flattened = [];
-
-        if ($messages instanceof MessageBag) {
-            $messages = $messages->getMessages();
-        }
-
-        foreach ($messages as $key => $value) {
-            if (is_array($value)) {
-                $flattened[$key] = head($value);
-            } else {
-                $flattened[$key] = $value;
-            }
-        }
-
-        return $flattened;
-    }
-
-    /**
-     * Set response data.
-     * Valid types are array and objects that implement Arrayable.
-     *
-     * @param array|\Illuminate\Contracts\Support\Arrayable $data Content that can be cast to array.
+     * @param string $message
      *
      * @return $this
-     * @throws \UnexpectedValueException
      */
-    public function setData($data)
+    public function message($message)
     {
-        $this->setContent($data);
+        $this->message = $message;
 
         return $this;
     }
@@ -378,7 +245,7 @@ class JsonResponse extends Response
             $this->meta = [];
         }
 
-        if (is_string($key)) {
+        if (\is_string($key)) {
             Arr::set($this->meta, $key, $value);
         } else {
             foreach ($key as $metaKey => $metaValue) {
@@ -390,38 +257,67 @@ class JsonResponse extends Response
     }
 
     /**
-     * Add field to response.
+     * Sends content for the current web response.
      *
-     * @param string|array $key
-     * @param mixed $value This value will be used only if key is a string.
-     *
-     * @return $this
+     * @return \Symfony\Component\HttpFoundation\Response
      * @throws \UnexpectedValueException
+     * @throws \Exception
+     * @throws \InvalidArgumentException
      */
-    public function add($key, $value = null)
+    public function sendContent()
     {
-        if (!$this->fields) {
-            $this->fields = [];
+        echo $this->getContent();
+
+        return $this;
+    }
+
+    /**
+     * Sends HTTP headers.
+     *
+     * @return \Ethereal\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
+     */
+    public function sendHeaders()
+    {
+        if ($this->callback !== null) {
+            // Not using application/javascript for compatibility reasons with older browsers.
+            $this->headers->set('Content-Type', 'text/javascript');
         }
 
-        if (is_string($key)) {
-            $this->fields[$key] = $value;
+        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
+        // in order to not overwrite a custom definition.
+        elseif (!$this->headers->has('Content-Type') || $this->headers->get('Content-Type') === 'text/javascript') {
+            $this->headers->set('Content-Type', 'application/json');
         } else {
-            $this->fields = array_merge($this->fields, $key);
+            $this->headers->set('Content-Type', 'application/json');
         }
+
+        return parent::sendHeaders();
+    }
+
+    /**
+     * Sets the response content.
+     *
+     * @param mixed $content
+     *
+     * @return $this
+     */
+    public function setContent($content)
+    {
+        $this->data = $content;
 
         return $this;
     }
 
     /**
      * Set response data.
+     * Valid types are array and objects that implement Arrayable.
      *
-     * @param mixed $data
+     * @param array|mixed $data Content that can be cast to array.
      *
      * @return $this
      * @throws \UnexpectedValueException
      */
-    public function data($data)
+    public function setData($data = [])
     {
         $this->setContent($data);
 
@@ -429,43 +325,61 @@ class JsonResponse extends Response
     }
 
     /**
-     * Sets the JSONP callback.
+     * Set response meta data.
      *
-     * @param string|null $callback The JSONP callback or null to use none
+     * @param mixed $data
      *
      * @return $this
-     * @throws \InvalidArgumentException When the callback name is not valid
      */
-    public function callback($callback = null)
+    public function setMeta($data)
     {
-        if ($callback !== null) {
-            // taken from http://www.geekality.net/2011/08/03/valid-javascript-identifier/
-            $pattern = '/^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\x{200C}\x{200D}]*+$/u';
-            $parts = explode('.', $callback);
-            foreach ($parts as $part) {
-                if (!preg_match($pattern, $part)) {
-                    throw new InvalidArgumentException('The callback name is not valid.');
-                }
-            }
-        }
-
-        $this->callback = $callback;
+        $this->meta = $data;
 
         return $this;
     }
 
     /**
-     * Set response status code.
+     * Get error as data.
      *
-     * @param int $code
-     *
-     * @return $this
-     * @throws \InvalidArgumentException
+     * @return mixed
      */
-    public function code($code)
+    protected function getErrorData()
     {
-        $this->setStatusCode($code);
+        $error = [
+            'message' => $this->getErrorMessage(),
+        ];
 
-        return $this;
+        if ($this->debug && \is_object($this->error)) {
+            $error['exception'] = \get_class($this->error);
+            $error['file'] = $this->error->getFile();
+            $error['line'] = $this->error->getLine();
+            $error['trace'] = \collect($this->error->getTrace())->map(function ($trace) {
+                return Arr::except($trace, ['args']);
+            })->all();
+        }
+
+        if ($this->error instanceof ValidationException && $this->error->validator) {
+            if ($this->error->validator) {
+                $error['errors'] = $this->error->validator->errors();
+            } else {
+                $error['errors'] = [];
+            }
+        }
+
+        return $error;
+    }
+
+    /**
+     * Get exception message.
+     *
+     * @return string
+     */
+    protected function getErrorMessage()
+    {
+        if (\is_string($this->error)) {
+            return $this->error;
+        }
+
+        return $this->error->getMessage();
     }
 }

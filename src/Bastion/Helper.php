@@ -2,60 +2,38 @@
 
 namespace Ethereal\Bastion;
 
-use Ethereal\Bastion\Database\Ability;
+use Ethereal\Bastion\Database\AssignedPermission;
 use Ethereal\Bastion\Database\AssignedRole;
 use Ethereal\Bastion\Database\Permission;
 use Ethereal\Bastion\Database\Role;
+use Illuminate\Container\EntryNotFoundException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 class Helper
 {
     /**
-     * Get ability model instance.
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public static function getAbilityModel()
-    {
-        $class = static::getAbilityModelClass();
-
-        return new $class;
-    }
-
-    /**
-     * Get ability model class name.
+     * Get model class name.
      *
      * @return string
      */
-    public static function getAbilityModelClass()
+    public static function getAssignedPermissionModelClass()
     {
-        return static::getConfig('bastion.models.ability', Ability::class);
+        return static::getConfig('bastion.models.assigned_permission', AssignedPermission::class);
     }
 
     /**
-     * Get abilities table.
+     * Get table.
      *
      * @return string
      */
-    public static function getAbilityTable()
+    public static function getAssignedPermissionsTable()
     {
-        return static::getConfig('bastion.tables.abilities', 'abilities');
+        return static::getConfig('bastion.tables.assigned_permissions', 'assigned_permissions');
     }
 
     /**
-     * Get assigned role model instance.
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public static function getAssignedRoleModel()
-    {
-        $class = static::getAssignedRoleModelClass();
-
-        return new $class;
-    }
-
-    /**
-     * Get assigned role model class name.
+     * Get model class name.
      *
      * @return string
      */
@@ -65,87 +43,39 @@ class Helper
     }
 
     /**
-     * Get assigned role table.
+     * Get table.
      *
      * @return string
      */
-    public static function getAssignedRoleTable()
+    public static function getAssignedRolesTable()
     {
         return static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
     }
 
     /**
-     * Get role model instance.
+     * Get model type and id.
      *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public static function getRoleModel()
-    {
-        $class = static::getRoleModelClass();
-
-        return new $class;
-    }
-
-    /**
-     * Get role model class name.
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|int|null $id
      *
-     * @return string
+     * @return array
      */
-    public static function getRoleModelClass()
+    public static function getModelTypeAndId($model, $id)
     {
-        return static::getConfig('bastion.models.role', Role::class);
-    }
+        $modelType = null;
+        $modelId = null;
 
-    /**
-     * Get role table.
-     *
-     * @return string
-     */
-    public static function getRoleTable()
-    {
-        return static::getConfig('bastion.tables.roles', 'roles');
-    }
+        if (\is_string($model)) {
+            $modelType = static::getMorphOfClass($model);
+            $modelId = $id;
+            return [$modelType, $modelId];
+        } elseif ($model instanceof Model) {
+            $modelType = $model->getMorphClass();
+            $modelId = $model->getKey();
+            return [$modelType, $modelId];
+        }
 
-    /**
-     * Get permission model instance.
-     *
-     * @return \Illuminate\Database\Eloquent\Model
-     */
-    public static function getPermissionModel()
-    {
-        $class = static::getPermissionModelClass();
-
-        return new $class;
-    }
-
-    /**
-     * Get permission model class name.
-     *
-     * @return string
-     */
-    public static function getPermissionModelClass()
-    {
-        return static::getConfig('bastion.models.permission', Permission::class);
-    }
-
-    /**
-     * Get permission table.
-     *
-     * @return string
-     */
-    public static function getPermissionTable()
-    {
-        return static::getConfig('bastion.tables.permissions', 'permissions');
-    }
-
-    /**
-     * Get bastion.
-     *
-     * @return \Ethereal\Bastion\Bastion
-     */
-    public static function bastion()
-    {
-        return app(Bastion::class);
+        return [$modelType, $modelId];
     }
 
     /**
@@ -169,15 +99,59 @@ class Helper
     }
 
     /**
+     * Get model class name.
+     *
+     * @return string
+     */
+    public static function getPermissionModelClass()
+    {
+        return static::getConfig('bastion.models.permission', Permission::class);
+    }
+
+    /**
+     * Get table.
+     *
+     * @return string
+     */
+    public static function getPermissionsTable()
+    {
+        return static::getConfig('bastion.tables.permissions', 'permissions');
+    }
+
+    /**
+     * Get model class name.
+     *
+     * @return string
+     */
+    public static function getRoleModelClass()
+    {
+        return static::getConfig('bastion.models.role', Role::class);
+    }
+
+    /**
+     * Get table.
+     *
+     * @return string
+     */
+    public static function getRolesTable()
+    {
+        return static::getConfig('bastion.tables.roles', 'roles');
+    }
+
+    /**
      * Get application config.
      *
      * @param string $key
      * @param mixed $default
      *
-     * @return \Illuminate\Config\Repository
+     * @return mixed
      */
     protected static function getConfig($key, $default = null)
     {
-        return app('config')->get($key, $default);
+        try {
+            return \app('config')->get($key, $default);
+        } catch (EntryNotFoundException $e) {
+            return $default;
+        }
     }
 }

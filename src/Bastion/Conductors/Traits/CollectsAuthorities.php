@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion\Conductors\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Traversable;
 
 trait CollectsAuthorities
@@ -10,28 +11,34 @@ trait CollectsAuthorities
      * Collect authority list.
      *
      * @param \Illuminate\Database\Eloquent\Model|string|array $listOrClass
-     * @param mixed $ids
+     * @param array|int|null $ids
      *
      * @return array
      */
-    protected function collectAuthorities($listOrClass, $ids)
+    protected function collectAuthorities($listOrClass, $ids = [])
     {
-        if (is_string($listOrClass)) {
-            $authorities = [];
+        $targets = [];
+
+        if (\is_array($listOrClass) || $listOrClass instanceof Traversable) {
+            $targets = $listOrClass;
+        } elseif ($listOrClass instanceof Model) {
+            $targets = [$listOrClass];
+        } elseif (!empty($ids)) {
+            $models = [];
 
             foreach ((array)$ids as $id) {
                 /** @var \Ethereal\Database\Ethereal $model */
                 $model = new $listOrClass;
                 $model->setAttribute($model->getKeyName(), $id);
                 $model->exists = true;
-                $authorities[] = $model;
+                $models[] = $model;
             }
 
-            return $authorities;
-        } elseif (!is_array($listOrClass) && !$listOrClass instanceof Traversable) {
-            return [$listOrClass];
+            $targets = $models;
+        } else {
+            $targets[] = $listOrClass;
         }
 
-        return $listOrClass;
+        return $targets;
     }
 }

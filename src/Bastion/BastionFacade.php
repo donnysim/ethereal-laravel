@@ -13,6 +13,6 @@ class BastionFacade extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return Bastion::class;
+        return 'bastion';
     }
 }

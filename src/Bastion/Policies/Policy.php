@@ -1,6 +1,6 @@
 <?php
 
-namespace Ethereal\Bastion\Policy;
+namespace Ethereal\Bastion\Policies;
 
 trait Policy
 {
@@ -9,7 +9,7 @@ trait Policy
      *
      * @param string|null $reason
      *
-     * @return \Ethereal\Bastion\Policy\PolicyResult
+     * @return \Ethereal\Bastion\Policies\PolicyResult
      */
     protected function allow($reason = null)
     {
@@ -21,7 +21,7 @@ trait Policy
      *
      * @param string|null $reason
      *
-     * @return \Ethereal\Bastion\Policy\PolicyResult
+     * @return \Ethereal\Bastion\Policies\PolicyResult
      */
     protected function deny($reason = null)
     {

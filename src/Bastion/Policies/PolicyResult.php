@@ -1,6 +1,6 @@
 <?php
 
-namespace Ethereal\Bastion\Policy;
+namespace Ethereal\Bastion\Policies;
 
 class PolicyResult
 {
@@ -39,7 +39,7 @@ class PolicyResult
      */
     public static function accessDenied($result)
     {
-        return $result === false || ($result instanceof PolicyResult && $result->denied());
+        return $result === false || ($result instanceof self && $result->denied());
     }
 
     /**
@@ -51,7 +51,31 @@ class PolicyResult
      */
     public static function accessGranted($result)
     {
-        return $result === true || ($result instanceof PolicyResult && $result->allowed());
+        return $result === true || ($result instanceof self && $result->allowed());
+    }
+
+    /**
+     * Allow access.
+     *
+     * @param mixed $reason
+     *
+     * @return static
+     */
+    public static function allow($reason = null)
+    {
+        return new static(true, $reason);
+    }
+
+    /**
+     * Deny access.
+     *
+     * @param mixed $reason
+     *
+     * @return static
+     */
+    public static function deny($reason = null)
+    {
+        return new static(false, $reason);
     }
 
     /**
@@ -64,7 +88,7 @@ class PolicyResult
      */
     public static function fromResult($result, $reason = null)
     {
-        if ($result instanceof PolicyResult) {
+        if ($result instanceof self) {
             return $result;
         }
 

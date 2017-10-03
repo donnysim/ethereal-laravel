@@ -2,7 +2,7 @@
 
 namespace Ethereal\Bastion;
 
-use Ethereal\Cache\TagFileStore;
+use Illuminate\Cache\FileStore;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,8 +14,30 @@ class BastionServiceProvider extends ServiceProvider
     public function boot()
     {
         $configPath = __DIR__ . '/../../config/bastion.php';
-        $this->publishes([$configPath => config_path('bastion.php')], 'config');
-        $this->registerBladeDirectives();
+        $this->publishes([
+            $configPath => \config_path('bastion.php'),
+            __DIR__ . '/../../migrations/bastion' => \database_path('migrations'),
+        ], 'bastion');
+        //        $this->registerBladeDirectives();
+    }
+
+    /**
+     * Register the service provider.
+     */
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__ . '/../../config/bastion.php', 'bastion');
+
+        $this->app->singleton('bastion', function ($app) {
+            return new Bastion($app, new FileStore($app['files'], \storage_path('cache/bastion')));
+        });
+
+        Relation::morphMap([
+            'bastion-permission' => Helper::getPermissionModelClass(),
+            'bastion-assigned-role' => Helper::getAssignedRoleModelClass(),
+            'bastion-assigned-permission' => Helper::getAssignedPermissionModelClass(),
+            'bastion-role' => Helper::getRoleModelClass(),
+        ]);
     }
 
     /**
@@ -81,30 +103,5 @@ class BastionServiceProvider extends ServiceProvider
         $compiler->directive('endrolewith', function ($expression) {
             return '<?php endif; ?>';
         });
-    }
-
-    /**
-     * Register the service provider.
-     */
-    public function register()
-    {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/bastion.php', 'bastion');
-
-        $this->app->singleton(Store::class, function ($app) {
-            $store = new Store();
-            $store->setCache(new TagFileStore($app['files'], storage_path('cache/bastion')));
-            return $store;
-        });
-
-        $this->app->singleton(Bastion::class, function ($app) {
-            return new Bastion($app, $app->make(Store::class));
-        });
-
-        Relation::morphMap([
-            'bastion-ability' => Helper::getAbilityModelClass(),
-            'bastion-assigned-role' => Helper::getAssignedRoleModelClass(),
-            'bastion-permission' => Helper::getPermissionModelClass(),
-            'bastion-role' => Helper::getRoleModelClass(),
-        ]);
     }
 }

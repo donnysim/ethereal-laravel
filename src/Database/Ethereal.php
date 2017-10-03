@@ -8,10 +8,7 @@ use Illuminate\Support\Arr;
 
 class Ethereal extends BaseModel
 {
-    use Traits\WithoutFillable,
-        Traits\Validates,
-        Traits\ExtendsRelations,
-        Traits\Translatable;
+    use Traits\WithoutFillable;
 
     /**
      * Database columns. This is used to filter out invalid columns.
@@ -21,43 +18,44 @@ class Ethereal extends BaseModel
     protected $columns = [];
 
     /**
-     * Fill the model with an array of attributes.
+     * Get a list of columns this model table contains.
      *
-     * @param array $attributes
-     *
-     * @return $this
-     * @throws \UnexpectedValueException
-     * @throws \InvalidArgumentException
+     * @return string[]
      */
-    public function fill(array $attributes)
+    public function getColumns()
     {
-        foreach ($attributes as $key => $value) {
-            $key = $this->removeTableFromKey($key);
-
-            if ($this->isRelationFillable($key)) {
-                if ($this->relationLoaded($key) && $this->getRelation($key) instanceof BaseModel) {
-                    $this->getRelation($key)->fill($value);
-                } else {
-                    $this->setRelation($key, $value);
-                }
-
-                continue;
-            }
-
-            $this->setAttribute($key, $value);
-        }
-
-        return $this;
+        return $this->columns;
     }
 
     /**
-     * Set model key value.
+     * Get the attributes that have been changed since last sync.
      *
-     * @param string|int $value
+     * @return array
      */
-    public function setKey($value)
+    public function getDirty()
     {
-        $this->setAttribute($this->getKeyName(), $value);
+        $dirty = [];
+        $attributes = empty($this->getColumns()) ? $this->getAttributes() : Arr::only($this->getAttributes(), $this->getColumns());
+
+        foreach ($attributes as $key => $value) {
+            if (!$this->originalIsEquivalent($key, $value)) {
+                $dirty[$key] = $value;
+            }
+        }
+
+        return $dirty;
+    }
+
+    /**
+     * Determine if an attribute is present in the attributes list.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function hasAttribute($name)
+    {
+        return \array_key_exists($name, $this->attributes);
     }
 
     /**
@@ -71,40 +69,20 @@ class Ethereal extends BaseModel
     public function hasAttributes(array $attributes, $all = true)
     {
         if ($all) {
-            return count(array_intersect_key(array_flip($attributes), $this->attributes)) === count($attributes);
+            return \count(\array_intersect_key(\array_flip($attributes), $this->attributes)) === \count($attributes);
         }
 
-        return count(array_intersect_key(array_flip($attributes), $this->attributes)) > 0;
+        return \count(\array_intersect_key(\array_flip($attributes), $this->attributes)) > 0;
     }
 
     /**
-     * Set attribute value without morphing.
+     * Determine if the model is soft deleting.
      *
-     * @param string $name
-     * @param mixed $value
+     * @return bool
      */
-    public function setRawAttribute($name, $value)
+    public function isSoftDeleting()
     {
-        $this->attributes[$name] = $value;
-    }
-
-    /**
-     * Keep only specific attributes and relations.
-     *
-     * @param array|string $keep
-     *
-     * @return $this
-     */
-    public function keepOnly($keep)
-    {
-        if (!is_array($keep)) {
-            $keep = func_get_args();
-        }
-
-        $this->attributes = Arr::only($this->attributes, $keep);
-        $this->relations = Arr::only($this->relations, $keep);
-
-        return $this;
+        return \method_exists($this, 'bootSoftDeletes');
     }
 
     /**
@@ -116,8 +94,8 @@ class Ethereal extends BaseModel
      */
     public function keepExcept($remove)
     {
-        if (!is_array($remove)) {
-            $remove = func_get_args();
+        if (!\is_array($remove)) {
+            $remove = \func_get_args();
         }
 
         $this->attributes = Arr::except($this->attributes, $remove);
@@ -127,46 +105,22 @@ class Ethereal extends BaseModel
     }
 
     /**
-     * Determine if the model is soft deleting.
+     * Keep only specific attributes and relations.
      *
-     * @return bool
-     */
-    public function isSoftDeleting()
-    {
-        return method_exists($this, 'bootSoftDeletes');
-    }
-
-    /**
-     * Get the attributes that have been changed since last sync.
+     * @param array|string $keep
      *
-     * @return array
+     * @return $this
      */
-    public function getDirty()
+    public function keepOnly($keep)
     {
-        $dirty = [];
-        $columns = empty($this->columns) ? $this->attributes : Arr::only($this->attributes, $this->getColumns());
-
-        foreach ($columns as $key => $value) {
-            if (!array_key_exists($key, $this->original)) {
-                $dirty[$key] = $value;
-            } elseif ($value !== $this->original[$key] &&
-                !$this->originalIsNumericallyEquivalent($key)
-            ) {
-                $dirty[$key] = $value;
-            }
+        if (!\is_array($keep)) {
+            $keep = \func_get_args();
         }
 
-        return $dirty;
-    }
+        $this->attributes = Arr::only($this->attributes, $keep);
+        $this->relations = Arr::only($this->relations, $keep);
 
-    /**
-     * Get a list of columns this model table contains.
-     *
-     * @return string[]
-     */
-    public function getColumns()
-    {
-        return $this->columns;
+        return $this;
     }
 
     /**
@@ -180,59 +134,24 @@ class Ethereal extends BaseModel
     }
 
     /**
-     * Get an attribute from the model or it's translation.
+     * Set model key value.
      *
-     * @param string $key
-     *
-     * @return mixed
+     * @param string|int $value
      */
-    public function getAttribute($key)
+    public function setKey($value)
     {
-        if (!$this->hasAttribute($key) && $this->translatable() && in_array($key, $this->translatable, true)) {
-            return $this->trans()->{$key};
-        }
-
-        return parent::getAttribute($key);
+        $this->setAttribute($this->getKeyName(), $value);
     }
 
     /**
-     * Determine if an attribute is present in the attributes list.
+     * Set attribute value without morphing.
      *
      * @param string $name
-     *
-     * @return bool
+     * @param mixed $value
      */
-    public function hasAttribute($name)
+    public function setRawAttribute($name, $value)
     {
-        return array_key_exists($name, $this->attributes);
-    }
-
-    /**
-     * Refresh model data from database.
-     *
-     * @param array|null $attributes
-     *
-     * @return $this
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function refresh($attributes = null)
-    {
-        if (!$this->exists) {
-            return $this;
-        }
-
-        /** @var Ethereal $freshModel */
-        $freshModel = $this->newQueryWithoutScopes()->findOrFail($this->getKey(), $attributes ?: ['*']);
-
-        if ($attributes) {
-            $this->setRawAttributes(
-                array_merge($this->getAttributes(), Arr::only($freshModel->getAttributes(), $attributes))
-            );
-        } else {
-            $this->setRawAttributes($freshModel->getAttributes(), true);
-        }
-
-        return $this;
+        $this->attributes[$name] = $value;
     }
 
     /**

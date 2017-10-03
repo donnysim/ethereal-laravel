@@ -3,14 +3,13 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
-use InvalidArgumentException;
 
 class RemovesRoles
 {
     use Traits\CollectsAuthorities;
 
     /**
-     * Roles to remove from the authority.
+     * Roles to assign to the authority.
      *
      * @var array
      */
@@ -24,7 +23,7 @@ class RemovesRoles
     protected $store;
 
     /**
-     * RemovesRoles constructor.
+     * RemovesROles constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $roles
@@ -36,7 +35,7 @@ class RemovesRoles
     }
 
     /**
-     * Remove roles to one or more authorities.
+     * Remove roles from one or more authorities.
      *
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
@@ -51,27 +50,36 @@ class RemovesRoles
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
-        $roles = $roleClass::collectRoles($this->roles)->keys()->all();
+        $roles = $roleClass::ensureRoles($this->roles, $this->store->getGuard());
 
-        if (empty($roles)) {
+        if ($roles->isEmpty()) {
             return $this;
         }
 
-        $query = Helper::getAssignedRoleModel()->newQuery();
+        $assignedRoleClass = Helper::getAssignedRoleModelClass();
+        $assignedRole = new $assignedRoleClass();
+        $query = $assignedRoleClass::query();
+        $queries = 0;
 
         foreach ($authorities as $authority) {
             /** @var \Illuminate\Database\Eloquent\Model $authority */
             if (!$authority->exists) {
-                throw new InvalidArgumentException('Cannot assign roles for authority that does not exist.');
+                continue;
             }
 
-            $query->orWhere(function ($query) use ($roles, $authority) {
-                $query->rolesForAuthority($roles, $authority);
+            $queries++;
+
+            $query->orWhere(function ($query) use ($assignedRole, $roles, $authority) {
+                $query->whereIn("{$assignedRole->getTable()}.role_id", $roles->pluck('id')->all())
+                    ->where("{$assignedRole->getTable()}.model_id", $authority->getKey())
+                    ->where("{$assignedRole->getTable()}.model_type", $authority->getMorphClass());
             });
         }
 
-        $query->delete();
-        $this->store->clearCacheFor($authorities);
+        if ($queries > 0) {
+            $query->delete();
+            $this->store->clearCacheFor($authorities);
+        }
 
         return $this;
     }

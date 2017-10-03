@@ -4,9 +4,9 @@ namespace Ethereal\Bastion\Database;
 
 use Ethereal\Database\Ethereal;
 
-class AssignedRole extends Ethereal
+class AssignedPermission extends Ethereal
 {
     public $timestamps = false;
 
-    protected $columns = ['role_id', 'model_id', 'model_type'];
+    protected $columns = ['permission_id', 'model_id', 'model_type'];
 }

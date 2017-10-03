@@ -5,7 +5,7 @@ return [
      * Bastion specific tables.
      */
     'tables' => [
-        'abilities' => 'abilities',
+        'assigned_permissions' => 'assigned_permissions',
         'assigned_roles' => 'assigned_roles',
         'permissions' => 'permissions',
         'roles' => 'roles',
@@ -15,9 +15,9 @@ return [
      * Application models.
      */
     'models' => [
-        'ability' => \Ethereal\Bastion\Database\Ability::class,
-        'assigned_role' => \Ethereal\Bastion\Database\AssignedRole::class,
-        'permission' => \Ethereal\Bastion\Database\Permission::class,
-        'role' => \Ethereal\Bastion\Database\Role::class,
+        'assigned_permission' => Ethereal\Bastion\Database\AssignedPermission::class,
+        'assigned_role' => Ethereal\Bastion\Database\AssignedRole::class,
+        'permission' => Ethereal\Bastion\Database\Permission::class,
+        'role' => Ethereal\Bastion\Database\Role::class,
     ],
 ];

@@ -1,109 +1,52 @@
 <?php
 
-use Ethereal\Bastion\Bastion;
-use Ethereal\Bastion\Store;
+namespace Tests\Bastion\Database;
 
-class MapTest extends BaseTestCase
+use Ethereal\Bastion\Database\Permission;
+use Ethereal\Bastion\Database\Role;
+use Ethereal\Bastion\Map;
+use Orchestra\Testbench\TestCase;
+
+class MapTest extends TestCase
 {
-    use UsesDatabase;
-
     /**
      * @test
      */
-    public function it_can_get_role_names()
+    public function it_gets_highest_and_lowest_role_level()
     {
-        $this->migrate();
+        $map = new Map('default', \collect([
+            new Role(['level' => 10]),
+            new Role(['level' => 100]),
+            new Role(['level' => 1000]),
+        ]), \collect());
 
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-
-        $map = $store->getMap($user);
-
-        self::assertEquals(['admin'], $map->getRoleNames()->all());
+        self::assertEquals($map->getHighestRoleLevel(), 10);
+        self::assertEquals($map->getLowestRoleLevel(), 1000);
     }
 
     /**
      * @test
      */
-    public function it_can_get_allowed_abilities()
+    public function it_gets_all_role_names()
     {
-        $this->migrate();
+        $map = new Map('default', \collect([
+            new Role(['name' => 'test']),
+            new Role(['name' => 'test-2']),
+            new Role(['name' => 'test']),
+        ]), \collect());
 
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->to('kick');
-        $bastion->forbid('admin')->to('punch');
-
-        $map = $store->getMap($user);
-
-        self::assertEquals(['kick'], $map->getAllowedAbilities()->keys()->all());
+        self::assertEquals(['test', 'test-2'], $map->getRoleNames()->all());
     }
 
     /**
      * @test
      */
-    public function it_can_get_forbidden_abilities()
+    public function it_gets_permissions()
     {
-        $this->migrate();
+        $map = new Map('default', \collect(), \collect([
+            new Permission(['name' => 'model-permission']),
+        ]));
 
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->to('kick');
-        $bastion->forbid('admin')->to('punch');
-
-        $map = $store->getMap($user);
-
-        self::assertEquals(['punch'], $map->getForbiddenAbilities()->keys()->all());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_check_if_ability_identifier_is_forbidden()
-    {
-        $this->migrate();
-
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->to('kick');
-        $bastion->forbid('admin')->to('punch');
-
-        $map = $store->getMap($user);
-
-        self::assertFalse($map->isForbidden('kick'));
-        self::assertTrue($map->isForbidden('punch'));
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_check_if_ability_identifier_is_allowed()
-    {
-        $this->migrate();
-
-        $store = new Store;
-        $bastion = new Bastion($this->app, $store);
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-
-        $bastion->assign('admin')->to($user);
-        $bastion->allow('admin')->to('kick');
-        $bastion->forbid('admin')->to('punch');
-
-        $map = $store->getMap($user);
-
-        self::assertTrue($map->isAllowed('kick'));
-        self::assertFalse($map->isAllowed('punch'));
+        self::assertEquals(['model-permission'], $map->getPermissions()->keys()->all());
     }
 }

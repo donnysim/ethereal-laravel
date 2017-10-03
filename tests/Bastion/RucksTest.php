@@ -1,9 +1,13 @@
 <?php
 
+namespace Tests\Bastion\Database;
+
 use Ethereal\Bastion\Rucks;
 use Ethereal\Bastion\Store;
+use Orchestra\Testbench\TestCase;
+use Tests\Models\TestUserModel;
 
-class RucksTest extends BaseTestCase
+class RucksTest extends TestCase
 {
     /**
      * @test
@@ -109,21 +113,6 @@ class RucksTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_can_determine_if_policy_is_available()
-    {
-        $rucks = $this->getRucks();
-
-        self::assertFalse($rucks->hasPolicyCheck('kick', new TestUserModel));
-
-        $rucks->policy(TestUserModel::class, TestPolicy::class);
-
-        self::assertFalse($rucks->hasPolicyCheck('dance', new TestUserModel));
-        self::assertTrue($rucks->hasPolicyCheck('kick', new TestUserModel));
-    }
-
-    /**
-     * @test
-     */
     public function check_fails_if_no_policy_is_available()
     {
         $rucks = $this->getRucks();
@@ -203,7 +192,7 @@ class RucksTest extends BaseTestCase
 
     protected function getRucks()
     {
-        return new Rucks($this->app, new Store);
+        return new Rucks($this->app, new Store('default'));
     }
 }
 

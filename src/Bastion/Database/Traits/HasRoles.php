@@ -13,6 +13,26 @@ trait HasRoles
      */
     public function roles()
     {
-        return $this->morphToMany(Helper::getRoleModelClass(), 'target', Helper::getAssignedRoleTable(), 'target_id', 'role_id');
+        return $this->morphToMany(Helper::getRoleModelClass(), 'model', Helper::getAssignedRolesTable(), 'model_id', 'role_id')
+            ->where('guard', \app('bastion')->getGuard());
+    }
+
+    /**
+     * Add profiles table to the query.
+     *
+     * @param \Illuminate\Database\Query\Builder $query
+     *
+     * @return mixed
+     */
+    public function scopeJoinRoles($query)
+    {
+        $art = Helper::getAssignedRolesTable();
+        $rt = Helper::getRolesTable();
+
+        return $query->join($art, function ($join) use ($art) {
+
+            $join->on("$art.model_id", '=', "{$this->getTable()}.{$this->getKeyName()}")
+                ->where("$art.model_type", $this->getMorphClass());
+        })->join($rt, "$rt.id", '=', "$art.role_id");
     }
 }

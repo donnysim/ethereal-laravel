@@ -7,6 +7,20 @@ use Illuminate\Support\Collection;
 class Map
 {
     /**
+     * Guard name of the map.
+     *
+     * @var string
+     */
+    protected $guard;
+
+    /**
+     * Permissions collection.
+     *
+     * @var \Illuminate\Database\Eloquent\Collection
+     */
+    protected $permissions;
+
+    /**
      * Role collections.
      *
      * @var \Illuminate\Database\Eloquent\Collection
@@ -14,53 +28,50 @@ class Map
     protected $roles;
 
     /**
-     * Ability collection.
-     *
-     * @var \Illuminate\Database\Eloquent\Collection
-     */
-    protected $abilities;
-
-    /**
-     * Allowed abilities list.
-     *
-     * @var \Illuminate\Database\Eloquent\Collection
-     */
-    protected $allowedAbilities;
-
-    /**
-     * Forbidden abilities list.
-     *
-     * @var \Illuminate\Database\Eloquent\Collection
-     */
-    protected $forbiddenAbilities;
-
-    /**
-     * Highest role level. Lower is higher.
-     *
-     * @var int
-     */
-    protected $highestRoleLevel = 1000;
-
-    /**
-     * Lowest role level. Higher is lower.
-     *
-     * @var int
-     */
-    protected $lowestRoleLevel = 1000;
-
-    /**
      * Map constructor.
      *
+     * @param string $guard
      * @param \Illuminate\Support\Collection $roles
-     * @param \Illuminate\Support\Collection $abilities
+     * @param \Illuminate\Support\Collection $permissions
      */
-    public function __construct(Collection $roles, Collection $abilities)
+    public function __construct($guard, Collection $roles, Collection $permissions)
     {
+        $this->guard = $guard;
         $this->roles = $roles;
-        $this->abilities = $abilities;
+        $this->permissions = $permissions;
+    }
 
-        $this->highestRoleLevel = $roles->min('level');
-        $this->lowestRoleLevel = $roles->max('level');
+    /**
+     * Get highest role level.
+     *
+     * @return int
+     */
+    public function getHighestRoleLevel()
+    {
+        return $this->roles->min('level');
+    }
+
+    /**
+     * Get lowest role level.
+     *
+     * @return int
+     */
+    public function getLowestRoleLevel()
+    {
+        return $this->roles->max('level');
+    }
+
+    /**
+     * Compile permission identifiers.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getPermissionIdentifiers()
+    {
+        return $this->permissions->map(function ($permission) {
+            /** @var \Ethereal\Bastion\Database\Permission $permission */
+            return $permission->compileIdentifier();
+        });
     }
 
     /**
@@ -68,9 +79,9 @@ class Map
      *
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
      */
-    public function getAbilities()
+    public function getPermissions()
     {
-        return $this->abilities;
+        return $this->permissions->keyBy('name');
     }
 
     /**
@@ -80,55 +91,17 @@ class Map
      */
     public function getRoleNames()
     {
-        return $this->roles->pluck('name');
+        return $this->roles->pluck('name')->unique();
     }
 
     /**
-     * Determine if the ability is forbidden.
+     * Get authority roles.
      *
-     * @param string $identifier
-     *
-     * @return bool
+     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
      */
-    public function isForbidden($identifier)
+    public function getRoles()
     {
-        return $this->getForbiddenAbilities()->has($identifier);
-    }
-
-    /**
-     * Get all allowed abilities.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getForbiddenAbilities()
-    {
-        return $this->abilities->filter(function ($item) {
-            return (bool)$item->forbidden;
-        })->keyBy('identifier');
-    }
-
-    /**
-     * Determine if the ability is allowed.
-     *
-     * @param string $identifier
-     *
-     * @return bool
-     */
-    public function isAllowed($identifier)
-    {
-        return $this->getAllowedAbilities()->has($identifier);
-    }
-
-    /**
-     * Get all allowed abilities.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getAllowedAbilities()
-    {
-        return $this->abilities->filter(function ($item) {
-            return !(bool)$item->forbidden;
-        })->keyBy('identifier');
+        return $this->roles;
     }
 
     /**
@@ -148,35 +121,5 @@ class Map
         }
 
         return false;
-    }
-
-    /**
-     * Get authority roles.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
-     */
-    public function getRoles()
-    {
-        return $this->roles;
-    }
-
-    /**
-     * Get highest role level.
-     *
-     * @return int
-     */
-    public function getHighestRoleLevel()
-    {
-        return $this->highestRoleLevel;
-    }
-
-    /**
-     * Get lowest role level.
-     *
-     * @return int
-     */
-    public function getLowestRoleLevel()
-    {
-        return $this->lowestRoleLevel;
     }
 }

@@ -1,185 +1,83 @@
 <?php
 
+namespace Tests\Bastion\Database;
+
 use Ethereal\Bastion\Database\AssignedRole;
 use Ethereal\Bastion\Database\Role;
+use Ethereal\Database\Ethereal;
+use Orchestra\Database\ConsoleServiceProvider;
+use Orchestra\Testbench\TestCase;
+use Orchestra\Testbench\Traits\WithLoadMigrationsFrom;
 
-class RoleTest extends BaseTestCase
+class RoleTest extends TestCase
 {
-    use UsesDatabase;
+    use WithLoadMigrationsFrom;
 
     /**
      * @test
+     * @expectedException \InvalidArgumentException
      */
-    public function it_can_collect_roles_from_names()
+    public function authority_must_exist_to_get_permissions()
     {
-        $this->migrate();
-
-        $roles = Role::collectRoles(['user', 'admin']);
-
-        static::assertArraySubset([
-            [
-                'name' => 'user',
-            ],
-            [
-                'name' => 'admin',
-            ],
-        ], $roles->values()->toArray());
+        Role::ofAuthority(new Ethereal());
     }
 
     /**
      * @test
      */
-    public function it_can_collect_roles_from_names_with_custom_attributes()
+    public function it_gets_all_roles_of_authority()
     {
-        $this->migrate();
+        $role = Role::create([
+            'name' => 'test',
+            'guard' => 'default',
+            'system' => true,
+            'private' => true,
+        ]);
 
-        $roles = Role::collectRoles(['user' => ['title' => 'Simple User'], 'admin']);
+        $role2 = Role::create([
+            'name' => 'test-2',
+            'guard' => 'next',
+            'system' => true,
+            'private' => true,
+        ]);
 
-        static::assertArraySubset([
-            [
-                'name' => 'user',
-                'title' => 'Simple User',
-            ],
-            [
-                'name' => 'admin',
-            ],
-        ], $roles->values()->toArray());
+        AssignedRole::create(['role_id' => $role->getKey(), 'model_id' => 1, 'model_type' => Ethereal::class]);
+        AssignedRole::create(['role_id' => $role2->getKey(), 'model_id' => 1, 'model_type' => Ethereal::class]);
+
+        $authority = new Ethereal(['id' => 1]);
+        $authority->exists = true;
+        self::assertEquals(2, Role::ofAuthority($authority)->count());
+
+        $authority = new Ethereal(['id' => 1]);
+        $authority->exists = true;
+        self::assertEquals(1, Role::ofAuthority($authority, 'default')->count());
+
+        $authority = new Ethereal(['id' => 2]);
+        $authority->exists = true;
+        self::assertEquals(0, Role::ofAuthority($authority)->count());
     }
 
     /**
-     * @test
+     * Get package providers.
+     *
+     * @param \Illuminate\Foundation\Application $app
+     *
+     * @return array
      */
-    public function it_can_collect_roles_by_id()
+    protected function getPackageProviders($app)
     {
-        $this->migrate();
-
-        $role = Role::create(['name' => 'user']);
-        $roles = Role::collectRoles([$role->getKey(), 'admin']);
-
-        static::assertArraySubset([
-            [
-                'id' => $role->getKey(),
-                'name' => 'user',
-            ],
-            [
-                'name' => 'admin',
-            ],
-        ], $roles->values()->toArray());
+        return [ConsoleServiceProvider::class];
     }
 
     /**
-     * @test
+     * Setup the test environment.
+     *
+     * @throws \Exception
      */
-    public function it_can_collect_roles_with_models()
+    protected function setUp()
     {
-        $this->migrate();
+        parent::setUp();
 
-        $role = Role::create(['name' => 'user']);
-        $roles = Role::collectRoles([$role, 'admin']);
-
-        static::assertArraySubset([
-            [
-                'id' => $role->getKey(),
-                'name' => 'user',
-            ],
-            [
-                'name' => 'admin',
-            ],
-        ], $roles->values()->toArray());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_save_the_model_when_collecting_roles()
-    {
-        $this->migrate();
-
-        $roles = Role::collectRoles([new Role(['name' => 'user']), 'admin']);
-
-        static::assertArraySubset([
-            [
-                'name' => 'user',
-            ],
-            [
-                'name' => 'admin',
-            ],
-        ], $roles->values()->toArray());
-    }
-
-    /**
-     * @test
-     */
-    public function it_collects_roles_and_returns_keyed_collection()
-    {
-        $this->migrate();
-
-        $role1 = Role::create(['name' => 'user']);
-        $role2 = Role::create(['name' => 'admin']);
-        $roles = Role::collectRoles([$role1, $role2]);
-
-        static::assertArraySubset([
-            $role1->getKey() => [
-                'id' => $role1->getKey(),
-                'name' => 'user',
-            ],
-            $role2->getKey() => [
-                'id' => $role2->getKey(),
-                'name' => 'admin',
-            ],
-        ], $roles->toArray());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_create_assign_record()
-    {
-        $this->migrate();
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $role = Role::create(['name' => 'user']);
-
-        $role->createAssignRecord($user);
-
-        self::assertEquals(1, AssignedRole::where([
-            'role_id' => $role->getKey(),
-            'target_id' => $user->getKey(),
-            'target_type' => $user->getMorphClass(),
-        ])->count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_get_all_assigned_roles_for_authority()
-    {
-        $this->migrate();
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $role = Role::create(['name' => 'user']);
-
-        $role->createAssignRecord($user);
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_get_all_assigned_roles_of_authority()
-    {
-        $this->migrate();
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $role = Role::create(['name' => 'user']);
-        $role2 = Role::create(['name' => 'admin']);
-
-        $role->createAssignRecord($user);
-        $role2->createAssignRecord($user);
-
-        self::assertEquals(2, AssignedRole::where([
-            'target_id' => $user->getKey(),
-            'target_type' => $user->getMorphClass(),
-        ])->count());
-        self::assertEquals(2, Role::getRoles($user)->count());
+        $this->loadMigrationsFrom(__DIR__ . '/../../../migrations/bastion');
     }
 }

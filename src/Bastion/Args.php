@@ -54,28 +54,42 @@ class Args
         $this->ability = $ability;
 
         if ($model instanceof Model) {
-            $this->class = get_class($model);
+            $this->class = \get_class($model);
             $this->morph = $model->getMorphClass();
             $this->model = $model;
-        } elseif (is_string($model)) {
+        } elseif (\is_string($model)) {
             $this->class = $model;
             $this->morph = Helper::getMorphOfClass($model);
         }
 
         $this->payload = $payload;
-        if (is_array($model)) {
+        if (\is_array($model)) {
             $this->payload = $model;
         }
     }
 
     /**
-     * Get method name suitable for policy.
+     * Resolve arguments.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
+     * @param array $payload
+     *
+     * @return static
+     */
+    public static function resolve($ability, $model = null, $payload = [])
+    {
+        return new static($ability, $model, $payload);
+    }
+
+    /**
+     * Get ability.
      *
      * @return string
      */
-    public function method()
+    public function ability()
     {
-        return Str::camel($this->ability);
+        return $this->ability;
     }
 
     /**
@@ -91,19 +105,29 @@ class Args
             $args[] = $this->model;
         }
 
-        $args = array_merge($args, $this->payload());
+        $args = \array_merge($args, $this->payload());
 
         return $args;
     }
 
     /**
-     * Get ability.
+     * Get method name suitable for policy.
      *
      * @return string
      */
-    public function ability()
+    public function method()
     {
-        return $this->ability;
+        return \strpos($this->ability, '-') !== false ? Str::camel($this->ability) : $this->ability;
+    }
+
+    /**
+     * Get model.
+     *
+     * @return array|\Illuminate\Database\Eloquent\Model|null|string
+     */
+    public function model()
+    {
+        return $this->model;
     }
 
     /**
@@ -124,16 +148,6 @@ class Args
     public function modelMorph()
     {
         return $this->morph;
-    }
-
-    /**
-     * Get model.
-     *
-     * @return array|\Illuminate\Database\Eloquent\Model|null|string
-     */
-    public function model()
-    {
-        return $this->model;
     }
 
     /**

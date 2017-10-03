@@ -1,8 +1,13 @@
 <?php
 
-use Ethereal\Bastion\Args;
+namespace Tests\Bastion\Database;
 
-class ArgsTest extends BaseTestCase
+use Ethereal\Bastion\Args;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Orchestra\Testbench\TestCase;
+use Tests\Models\TestUserModel;
+
+class ArgsTest extends TestCase
 {
     /**
      * @test
@@ -19,9 +24,12 @@ class ArgsTest extends BaseTestCase
      */
     public function it_can_resolve_model_class_and_morph()
     {
+        Relation::morphMap([
+            'TestUserModel' => TestUserModel::class,
+        ]);
         $args = new Args('dance', new TestUserModel);
 
-        self::assertEquals('TestUserModel', $args->modelClass());
+        self::assertEquals(TestUserModel::class, $args->modelClass());
         self::assertEquals('TestUserModel', $args->modelMorph());
         self::assertInstanceOf(TestUserModel::class, $args->model());
     }
@@ -31,9 +39,12 @@ class ArgsTest extends BaseTestCase
      */
     public function it_can_resolve_class_and_morph_from_class()
     {
+        Relation::morphMap([
+            'TestUserModel' => TestUserModel::class,
+        ]);
         $args = new Args('dance', TestUserModel::class);
 
-        self::assertEquals('TestUserModel', $args->modelClass());
+        self::assertEquals(TestUserModel::class, $args->modelClass());
         self::assertEquals('TestUserModel', $args->modelMorph());
     }
 

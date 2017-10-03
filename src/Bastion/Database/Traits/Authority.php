@@ -2,29 +2,62 @@
 
 namespace Ethereal\Bastion\Database\Traits;
 
-use Ethereal\Bastion\Conductors\AssignsRoles;
-use Ethereal\Bastion\Conductors\ChecksAbilities;
+use Ethereal\Bastion\Conductors\ChecksPermissions;
 use Ethereal\Bastion\Conductors\ChecksRoles;
-use Ethereal\Bastion\Conductors\GivesAbilities;
-use Ethereal\Bastion\Conductors\RemovesAbilities;
 use Ethereal\Bastion\Conductors\RemovesRoles;
-use Ethereal\Bastion\Helper;
 
 trait Authority
 {
-    use HasRoles, HasAbilities;
+    use HasRoles, HasPermissions;
 
     /**
-     * Alias to a method.
+     * Give permission to this authority.
      *
-     * @param array|string $role
+     * @param string|array $permissions
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param int|null $id
+     */
+    public function allow($permissions, $model = null, $id = null)
+    {
+        \app('bastion')->allow($this)->to((array)$permissions, $model, $id);
+    }
+
+    /**
+     * Assign roles to this authority.
+     *
+     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
+     */
+    public function assign($roles)
+    {
+        \app('bastion')->assign(\is_array($roles) ? $roles : \func_get_args())->to($this);
+    }
+
+    /**
+     * Determine if authority has permission.
+     *
+     * @param string $permission
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function isAn($role)
+    public function can($permission, $model = null)
     {
-        return $this->isA(is_array($role) ? $role : func_get_args());
+        return (new ChecksPermissions(\app('bastion')->getStore(), $this))->can($permission, $model);
+    }
+
+    /**
+     * Determine if authority does not have permission.
+     *
+     * @param string $ability
+     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     *
+     * @return bool
+     * @throws \InvalidArgumentException
+     */
+    public function cannot($ability, $model = null)
+    {
+        return !$this->can($ability, $model);
     }
 
     /**
@@ -37,20 +70,20 @@ trait Authority
      */
     public function isA($role)
     {
-        return (new ChecksRoles(Helper::bastion()->getStore(), $this))->a(is_array($role) ? $role : func_get_args());
+        return (new ChecksRoles(\app('bastion')->getStore(), $this))->a(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
-     * Alias to notA method.
+     * Alias to a method.
      *
      * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function isNotAn($role)
+    public function isAn($role)
     {
-        return $this->isNotA(is_array($role) ? $role : func_get_args());
+        return $this->isA(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
@@ -63,97 +96,20 @@ trait Authority
      */
     public function isNotA($role)
     {
-        return (new ChecksRoles(Helper::bastion()->getStore(), $this))->notA(is_array($role) ? $role : func_get_args());
+        return (new ChecksRoles(\app('bastion')->getStore(), $this))->notA(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
-     * Determine if authority does not have the ability.
+     * Alias to notA method.
      *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
+     * @param array|string $role
      *
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function cannot($ability, $model = null, $parent = null)
+    public function isNotAn($role)
     {
-        return !$this->can($ability, $model, $parent);
-    }
-
-    /**
-     * Determine if authority has the ability.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function can($ability, $model = null, $parent = null)
-    {
-        return (new ChecksAbilities(Helper::bastion()->getStore(), $this))
-            ->parent($parent)
-            ->can($ability, $model);
-    }
-
-    /**
-     * Determine if the ability is allowed for the current user.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
-     * @param array $payload
-     *
-     * @return \Ethereal\Bastion\Policy\PolicyResult
-     * @throws \InvalidArgumentException
-     */
-    public function check($ability, $model = null, $payload = [])
-    {
-        return Helper::bastion()->rucks()->check($ability, $model, $payload);
-    }
-
-    /**
-     * Determine if the ability is allowed for the current user.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
-     * @param array $payload
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function allowed($ability, $model = null, $payload = [])
-    {
-        return Helper::bastion()->allows($ability, $model, $payload);
-    }
-
-    /**
-     * Determine if the ability is denied for the current user.
-     *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null|array $model
-     * @param array $payload
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function denied($ability, $model = null, $payload = [])
-    {
-        return !Helper::bastion()->allows($ability, $model, $payload);
-    }
-
-    /**
-     * Assign the given role to authority.
-     *
-     * @param array|string|\Illuminate\Database\Eloquent\Model $roles
-     *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \InvalidArgumentException
-     */
-    public function assign($roles)
-    {
-        (new AssignsRoles(Helper::bastion()->getStore(), is_array($roles) ? $roles : func_get_args()))->to($this);
+        return $this->isNotA(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
@@ -167,7 +123,7 @@ trait Authority
     public function reassign($roles)
     {
         $this->roles()->detach();
-        (new AssignsRoles(Helper::bastion()->getStore(), is_array($roles) ? $roles : func_get_args()))->to($this);
+        $this->assign(\is_array($roles) ? $roles : \func_get_args());
     }
 
     /**
@@ -180,105 +136,6 @@ trait Authority
      */
     public function retract($roles)
     {
-        (new RemovesRoles(Helper::bastion()->getStore(), is_array($roles) ? $roles : func_get_args()))->from($this);
-    }
-
-    /**
-     * Give abilities to authorities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
-     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
-     * @param array|string|int|null $ids
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function allow($abilities, $modelListOrClass = null, $ids = null, $parent = null)
-    {
-        (new GivesAbilities(Helper::bastion()->getStore(), [$this], false))
-            ->parent($parent)
-            ->to($abilities, $modelListOrClass, $ids);
-    }
-
-    /**
-     * Remove abilities from authorities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
-     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
-     * @param array|string|int|null $ids
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \UnexpectedValueException
-     */
-    public function disallow($abilities, $modelListOrClass = null, $ids = null, $parent = null)
-    {
-        (new RemovesAbilities(Helper::bastion()->getStore(), [$this], false))
-            ->parent($parent)
-            ->to($abilities, $modelListOrClass, $ids);
-    }
-
-    /**
-     * Forbid abilities to authorities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
-     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
-     * @param array|string|int|null $ids
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
-    public function forbid($abilities, $modelListOrClass = null, $ids = null, $parent = null)
-    {
-        (new GivesAbilities(Helper::bastion()->getStore(), [$this], true))
-            ->parent($parent)
-            ->to($abilities, $modelListOrClass, $ids);
-    }
-
-    /**
-     * Permit forbidden abilities from authorities.
-     *
-     * @param \Illuminate\Database\Eloquent\Model|array|string $abilities
-     * @param \Illuminate\Database\Eloquent\Model|array|string|null $modelListOrClass
-     * @param array|string|int|null $ids
-     * @param \Illuminate\Database\Eloquent\Model|null $parent
-     *
-     * @throws \InvalidArgumentException
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \UnexpectedValueException
-     */
-    public function permit($abilities, $modelListOrClass = null, $ids = null, $parent = null)
-    {
-        (new RemovesAbilities(Helper::bastion()->getStore(), [$this], true))
-            ->parent($parent)
-            ->to($abilities, $modelListOrClass, $ids);
-    }
-
-    /**
-     * Check if any of the available roles have an option.
-     *
-     * @param string $name
-     * @param string|bool|int $value
-     *
-     * @return bool
-     * @throws \InvalidArgumentException
-     */
-    public function hasRoleWith($name, $value)
-    {
-        return $this->permissions()->has($name, $value);
-    }
-
-    /**
-     * Get authority permissions.
-     *
-     * @return \Ethereal\Bastion\Map
-     * @throws \InvalidArgumentException
-     */
-    public function permissions()
-    {
-        return Helper::bastion()->permissions($this);
+        (new RemovesRoles(\app('bastion')->getStore(), \is_array($roles) ? $roles : \func_get_args()))->from($this);
     }
 }
