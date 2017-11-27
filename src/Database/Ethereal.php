@@ -5,6 +5,7 @@ namespace Ethereal\Database;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model as BaseModel;
 use Illuminate\Support\Arr;
+use Modules\Payments\Relations\MorphToAll;
 
 class Ethereal extends BaseModel
 {
@@ -204,5 +205,22 @@ class Ethereal extends BaseModel
         $this->fireModelEvent('created', false);
 
         return true;
+    }
+
+    /**
+     * Define a polymorphic many-to-many relationship that returns all models.
+     *
+     * @param string $pivot
+     * @param string|null $morphName
+     * @param string|null $foreignKey
+     *
+     * @return \Modules\Payments\Relations\MorphToAll
+     */
+    public function morphToAll($pivot, $morphName = null, $foreignKey = null): MorphToAll
+    {
+        $foreignKey = $foreignKey ?: $this->getForeignKey();
+        $morphKey = $morphName ?: 'model';
+
+        return new MorphToAll($this, new $pivot(), $foreignKey, $morphKey);
     }
 }
