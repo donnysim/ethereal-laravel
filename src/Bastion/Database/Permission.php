@@ -254,7 +254,7 @@ class Permission extends Ethereal
         $identifier = [\strtolower($this->name)];
 
         if ($this->model_type) {
-            $identifier[] = Str::slug(\strtolower($this->model_type));
+            $identifier[] = \strtolower($this->model_type);
         }
 
         if ($this->model_id) {
