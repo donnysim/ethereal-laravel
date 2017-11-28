@@ -72,10 +72,10 @@ class ChecksPermissions
 
         if ($model) {
             if (\is_string($model)) {
-                $parts[] = Str::slug(\strtolower(Helper::getMorphOfClass($model)));
+                $parts[] = \strtolower(Helper::getMorphOfClass($model));
                 $matches[] = \implode('-', $parts);
             } else {
-                $parts[] = Str::slug(\strtolower($model->getMorphClass()));
+                $parts[] = \strtolower($model->getMorphClass());
                 $matches[] = \implode('-', $parts);
 
                 if ($model->exists) {
