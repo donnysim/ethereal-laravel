@@ -2,7 +2,6 @@
 
 namespace Tests\Bastion\Conductors;
 
-use Ethereal\Bastion\BastionServiceProvider;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Database\Role;
@@ -15,73 +14,45 @@ class RemovesRolesTest extends TestCase
 {
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
     public function it_can_remove_roles_from_model_class_and_ids()
     {
-        $user = TestUserModel::create(['email' => 'test']);
+        $authority = TestUserModel::create(['email' => 'test']);
+        $role1 = Role::create(['name' => 'rrci1']);
+        $role2 = Role::create(['name' => 'rrci2']);
 
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
-        $assign->to(TestUserModel::class, [$user->getKey(), $user->getKey() + 1]);
+        $assign = new AssignsRoles(new Store(), [$role1, $role2]);
+        $assign->to(TestUserModel::class, [$authority->getKey()]);
 
-        self::assertEquals(2, Role::ofAuthority($user)->count());
+        self::assertEquals(2, Role::allRoles($authority)->count());
 
-        $remove = new RemovesRoles(new Store('default'), ['user']);
-        $remove->from(TestUserModel::class, [$user->getKey()]);
+        $remove = new RemovesRoles(new Store(), [$role1]);
+        $remove->from(TestUserModel::class, [$authority->getKey()]);
 
-        self::assertEquals(1, Role::ofAuthority($user)->count());
+        self::assertEquals(1, Role::allRoles($authority)->count());
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
-    public function it_can_remove_roles_from_user()
+    public function it_removes_roles_from_model()
     {
-        $user = TestUserModel::create(['email' => 'test']);
+        $authority = TestUserModel::create(['email' => 'test']);
+        $role1 = Role::create(['name' => 'rmm1']);
+        $role2 = Role::create(['name' => 'rmm2']);
+        $role1->assignTo($authority);
+        $role2->assignTo($authority);
 
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
-        $assign->to(TestUserModel::class, [$user->getKey(), $user->getKey() + 1]);
+        self::assertEquals(2, Role::allRoles($authority)->count());
 
-        self::assertEquals(2, Role::ofAuthority($user)->count());
+        $remove = new RemovesRoles(new Store(), [$role1]);
+        $remove->from($authority);
 
-        $remove = new RemovesRoles(new Store('default'), ['user']);
-        $remove->from($user);
-
-        self::assertEquals(1, Role::ofAuthority($user)->count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_does_not_clear_all_roles_when_model_does_not_exist()
-    {
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
-        $assign->to(TestUserModel::class, [1, 2, 3]);
-
-        self::assertEquals(2, Role::count());
-
-        $remove = new RemovesRoles(new Store('default'), ['user']);
-        $remove->from(new TestUserModel());
-
-        self::assertEquals(2, Role::count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_only_removes_roles_from_current_guard()
-    {
-        $user = TestUserModel::create(['email' => 'test']);
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
-        $assign->to($user);
-
-        $assign = new AssignsRoles(new Store('other'), ['user', 'admin']);
-        $assign->to($user);
-
-        $remove = new RemovesRoles(new Store('default'), ['user']);
-        $remove->from($user);
-
-        self::assertEquals(1, (new Store('default'))->getMap($user)->getRoles()->count());
-        self::assertEquals(2, (new Store('other'))->getMap($user)->getRoles()->count());
+        self::assertEquals(1, Role::allRoles($authority)->count());
     }
 
     /**
@@ -91,9 +62,9 @@ class RemovesRolesTest extends TestCase
      *
      * @return array
      */
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
-        return [ConsoleServiceProvider::class, BastionServiceProvider::class];
+        return [ConsoleServiceProvider::class];
     }
 
     /**

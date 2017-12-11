@@ -75,7 +75,7 @@ class Rucks
      *
      * @return array
      */
-    public function abilities()
+    public function abilities(): array
     {
         return $this->abilities;
     }
@@ -85,9 +85,9 @@ class Rucks
      *
      * @param callable $callback
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function after(callable $callback)
+    public function after(callable $callback): Rucks
     {
         $this->afterCallbacks[] = $callback;
 
@@ -104,7 +104,7 @@ class Rucks
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function allows($ability, $model = null, array $payload = [])
+    public function allows($ability, $model = null, array $payload = []): bool
     {
         return $this->check($ability, $model, $payload)->allowed();
     }
@@ -114,9 +114,9 @@ class Rucks
      *
      * @param callable $callback
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function before(callable $callback)
+    public function before(callable $callback): Rucks
     {
         $this->beforeCallbacks[] = $callback;
 
@@ -133,7 +133,7 @@ class Rucks
      * @return \Ethereal\Bastion\Policies\PolicyResult
      * @throws \InvalidArgumentException
      */
-    public function check($ability, $model = null, array $payload = [])
+    public function check($ability, $model = null, array $payload = []): PolicyResult
     {
         $user = $this->resolveUser();
         if (!$user) {
@@ -176,10 +176,10 @@ class Rucks
      * @param string $ability
      * @param callable|string $callback
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Rucks
      * @throws \InvalidArgumentException
      */
-    public function define($ability, $callback)
+    public function define($ability, $callback): Rucks
     {
         if (\is_callable($callback)) {
             $this->abilities[$ability] = $callback;
@@ -202,7 +202,7 @@ class Rucks
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function denies($ability, $model = null, array $payload = [])
+    public function denies($ability, $model = null, array $payload = []): bool
     {
         return $this->check($ability, $model, $payload)->denied();
     }
@@ -212,9 +212,9 @@ class Rucks
      *
      * @param mixed $user
      *
-     * @return static
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function forUser($user)
+    public function forUser($user): Rucks
     {
         $rucks = new static($this->container, $this->getStore());
         $rucks->setUserResolver(function () use ($user) {
@@ -257,7 +257,7 @@ class Rucks
     /**
      * Get store.
      *
-     * @return \Ethereal\Bastion\Store
+     * @return \Ethereal\Bastion\Store|null
      */
     public function getStore()
     {
@@ -271,7 +271,7 @@ class Rucks
      *
      * @return bool
      */
-    public function hasAbility($ability)
+    public function hasAbility($ability): bool
     {
         $abilities = \is_array($ability) ? $ability : \func_get_args();
 
@@ -291,7 +291,7 @@ class Rucks
      *
      * @return bool
      */
-    public function hasPolicy($policy)
+    public function hasPolicy($policy): bool
     {
         return isset($this->policies[$policy]);
     }
@@ -301,7 +301,7 @@ class Rucks
      *
      * @return array
      */
-    public function policies()
+    public function policies(): array
     {
         return $this->policies;
     }
@@ -312,9 +312,9 @@ class Rucks
      * @param string $class
      * @param string $policy
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Rucks
      */
-    public function policy($class, $policy)
+    public function policy($class, $policy): Rucks
     {
         $this->policies[$class] = $policy;
 
@@ -370,7 +370,7 @@ class Rucks
      *
      * @return \Closure
      */
-    protected function buildAbilityCallback($callback)
+    protected function buildAbilityCallback($callback): callable
     {
         return function () use ($callback) {
             list($class, $method) = Str::parseCallback($callback);
@@ -427,7 +427,9 @@ class Rucks
 
             if (PolicyResult::accessDenied($result)) {
                 return $result;
-            } elseif ($result !== null) {
+            }
+
+            if ($result !== null) {
                 $grant = $result;
             }
         }
@@ -442,7 +444,7 @@ class Rucks
      * @param mixed $user
      * @param \Ethereal\Bastion\Args $args
      *
-     * @return \Ethereal\Bastion\Policies\PolicyResult
+     * @return \Ethereal\Bastion\Policies\PolicyResult|null
      */
     protected function callPolicyBefore($policy, $user, $args)
     {
@@ -471,7 +473,7 @@ class Rucks
      *
      * @return \Closure
      */
-    protected function resolvePolicyCallback($user, Args $args, $policy)
+    protected function resolvePolicyCallback($user, Args $args, $policy): callable
     {
         return function () use ($policy, $user, $args) {
             $policyResult = $this->callPolicyBefore($policy, $user, $args);

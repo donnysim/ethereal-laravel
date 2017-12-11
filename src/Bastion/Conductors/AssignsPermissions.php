@@ -2,8 +2,8 @@
 
 namespace Ethereal\Bastion\Conductors;
 
+use Ethereal\Bastion\Exceptions\InvalidAuthorityException;
 use Ethereal\Bastion\Helper;
-use InvalidArgumentException;
 
 class AssignsPermissions
 {
@@ -42,30 +42,31 @@ class AssignsPermissions
      * @param string|\Illuminate\Database\Eloquent\Model|null $model
      * @param int|null $id
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Conductors\AssignsPermissions
+     * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    public function to($permissions, $model = null, $id = null)
+    public function to($permissions, $model = null, $id = null): AssignsPermissions
     {
         $authorities = $this->collectAuthorities($this->authorities);
 
         /** @var \Ethereal\Bastion\Database\Permission $permissionClass */
         $permissionClass = Helper::getPermissionModelClass();
+        $keyName = (new $permissionClass)->getKeyName();
+        $collection = $permissionClass::ensurePermissions((array)$permissions, $model, $id)->keyBy($keyName);
 
-        $collection = $permissionClass::ensurePermissions((array)$permissions, $this->store->getGuard(), $model, $id);
         if ($collection->isEmpty()) {
             return $this;
         }
 
         foreach ($authorities as $authority) {
-            /** @var \Illuminate\Database\Eloquent\Model $authority */
             if (!$authority->exists) {
-                throw new InvalidArgumentException('Cannot assign permissions for authority that does not exist.');
+                throw new InvalidAuthorityException('Cannot assign permissions to authority that does not exist.');
             }
 
-            $missingPermissionKeys = $collection->keys()->diff($permissionClass::ofAuthority($authority)->keys());
-
+            $missingPermissionKeys = $collection->keys()->diff($permissionClass::ofAuthority($authority)->pluck($keyName));
             foreach ($missingPermissionKeys as $missingPermissionKey) {
-                $collection->get($missingPermissionKey)->assignTo($authority, $this->store->getGuard());
+                $collection->get($missingPermissionKey)->assignTo($authority);
             }
         }
 

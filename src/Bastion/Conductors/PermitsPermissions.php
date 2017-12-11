@@ -5,7 +5,7 @@ namespace Ethereal\Bastion\Conductors;
 use Ethereal\Bastion\Exceptions\InvalidAuthorityException;
 use Ethereal\Bastion\Helper;
 
-class RemovesPermissions
+class PermitsPermissions
 {
     use Traits\CollectsAuthorities;
 
@@ -24,7 +24,7 @@ class RemovesPermissions
     protected $store;
 
     /**
-     * RemovesPermissions constructor.
+     * PermitsPermissions constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $authorities
@@ -36,17 +36,17 @@ class RemovesPermissions
     }
 
     /**
-     * Remove permissions from one or more authorities.
+     * Permit permissions to one or more authorities.
      *
      * @param $permissions
      * @param string|\Illuminate\Database\Eloquent\Model|null $model
      * @param int|null $id
      *
-     * @return \Ethereal\Bastion\Conductors\RemovesPermissions
+     * @return \Ethereal\Bastion\Conductors\PermitsPermissions
      * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
      */
-    public function to($permissions, $model = null, $id = null): RemovesPermissions
+    public function to($permissions, $model = null, $id = null): PermitsPermissions
     {
         $authorities = $this->collectAuthorities($this->authorities);
 
@@ -76,7 +76,7 @@ class RemovesPermissions
                     ->where([
                         "{$apTable}.model_type" => $authority->getMorphClass(),
                         "{$apTable}.model_id" => $authority->getKey(),
-                        'forbid' => false,
+                        'forbid' => true,
                     ]);
             });
 

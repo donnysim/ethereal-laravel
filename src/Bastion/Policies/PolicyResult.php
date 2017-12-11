@@ -37,7 +37,7 @@ class PolicyResult
      *
      * @return bool
      */
-    public static function accessDenied($result)
+    public static function accessDenied($result): bool
     {
         return $result === false || ($result instanceof self && $result->denied());
     }
@@ -49,7 +49,7 @@ class PolicyResult
      *
      * @return bool
      */
-    public static function accessGranted($result)
+    public static function accessGranted($result): bool
     {
         return $result === true || ($result instanceof self && $result->allowed());
     }
@@ -59,9 +59,9 @@ class PolicyResult
      *
      * @param mixed $reason
      *
-     * @return static
+     * @return \Ethereal\Bastion\Policies\PolicyResult
      */
-    public static function allow($reason = null)
+    public static function allow($reason = null): PolicyResult
     {
         return new static(true, $reason);
     }
@@ -71,9 +71,9 @@ class PolicyResult
      *
      * @param mixed $reason
      *
-     * @return static
+     * @return \Ethereal\Bastion\Policies\PolicyResult
      */
-    public static function deny($reason = null)
+    public static function deny($reason = null): PolicyResult
     {
         return new static(false, $reason);
     }
@@ -84,9 +84,9 @@ class PolicyResult
      * @param mixed $result
      * @param string|null $reason Reason if none provided.
      *
-     * @return static
+     * @return \Ethereal\Bastion\Policies\PolicyResult
      */
-    public static function fromResult($result, $reason = null)
+    public static function fromResult($result, $reason = null): PolicyResult
     {
         if ($result instanceof self) {
             return $result;
@@ -96,23 +96,27 @@ class PolicyResult
     }
 
     /**
+     * Determine if the check passed.
+     *
      * @return bool
      */
-    public function allowed()
+    public function allowed(): bool
     {
         return $this->passed;
     }
 
     /**
+     * Determine if the check failed.
+     *
      * @return bool
      */
-    public function denied()
+    public function denied(): bool
     {
         return !$this->passed;
     }
 
     /**
-     * Action reason.
+     * Reason why the action was allowed or denied.
      *
      * @return null|string
      */

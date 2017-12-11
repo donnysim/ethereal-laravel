@@ -7,36 +7,27 @@ use Illuminate\Support\Collection;
 class Map
 {
     /**
-     * Guard name of the map.
-     *
-     * @var string
-     */
-    protected $guard;
-
-    /**
      * Permissions collection.
      *
-     * @var \Illuminate\Database\Eloquent\Collection
+     * @var \Illuminate\Support\Collection
      */
     protected $permissions;
 
     /**
      * Role collections.
      *
-     * @var \Illuminate\Database\Eloquent\Collection
+     * @var \Illuminate\Support\Collection
      */
     protected $roles;
 
     /**
      * Map constructor.
      *
-     * @param string $guard
      * @param \Illuminate\Support\Collection $roles
      * @param \Illuminate\Support\Collection $permissions
      */
-    public function __construct($guard, Collection $roles, Collection $permissions)
+    public function __construct(Collection $roles, Collection $permissions)
     {
-        $this->guard = $guard;
         $this->roles = $roles;
         $this->permissions = $permissions;
     }
@@ -46,7 +37,7 @@ class Map
      *
      * @return int
      */
-    public function getHighestRoleLevel()
+    public function highestRoleLevel(): int
     {
         return $this->roles->min('level');
     }
@@ -56,32 +47,19 @@ class Map
      *
      * @return int
      */
-    public function getLowestRoleLevel()
+    public function lowestRoleLevel(): int
     {
         return $this->roles->max('level');
     }
 
     /**
-     * Compile permission identifiers.
+     * Get authority permissions.
      *
      * @return \Illuminate\Support\Collection
      */
-    public function getPermissionIdentifiers()
+    public function permissions(): Collection
     {
-        return $this->permissions->map(function ($permission) {
-            /** @var \Ethereal\Bastion\Database\Permission $permission */
-            return $permission->compileIdentifier();
-        });
-    }
-
-    /**
-     * Get authority abilities.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
-     */
-    public function getPermissions()
-    {
-        return $this->permissions->keyBy('name');
+        return $this->permissions;
     }
 
     /**
@@ -89,7 +67,7 @@ class Map
      *
      * @return \Illuminate\Support\Collection
      */
-    public function getRoleNames()
+    public function roleNames(): Collection
     {
         return $this->roles->pluck('name')->unique();
     }
@@ -97,29 +75,10 @@ class Map
     /**
      * Get authority roles.
      *
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
-    public function getRoles()
+    public function roles(): Collection
     {
         return $this->roles;
-    }
-
-    /**
-     * Check all roles and see if any of them have a property with specific value.
-     *
-     * @param string $name
-     * @param string|bool|int $value
-     *
-     * @return bool
-     */
-    public function has($name, $value)
-    {
-        foreach ($this->getRoles() as $role) {
-            if ($role->{$name} === $value) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

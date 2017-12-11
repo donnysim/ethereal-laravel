@@ -11,7 +11,7 @@ trait Policy
      *
      * @return \Ethereal\Bastion\Policies\PolicyResult
      */
-    protected function allow($reason = null)
+    protected function allow($reason = null): PolicyResult
     {
         return new PolicyResult(true, $reason);
     }
@@ -23,7 +23,7 @@ trait Policy
      *
      * @return \Ethereal\Bastion\Policies\PolicyResult
      */
-    protected function deny($reason = null)
+    protected function deny($reason = null): PolicyResult
     {
         return new PolicyResult(false, $reason);
     }

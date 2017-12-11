@@ -2,22 +2,24 @@
 
 namespace Ethereal\Bastion\Database;
 
+use Ethereal\Bastion\Exceptions\InvalidAuthorityException;
+use Ethereal\Bastion\Exceptions\InvalidRoleException;
 use Ethereal\Bastion\Helper;
 use Ethereal\Database\Ethereal;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use InvalidArgumentException;
 
 class Role extends Ethereal
 {
-    protected $columns = ['id', 'name', 'title', 'guard', 'system', 'private', 'level', 'created_at', 'updated_at'];
-
     protected $casts = [
         'id' => 'int',
         'system' => 'bool',
         'private' => 'bool',
         'level' => 'int',
     ];
+
+    protected $columns = ['id', 'name', 'title', 'system', 'private', 'level', 'created_at', 'updated_at'];
 
     /**
      * Create a new Eloquent model instance.
@@ -32,88 +34,102 @@ class Role extends Ethereal
     }
 
     /**
-     * Collect various roles from a list.
+     * Ensure all roles are valid.
      *
      * @param array $roles
-     * @param string $guard
      *
      * @return \Illuminate\Support\Collection
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
-    public static function ensureRoles(array $roles, $guard)
+    public static function ensureRoles(array $roles): Collection
     {
-        $rolesList = new Collection();
+        $roleList = new Collection();
 
+        $findRoles = [];
         foreach ($roles as $key => $role) {
-            if ($role instanceof Model) {
+            if (\is_string($role)) {
+                $findRoles[] = $role;
+            } elseif ($role instanceof Model) {
                 if (!$role->exists) {
-                    $role->save();
+                    throw new InvalidRoleException("Role `{$role->name}` is not persisted in database.");
                 }
 
-                $rolesList->push($role);
-            } elseif (\is_string($role)) {
-                $rolesList->push(static::firstOrCreate(['name' => $role, 'guard' => $guard]));
-            } elseif (\is_string($key) && \is_array($role)) {
-                $model = static::firstOrNew(['name' => $key, 'guard' => $guard]);
-                $model->fill($role)->save();
-
-                $rolesList->push($model);
-            } elseif (\is_numeric($role)) {
-                $rolesList->push(static::findOrFail($role));
+                $roleList->push($role);
             }
         }
 
-        return $rolesList->keyBy((new static)->getKeyName());
+        if (\count($findRoles)) {
+            $roles = static::whereIn('name', $findRoles)->get(['id', 'name']);
+            $missing = array_values(array_diff($findRoles, $roles->pluck('name')->all()));
+
+            if (\count($missing)) {
+                throw new InvalidRoleException("Role `{$missing[0]}` does not exists.");
+            }
+
+            $roleList = $roleList->merge($roles);
+        }
+
+        return $roleList->keyBy((new static)->getKeyName());
     }
 
     /**
-     * Get authority roles.
+     * Get all authority roles.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param string|null $guard
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Database\Eloquent\Collection|static[]
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    public static function ofAuthority(Model $authority, $guard = null)
+    public static function allRoles(Model $authority)
+    {
+        return self::authorityQuery($authority)->get();
+    }
+
+    /**
+     * Start authority role query.
+     *
+     * @param \Illuminate\Database\Eloquent\Model $authority
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     */
+    protected static function authorityQuery(Model $authority): Builder
     {
         if (!$authority->exists) {
-            throw new InvalidArgumentException('Authority must exist to retrieve assigned roles.');
+            throw new InvalidAuthorityException('Authority must exist to retrieve assigned roles.');
         }
 
         $role = new static();
-        $query = $role->newQueryWithoutScopes();
-
-        return $query->whereIn($role->getKeyName(), function ($query) use ($role, $guard, $authority) {
-            $query->select($role->getForeignKey())->from(Helper::getAssignedRolesTable())
-                ->when($guard, function ($query) use ($guard) {
-                    $query->where('guard', $guard);
-                })
-                ->where([
-                    'model_id' => $authority->getKey(),
-                    'model_type' => $authority->getMorphClass(),
-                ]);
-        })->get()->keyBy($role->getKeyName());
+        return $role
+            ->newQuery()
+            ->whereIn($role->getKeyName(), function ($query) use ($authority, $role) {
+                $query
+                    ->select($role->getForeignKey())
+                    ->from(Helper::getAssignedRolesTable())
+                    ->where([
+                        'model_id' => $authority->getKey(),
+                        'model_type' => $authority->getMorphClass(),
+                    ]);
+            });
     }
 
     /**
      * Assign role to authority.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
-     * @param string $guard
      *
      * @return $this|\Illuminate\Database\Eloquent\Model
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
-    public function assignTo(Model $authority, $guard)
+    public function assignTo(Model $authority)
     {
-        if (!$guard) {
-            throw new InvalidArgumentException('Guard must be provided for role assign.');
-        }
-
         if (!$authority->exists) {
-            throw new InvalidArgumentException('Authority must exist to assign a role.');
+            throw new InvalidAuthorityException('Authority must exist to assign a role.');
         }
 
         if (!$this->exists) {
-            throw new InvalidArgumentException('Role must be saved before it can be assigned to authority.');
+            throw new InvalidRoleException('Role must be saved before it can be assigned to authority.');
         }
 
         /** @var \Ethereal\Bastion\Database\AssignedRole $assignClass */

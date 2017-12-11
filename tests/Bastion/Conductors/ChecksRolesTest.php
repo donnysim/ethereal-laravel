@@ -2,9 +2,9 @@
 
 namespace Tests\Bastion\Conductors;
 
-use Ethereal\Bastion\BastionServiceProvider;
 use Ethereal\Bastion\Conductors\AssignsRoles;
 use Ethereal\Bastion\Conductors\ChecksRoles;
+use Ethereal\Bastion\Database\Role;
 use Ethereal\Bastion\Store;
 use Orchestra\Database\ConsoleServiceProvider;
 use Orchestra\Testbench\TestCase;
@@ -14,47 +14,61 @@ class ChecksRolesTest extends TestCase
 {
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
     public function it_can_check_if_authority_does_not_have_a_role()
     {
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
+        $role1 = Role::create(['name' => 'dnhr1']);
+        $role2 = Role::create(['name' => 'dnhr2']);
+
+        $user = TestUserModel::create(['email' => 'john@doe.com']);
+        $assign = new AssignsRoles(new Store(), [$role1, $role2]);
         $assign->to($user);
 
-        $check = new ChecksRoles(new Store('default'), $user);
+        $check = new ChecksRoles(new Store(), $user);
 
-        self::assertTrue($check->notA('geek'));
-        self::assertTrue($check->notAn('elephant'));
+        self::assertTrue($check->notA('dnhr3'));
+        self::assertTrue($check->notAn('dnhr4'));
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
     public function it_can_check_if_authority_has_a_role()
     {
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
+        $role1 = Role::create(['name' => 'ahr1']);
+        $role2 = Role::create(['name' => 'ahr2']);
+
+        $user = TestUserModel::create(['email' => 'john@doe.com']);
+        $assign = new AssignsRoles(new Store(), [$role1, $role2]);
         $assign->to($user);
 
-        $check = new ChecksRoles(new Store('default'), $user);
+        $check = new ChecksRoles(new Store(), $user);
 
-        self::assertTrue($check->a('user'));
-        self::assertTrue($check->an('admin'));
+        self::assertTrue($check->a('ahr1'));
+        self::assertTrue($check->an('ahr2'));
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
     public function it_can_check_if_authority_has_all_roles()
     {
+        $role1 = Role::create(['name' => 'ahar1']);
+        $role2 = Role::create(['name' => 'ahar2']);
+
         $user = TestUserModel::create(['email' => 'john@example.com']);
-        $assign = new AssignsRoles(new Store('default'), ['user', 'admin']);
+        $assign = new AssignsRoles(new Store(), [$role1, $role2]);
         $assign->to($user);
 
-        $check = new ChecksRoles(new Store('default'), $user);
+        $check = new ChecksRoles(new Store(), $user);
 
-        self::assertTrue($check->notA('geek'));
-        self::assertTrue($check->notAn('elephant'));
+        self::assertTrue($check->all('ahar1', 'ahar2'));
     }
 
     /**
@@ -64,9 +78,9 @@ class ChecksRolesTest extends TestCase
      *
      * @return array
      */
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
-        return [ConsoleServiceProvider::class, BastionServiceProvider::class];
+        return [ConsoleServiceProvider::class];
     }
 
     /**

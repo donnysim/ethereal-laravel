@@ -7,54 +7,65 @@ use Ethereal\Bastion\Database\Role;
 use Ethereal\Database\Ethereal;
 use Orchestra\Database\ConsoleServiceProvider;
 use Orchestra\Testbench\TestCase;
-use Orchestra\Testbench\Traits\WithLoadMigrationsFrom;
+use Tests\Models\TestUserModel;
 
 class RoleTest extends TestCase
 {
-    use WithLoadMigrationsFrom;
-
     /**
      * @test
-     * @expectedException \InvalidArgumentException
      */
-    public function authority_must_exist_to_get_permissions()
+    public function it_can_be_assigned_to_authority()
     {
-        Role::ofAuthority(new Ethereal());
+        $authority = TestUserModel::create(['email' => 'john@doe.com']);
+        $role = Role::create(['name' => 'all-guard-role1', 'scope' => 'all-guard1']);
+        $role->assignTo($authority);
+
+        self::assertEquals(1, AssignedRole::where([
+            'model_id' => $authority->getKey(),
+            'model_type' => $authority->getMorphClass(),
+        ])->count());
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
      */
-    public function it_gets_all_roles_of_authority()
+    public function it_returns_keyed_roles_list_by_id()
     {
-        $role = Role::create([
-            'name' => 'test',
-            'guard' => 'default',
-            'system' => true,
-            'private' => true,
-        ]);
+        $role = Role::create(['name' => 'keyed']);
+        self::assertEquals([$role->getKey()], Role::ensureRoles(['keyed'])->keys()->all());
+    }
 
-        $role2 = Role::create([
-            'name' => 'test-2',
-            'guard' => 'next',
-            'system' => true,
-            'private' => true,
-        ]);
+    /**
+     * @test
+     * @expectedException \Ethereal\Bastion\Exceptions\InvalidRoleException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
+     */
+    public function it_throws_error_ensuring_model_that_does_not_exist()
+    {
+        $role = new Role(['name' => 'model']);
+        Role::ensureRoles([$role]);
+    }
 
-        AssignedRole::create(['role_id' => $role->getKey(), 'model_id' => 1, 'model_type' => Ethereal::class]);
-        AssignedRole::create(['role_id' => $role2->getKey(), 'model_id' => 1, 'model_type' => Ethereal::class]);
+    /**
+     * @test
+     * @expectedException \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     */
+    public function it_throws_error_if_authority_does_not_exist()
+    {
+        Role::allRoles(new Ethereal());
+    }
 
-        $authority = new Ethereal(['id' => 1]);
-        $authority->exists = true;
-        self::assertEquals(2, Role::ofAuthority($authority)->count());
-
-        $authority = new Ethereal(['id' => 1]);
-        $authority->exists = true;
-        self::assertEquals(1, Role::ofAuthority($authority, 'default')->count());
-
-        $authority = new Ethereal(['id' => 2]);
-        $authority->exists = true;
-        self::assertEquals(0, Role::ofAuthority($authority)->count());
+    /**
+     * @test
+     * @expectedException \Ethereal\Bastion\Exceptions\InvalidRoleException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
+     */
+    public function it_throws_error_if_ensuring_non_existing_role()
+    {
+        Role::create(['name' => 'exists']);
+        Role::ensureRoles(['exists', 'missing']);
     }
 
     /**
@@ -64,7 +75,7 @@ class RoleTest extends TestCase
      *
      * @return array
      */
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [ConsoleServiceProvider::class];
     }
@@ -79,5 +90,6 @@ class RoleTest extends TestCase
         parent::setUp();
 
         $this->loadMigrationsFrom(__DIR__ . '/../../../migrations/bastion');
+        $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
     }
 }

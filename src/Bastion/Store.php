@@ -24,23 +24,6 @@ class Store
     protected $cache;
 
     /**
-     * Guard this store is working with.
-     *
-     * @var string
-     */
-    protected $guard;
-
-    /**
-     * Store constructor.
-     *
-     * @param string $guard
-     */
-    public function __construct($guard)
-    {
-        $this->guard = $guard;
-    }
-
-    /**
      * Disable cache.
      */
     public static function disableCache()
@@ -61,7 +44,8 @@ class Store
      */
     public function clearCache()
     {
-        if ($cache = $this->getCache()) {
+        $cache = $this->getCache();
+        if ($cache) {
             $cache->flush();
         }
     }
@@ -79,15 +63,18 @@ class Store
                     $this->clearCacheFor($model);
                 }
             }
-        } elseif ($cache = $this->getCache()) {
-            $cache->forget($this->cacheKey($authority));
+        } else {
+            $cache = $this->getCache();
+            if ($cache) {
+                $cache->forget($this->cacheKey($authority));
+            }
         }
     }
 
     /**
      * Get the cache instance.
      *
-     * @return \Illuminate\Contracts\Cache\Store
+     * @return \Illuminate\Contracts\Cache\Store|null
      */
     public function getCache()
     {
@@ -99,16 +86,6 @@ class Store
     }
 
     /**
-     * Get guard.
-     *
-     * @return string
-     */
-    public function getGuard()
-    {
-        return $this->guard;
-    }
-
-    /**
      * Get authority permissions map.
      *
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -116,18 +93,18 @@ class Store
      * @return \Ethereal\Bastion\Map
      * @throws \InvalidArgumentException
      */
-    public function getMap(Model $authority)
+    public function getMap(Model $authority): Map
     {
         return $this->sear($authority, function () use ($authority) {
             /** @var \Ethereal\Bastion\Database\Role $class */
             $class = Helper::getRoleModelClass();
-            $roles = $class::ofAuthority($authority, $this->guard);
+            $roles = $class::allRoles($authority);
 
             /** @var \Ethereal\Bastion\Database\Permission $class */
             $class = Helper::getPermissionModelClass();
-            $permissions = $class::ofAuthority($authority, $roles, $this->guard);
+            $permissions = $class::ofAuthority($authority, $roles);
 
-            return new Map($this->guard, $roles, $permissions);
+            return new Map($roles, $permissions);
         });
     }
 
@@ -136,9 +113,9 @@ class Store
      *
      * @param \Illuminate\Contracts\Cache\Store $cache
      *
-     * @return $this
+     * @return \Ethereal\Bastion\Store
      */
-    public function setCache(CacheStore $cache)
+    public function setCache(CacheStore $cache): Store
     {
         $this->cache = $cache;
 
@@ -152,9 +129,9 @@ class Store
      *
      * @return string
      */
-    protected function cacheKey(Model $authority)
+    protected function cacheKey(Model $authority): string
     {
-        return \strtolower(Str::slug($this->guard . '-' . $authority->getMorphClass() . '-' . $authority->getKey()));
+        return \strtolower(Str::slug($authority->getMorphClass() . '-' . $authority->getKey()));
     }
 
     /**
@@ -165,7 +142,7 @@ class Store
      *
      * @return \Ethereal\Bastion\Map
      */
-    protected function sear(Model $authority, callable $callback)
+    protected function sear(Model $authority, callable $callback): Map
     {
         $cache = $this->getCache();
         if (!$cache) {

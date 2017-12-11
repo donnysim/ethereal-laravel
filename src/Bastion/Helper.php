@@ -17,7 +17,7 @@ class Helper
      *
      * @return string
      */
-    public static function getAssignedPermissionModelClass()
+    public static function getAssignedPermissionModelClass(): string
     {
         return static::getConfig('bastion.models.assigned_permission', AssignedPermission::class);
     }
@@ -27,7 +27,7 @@ class Helper
      *
      * @return string
      */
-    public static function getAssignedPermissionsTable()
+    public static function getAssignedPermissionsTable(): string
     {
         return static::getConfig('bastion.tables.assigned_permissions', 'assigned_permissions');
     }
@@ -37,7 +37,7 @@ class Helper
      *
      * @return string
      */
-    public static function getAssignedRoleModelClass()
+    public static function getAssignedRoleModelClass(): string
     {
         return static::getConfig('bastion.models.assigned_role', AssignedRole::class);
     }
@@ -47,7 +47,7 @@ class Helper
      *
      * @return string
      */
-    public static function getAssignedRolesTable()
+    public static function getAssignedRolesTable(): string
     {
         return static::getConfig('bastion.tables.assigned_roles', 'assigned_roles');
     }
@@ -60,7 +60,7 @@ class Helper
      *
      * @return array
      */
-    public static function getModelTypeAndId($model, $id)
+    public static function getModelTypeAndId($model, $id): array
     {
         $modelType = null;
         $modelId = null;
@@ -69,7 +69,9 @@ class Helper
             $modelType = static::getMorphOfClass($model);
             $modelId = $id;
             return [$modelType, $modelId];
-        } elseif ($model instanceof Model) {
+        }
+
+        if ($model instanceof Model) {
             $modelType = $model->getMorphClass();
             $modelId = $model->getKey();
             return [$modelType, $modelId];
@@ -85,7 +87,7 @@ class Helper
      *
      * @return string
      */
-    public static function getMorphOfClass($classPath)
+    public static function getMorphOfClass($classPath): string
     {
         $morphMap = Relation::morphMap();
 
@@ -103,7 +105,7 @@ class Helper
      *
      * @return string
      */
-    public static function getPermissionModelClass()
+    public static function getPermissionModelClass(): string
     {
         return static::getConfig('bastion.models.permission', Permission::class);
     }
@@ -113,7 +115,7 @@ class Helper
      *
      * @return string
      */
-    public static function getPermissionsTable()
+    public static function getPermissionsTable(): string
     {
         return static::getConfig('bastion.tables.permissions', 'permissions');
     }
@@ -123,7 +125,7 @@ class Helper
      *
      * @return string
      */
-    public static function getRoleModelClass()
+    public static function getRoleModelClass(): string
     {
         return static::getConfig('bastion.models.role', Role::class);
     }
@@ -133,7 +135,7 @@ class Helper
      *
      * @return string
      */
-    public static function getRolesTable()
+    public static function getRolesTable(): string
     {
         return static::getConfig('bastion.tables.roles', 'roles');
     }

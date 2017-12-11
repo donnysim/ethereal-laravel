@@ -75,9 +75,9 @@ class Args
      * @param \Illuminate\Database\Eloquent\Model|string|array|null $model
      * @param array $payload
      *
-     * @return static
+     * @return \Ethereal\Bastion\Args
      */
-    public static function resolve($ability, $model = null, $payload = [])
+    public static function resolve($ability, $model = null, $payload = []): Args
     {
         return new static($ability, $model, $payload);
     }
@@ -87,7 +87,7 @@ class Args
      *
      * @return string
      */
-    public function ability()
+    public function ability(): string
     {
         return $this->ability;
     }
@@ -97,7 +97,7 @@ class Args
      *
      * @return array
      */
-    public function arguments()
+    public function arguments(): array
     {
         $args = [];
 
@@ -115,7 +115,7 @@ class Args
      *
      * @return string
      */
-    public function method()
+    public function method(): string
     {
         return \strpos($this->ability, '-') !== false ? Str::camel($this->ability) : $this->ability;
     }
@@ -135,7 +135,7 @@ class Args
      *
      * @return string
      */
-    public function modelClass()
+    public function modelClass(): string
     {
         return $this->class;
     }
@@ -145,7 +145,7 @@ class Args
      *
      * @return string
      */
-    public function modelMorph()
+    public function modelMorph(): string
     {
         return $this->morph;
     }
@@ -155,7 +155,7 @@ class Args
      *
      * @return array
      */
-    public function payload()
+    public function payload(): array
     {
         return $this->payload;
     }

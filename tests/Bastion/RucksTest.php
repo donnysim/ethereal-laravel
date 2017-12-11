@@ -12,102 +12,17 @@ class RucksTest extends TestCase
     /**
      * @test
      */
-    public function it_fails_when_user_is_not_authenticated()
-    {
-        $rucks = $this->getRucks();
-        $rucks->setUserResolver(function () {
-            return null;
-        });
-        self::assertFalse($rucks->check('anything')->allowed());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_change_and_resolve_user()
+    public function check_fails_if_before_callback_returns_false()
     {
         $rucks = $this->getRucks();
         $rucks->setUserResolver(function () {
             return new TestUserModel;
         });
-
-        self::assertInstanceOf(TestUserModel::class, $rucks->resolveUser());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_create_new_instance_for_user()
-    {
-        $rucks = $this->getRucks();
-        $rucks->setUserResolver(function () {
-            return null;
-        });
-        $userRucks = $rucks->forUser(new TestUserModel);
-
-        self::assertNull($rucks->resolveUser());
-        self::assertInstanceOf(TestUserModel::class, $userRucks->resolveUser());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_set_and_get_store()
-    {
-        $rucks = $this->getRucks();
-
-        self::assertInstanceOf(Store::class, $rucks->getStore());
-
-        $rucks->setStore(null);
-
-        self::assertNull($rucks->getStore());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_register_policies()
-    {
-        $rucks = $this->getRucks();
-        $rucks->policy('model', 'policy');
-
-        self::assertEquals(['model' => 'policy'], $rucks->policies());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_check_if_policy_is_defined()
-    {
-        $rucks = $this->getRucks();
-        $rucks->policy('model', 'policy');
-
-        self::assertTrue($rucks->hasPolicy('model'));
-        self::assertFalse($rucks->hasPolicy('policy'));
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_register_abilities()
-    {
-        $rucks = $this->getRucks();
-        $rucks->define('kick', function () {
-
+        $rucks->before(function () {
+            return false;
         });
 
-        self::assertTrue($rucks->hasAbility('kick'));
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_get_policy_for_class()
-    {
-        $rucks = $this->getRucks();
-        $rucks->policy(TestUserModel::class, TestPolicy::class);
-
-        self::assertInstanceOf(TestPolicy::class, $rucks->getPolicyFor(TestUserModel::class));
+        self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
     }
 
     /**
@@ -142,17 +57,90 @@ class RucksTest extends TestCase
     /**
      * @test
      */
-    public function check_fails_if_before_callback_returns_false()
+    public function it_can_change_and_resolve_user()
     {
         $rucks = $this->getRucks();
         $rucks->setUserResolver(function () {
             return new TestUserModel;
         });
-        $rucks->before(function () {
-            return false;
+
+        self::assertInstanceOf(TestUserModel::class, $rucks->resolveUser());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_check_if_policy_is_defined()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy('model', 'policy');
+
+        self::assertTrue($rucks->hasPolicy('model'));
+        self::assertFalse($rucks->hasPolicy('policy'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_create_new_instance_for_user()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return null;
+        });
+        $userRucks = $rucks->forUser(new TestUserModel);
+
+        self::assertNull($rucks->resolveUser());
+        self::assertInstanceOf(TestUserModel::class, $userRucks->resolveUser());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_get_policy_for_class()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy(TestUserModel::class, TestPolicy::class);
+
+        self::assertInstanceOf(TestPolicy::class, $rucks->getPolicyFor(TestUserModel::class));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_register_abilities()
+    {
+        $rucks = $this->getRucks();
+        $rucks->define('kick', function () {
+
         });
 
-        self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
+        self::assertTrue($rucks->hasAbility('kick'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_register_policies()
+    {
+        $rucks = $this->getRucks();
+        $rucks->policy('model', 'policy');
+
+        self::assertEquals(['model' => 'policy'], $rucks->policies());
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_set_and_get_store()
+    {
+        $rucks = $this->getRucks();
+
+        self::assertInstanceOf(Store::class, $rucks->getStore());
+
+        $rucks->setStore(null);
+
+        self::assertNull($rucks->getStore());
     }
 
     /**
@@ -190,26 +178,38 @@ class RucksTest extends TestCase
         self::assertTrue($rucks->check('kick', TestUserModel::class)->denied());
     }
 
+    /**
+     * @test
+     */
+    public function it_fails_when_user_is_not_authenticated()
+    {
+        $rucks = $this->getRucks();
+        $rucks->setUserResolver(function () {
+            return null;
+        });
+        self::assertFalse($rucks->check('anything')->allowed());
+    }
+
     protected function getRucks()
     {
-        return new Rucks($this->app, new Store('default'));
+        return new Rucks($this->app, new Store());
     }
 }
 
 class TestPolicy
 {
-    public function kick()
-    {
-
-    }
-
-    public function allow()
+    public function allow(): bool
     {
         return true;
     }
 
-    public function deny()
+    public function deny(): bool
     {
         return false;
+    }
+
+    public function kick()
+    {
+
     }
 }

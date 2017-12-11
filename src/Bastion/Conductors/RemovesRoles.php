@@ -9,7 +9,7 @@ class RemovesRoles
     use Traits\CollectsAuthorities;
 
     /**
-     * Roles to assign to the authority.
+     * Roles to remove from authority.
      *
      * @var array
      */
@@ -23,7 +23,7 @@ class RemovesRoles
     protected $store;
 
     /**
-     * RemovesROles constructor.
+     * RemovesRoles constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $roles
@@ -40,39 +40,35 @@ class RemovesRoles
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
      *
-     * @return $this
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Bastion\Conductors\RemovesRoles
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    public function from($authorities, array $ids = [])
+    public function from($authorities, array $ids = []): RemovesRoles
     {
         $authorities = $this->collectAuthorities($authorities, $ids);
 
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
-        $roles = $roleClass::ensureRoles($this->roles, $this->store->getGuard());
+        $keyName = (new $roleClass)->getKeyName();
+        $roles = $roleClass::ensureRoles($this->roles);
 
         if ($roles->isEmpty()) {
             return $this;
         }
 
         $assignedRoleClass = Helper::getAssignedRoleModelClass();
-        $assignedRole = new $assignedRoleClass();
+        $assignedRoleTable = (new $assignedRoleClass())->getTable();
         $query = $assignedRoleClass::query();
         $queries = 0;
 
         foreach ($authorities as $authority) {
-            /** @var \Illuminate\Database\Eloquent\Model $authority */
-            if (!$authority->exists) {
-                continue;
-            }
-
             $queries++;
 
-            $query->orWhere(function ($query) use ($assignedRole, $roles, $authority) {
-                $query->whereIn("{$assignedRole->getTable()}.role_id", $roles->pluck('id')->all())
-                    ->where("{$assignedRole->getTable()}.model_id", $authority->getKey())
-                    ->where("{$assignedRole->getTable()}.model_type", $authority->getMorphClass());
+            $query->orWhere(function ($query) use ($keyName, $assignedRoleTable, $roles, $authority) {
+                $query->whereIn("{$assignedRoleTable}.role_id", $roles->pluck($keyName)->all())
+                    ->where("{$assignedRoleTable}.model_id", $authority->getKey())
+                    ->where("{$assignedRoleTable}.model_type", $authority->getMorphClass());
             });
         }
 

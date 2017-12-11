@@ -5,7 +5,6 @@ namespace Tests\Bastion\Conductors;
 use Ethereal\Bastion\Conductors\AssignsPermissions;
 use Ethereal\Bastion\Database\Permission;
 use Ethereal\Bastion\Store;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Orchestra\Database\ConsoleServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Tests\Models\TestUserModel;
@@ -14,62 +13,59 @@ class AssignsPermissionsTest extends TestCase
 {
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
      */
     public function it_can_give_action_permission()
     {
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $allow = new AssignsPermissions(new Store('default'), [$user]);
+        $authority = TestUserModel::create(['email' => 'john@doe.com']);
+        $allow = new AssignsPermissions(new Store(), [$authority]);
+
+        self::assertEquals(0, Permission::ofAuthority($authority)->count());
         $allow->to(['edit']);
-
-        self::assertEquals(1, Permission::ofAuthority($user)->count());
+        self::assertEquals('edit', Permission::ofAuthority($authority)->first()->identifier);
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
      */
-    public function it_can_give_multiple_action_permissions()
+    public function it_can_give_action_permission_on_model()
     {
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $allow = new AssignsPermissions(new Store('default'), [$user]);
-        $allow->to(['edit', 'create']);
+        $authority = TestUserModel::create(['email' => 'john@doe.com']);
+        $allow = new AssignsPermissions(new Store(), [$authority]);
 
-        self::assertEquals(2, Permission::ofAuthority($user)->count());
-    }
-
-    /**
-     * @test
-     */
-    public function it_can_give_permission_against_model()
-    {
-        Relation::morphMap([], false);
-
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $allow = new AssignsPermissions(new Store('default'), [$user]);
+        self::assertEquals(0, Permission::ofAuthority($authority)->count());
         $allow->to(['edit'], TestUserModel::class);
-
-        self::assertEquals(1, Permission::ofAuthority($user)->count());
-        $permission = Permission::ofAuthority($user)->first();
-        self::assertEquals('edit', $permission->name);
-        self::assertEquals(TestUserModel::class, $permission->model_type);
-        self::assertNull($permission->model_id);
+        self::assertEquals('edit-Tests\Models\TestUserModel', Permission::ofAuthority($authority)->first()->identifier);
     }
 
     /**
      * @test
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
      */
-    public function it_can_give_permission_against_model_with_id()
+    public function it_can_give_action_permission_on_specific_model()
     {
-        Relation::morphMap([], false);
+        $authority = TestUserModel::create(['email' => 'john@doe.com']);
+        $allow = new AssignsPermissions(new Store(), [$authority]);
 
-        $user = TestUserModel::create(['email' => 'john@example.com']);
-        $allow = new AssignsPermissions(new Store('default'), [$user]);
-        $allow->to(['edit'], TestUserModel::class, 10);
+        self::assertEquals(0, Permission::ofAuthority($authority)->count());
+        $allow->to(['edit'], TestUserModel::class, 1);
+        self::assertEquals('edit-Tests\Models\TestUserModel-1', Permission::ofAuthority($authority)->first()->identifier);
+    }
 
-        self::assertEquals(1, Permission::ofAuthority($user)->count());
-        $permission = Permission::ofAuthority($user)->first();
-        self::assertEquals('edit', $permission->name);
-        self::assertEquals(TestUserModel::class, $permission->model_type);
-        self::assertEquals(10, $permission->model_id);
+    /**
+     * @test
+     * @expectedException \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     */
+    public function it_throws_exception_if_authority_does_not_exist()
+    {
+        $allow = new AssignsPermissions(new Store(), [new TestUserModel()]);
+        $allow->to(['edit']);
     }
 
     /**
@@ -79,7 +75,7 @@ class AssignsPermissionsTest extends TestCase
      *
      * @return array
      */
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [ConsoleServiceProvider::class];
     }

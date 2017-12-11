@@ -8,5 +8,10 @@ class AssignedPermission extends Ethereal
 {
     public $timestamps = false;
 
-    protected $columns = ['permission_id', 'model_id', 'model_type'];
+    protected $casts = [
+        'permission_id' => 'int',
+        'forbid' => 'bool',
+    ];
+
+    protected $columns = ['permission_id', 'model_id', 'model_type', 'forbid'];
 }

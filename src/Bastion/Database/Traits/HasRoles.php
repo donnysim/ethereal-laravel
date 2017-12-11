@@ -3,6 +3,7 @@
 namespace Ethereal\Bastion\Database\Traits;
 
 use Ethereal\Bastion\Helper;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 trait HasRoles
 {
@@ -11,7 +12,7 @@ trait HasRoles
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
      */
-    public function roles()
+    public function roles(): MorphToMany
     {
         return $this->morphToMany(Helper::getRoleModelClass(), 'model', Helper::getAssignedRolesTable(), 'model_id', 'role_id')
             ->where('guard', \app('bastion')->getGuard());
@@ -30,7 +31,6 @@ trait HasRoles
         $rt = Helper::getRolesTable();
 
         return $query->join($art, function ($join) use ($art) {
-
             $join->on("$art.model_id", '=', "{$this->getTable()}.{$this->getKeyName()}")
                 ->where("$art.model_type", $this->getMorphClass());
         })->join($rt, "$rt.id", '=', "$art.role_id");

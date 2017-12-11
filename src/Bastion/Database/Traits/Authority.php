@@ -2,9 +2,12 @@
 
 namespace Ethereal\Bastion\Database\Traits;
 
-use Ethereal\Bastion\Conductors\ChecksPermissions;
-use Ethereal\Bastion\Conductors\ChecksRoles;
+use Ethereal\Bastion\Conductors\AssignsRoles;
+use Ethereal\Bastion\Conductors\ForbidsPermissions;
+use Ethereal\Bastion\Conductors\PermitsPermissions;
+use Ethereal\Bastion\Conductors\RemovesPermissions;
 use Ethereal\Bastion\Conductors\RemovesRoles;
+use Ethereal\Bastion\Database\AssignedPermission;
 
 trait Authority
 {
@@ -16,48 +19,78 @@ trait Authority
      * @param string|array $permissions
      * @param string|\Illuminate\Database\Eloquent\Model|null $model
      * @param int|null $id
+     *
+     * @return \Ethereal\Bastion\Database\AssignedPermission
      */
-    public function allow($permissions, $model = null, $id = null)
+    public function allow($permissions, $model = null, $id = null): AssignedPermission
     {
-        \app('bastion')->allow($this)->to((array)$permissions, $model, $id);
+        return \app('bastion')->allow($this)->to((array)$permissions, $model, $id);
     }
 
     /**
      * Assign roles to this authority.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $roles
+     *
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
      */
-    public function assign($roles)
+    public function assign($roles): AssignsRoles
     {
-        \app('bastion')->assign(\is_array($roles) ? $roles : \func_get_args())->to($this);
+        return \app('bastion')->assign(\is_array($roles) ? $roles : \func_get_args())->to($this);
     }
 
     /**
-     * Determine if authority has permission.
+     * Check if authority has permission.
      *
-     * @param string $permission
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|array $permission
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function can($permission, $model = null)
+    public function can($permission, $model = null): bool
     {
-        return (new ChecksPermissions(\app('bastion')->getStore(), $this))->can($permission, $model);
+        return \app('bastion')->can($this, $permission, $model);
     }
 
     /**
-     * Determine if authority does not have permission.
+     * Check if authority does not have a permission.
      *
-     * @param string $ability
-     * @param \Illuminate\Database\Eloquent\Model|string|null $model
+     * @param string|array $permission
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function cannot($ability, $model = null)
+    public function cannot($permission, $model = null): bool
     {
-        return !$this->can($ability, $model);
+        return !$this->can($permission, $model);
+    }
+
+    /**
+     * Remove permission from this authority.
+     *
+     * @param string|array $permissions
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param int|null $id
+     *
+     * @return \Ethereal\Bastion\Conductors\RemovesPermissions
+     */
+    public function disallow($permissions, $model = null, $id = null): RemovesPermissions
+    {
+        return \app('bastion')->disallow($this)->to((array)$permissions, $model, $id);
+    }
+
+    /**
+     * Forbid permission for this authority.
+     *
+     * @param string|array $permissions
+     * @param string|\Illuminate\Database\Eloquent\Model|null $model
+     * @param int|null $id
+     *
+     * @return \Ethereal\Bastion\Conductors\ForbidsPermissions
+     */
+    public function forbid($permissions, $model = null, $id = null): ForbidsPermissions
+    {
+        return \app('bastion')->forbid($this)->to((array)$permissions, $model, $id);
     }
 
     /**
@@ -66,11 +99,10 @@ trait Authority
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function isA($role)
+    public function isA($role): bool
     {
-        return (new ChecksRoles(\app('bastion')->getStore(), $this))->a(\is_array($role) ? $role : \func_get_args());
+        return \app('bastion')->is($this)->a(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
@@ -79,9 +111,8 @@ trait Authority
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function isAn($role)
+    public function isAn($role): bool
     {
         return $this->isA(\is_array($role) ? $role : \func_get_args());
     }
@@ -92,11 +123,10 @@ trait Authority
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function isNotA($role)
+    public function isNotA($role): bool
     {
-        return (new ChecksRoles(\app('bastion')->getStore(), $this))->notA(\is_array($role) ? $role : \func_get_args());
+        return \app('bastion')->is($this)->notA(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
@@ -105,25 +135,22 @@ trait Authority
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function isNotAn($role)
+    public function isNotAn($role): bool
     {
         return $this->isNotA(\is_array($role) ? $role : \func_get_args());
     }
 
     /**
-     * Remove all roles and assign the given roles to authority.
+     * Permit forbidden permissions to this authority.
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Bastion\Conductors\PermitsPermissions
      */
-    public function reassign($roles)
+    public function permit($roles): PermitsPermissions
     {
-        $this->roles()->detach();
-        $this->assign(\is_array($roles) ? $roles : \func_get_args());
+        return \app('bastion')->assign(\is_array($roles) ? $roles : \func_get_args())->to($this);
     }
 
     /**
@@ -131,11 +158,12 @@ trait Authority
      *
      * @param array|string|\Illuminate\Database\Eloquent\Model $roles
      *
+     * @return \Ethereal\Bastion\Conductors\RemovesRoles
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function retract($roles)
+    public function retract($roles): RemovesRoles
     {
-        (new RemovesRoles(\app('bastion')->getStore(), \is_array($roles) ? $roles : \func_get_args()))->from($this);
+        return \app('bastion')->retract(\is_array($roles) ? $roles : \func_get_args())->to($this);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Ethereal\Bastion\Conductors\Traits;
 
+use Ethereal\Bastion\Exceptions\InvalidAuthorityException;
 use Illuminate\Database\Eloquent\Model;
 use Traversable;
 
@@ -14,31 +15,34 @@ trait CollectsAuthorities
      * @param array|int|null $ids
      *
      * @return array
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    protected function collectAuthorities($listOrClass, $ids = [])
+    protected function collectAuthorities($listOrClass, $ids = []): array
     {
-        $targets = [];
-
         if (\is_array($listOrClass) || $listOrClass instanceof Traversable) {
-            $targets = $listOrClass;
-        } elseif ($listOrClass instanceof Model) {
-            $targets = [$listOrClass];
-        } elseif (!empty($ids)) {
-            $models = [];
-
-            foreach ((array)$ids as $id) {
-                /** @var \Ethereal\Database\Ethereal $model */
-                $model = new $listOrClass;
-                $model->setAttribute($model->getKeyName(), $id);
-                $model->exists = true;
-                $models[] = $model;
-            }
-
-            $targets = $models;
-        } else {
-            $targets[] = $listOrClass;
+            return $listOrClass;
         }
 
-        return $targets;
+        if ($listOrClass instanceof Model) {
+            if (!$listOrClass->exists) {
+                throw new InvalidAuthorityException('Authority with does not exist.');
+            }
+
+            return [$listOrClass];
+        }
+
+        if (\is_string($listOrClass) && !empty($ids)) {
+            $model = new $listOrClass();
+            $models = $listOrClass::whereIn($model->getKeyName(), $ids)->get([$model->getKeyName()]);
+
+            if (\count($ids) !== $models->count()) {
+                $missing = array_values(array_diff($ids, $models->pluck($model->getKeyName())->all()));
+                throw new InvalidAuthorityException('Authority with id ' . array_first($missing) . ' does not exist.');
+            }
+
+            return $models->all();
+        }
+
+        return [];
     }
 }

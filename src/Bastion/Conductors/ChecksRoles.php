@@ -38,9 +38,8 @@ class ChecksRoles
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function a($role)
+    public function a($role): bool
     {
         return $this->hasRole($this->authority, \is_array($role) ? $role : \func_get_args());
     }
@@ -51,9 +50,8 @@ class ChecksRoles
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function all($role)
+    public function all($role): bool
     {
         return $this->hasRole($this->authority, \is_array($role) ? $role : \func_get_args(), 'and');
     }
@@ -64,9 +62,8 @@ class ChecksRoles
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function an($role)
+    public function an($role): bool
     {
         return $this->a(\is_array($role) ? $role : \func_get_args());
     }
@@ -77,9 +74,8 @@ class ChecksRoles
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function notA($role)
+    public function notA($role): bool
     {
         return $this->hasRole($this->authority, \is_array($role) ? $role : \func_get_args(), 'not');
     }
@@ -90,9 +86,8 @@ class ChecksRoles
      * @param array|string $role
      *
      * @return bool
-     * @throws \InvalidArgumentException
      */
-    public function notAn($role)
+    public function notAn($role): bool
     {
         return $this->notA(\is_array($role) ? $role : \func_get_args());
     }
@@ -106,13 +101,15 @@ class ChecksRoles
      *
      * @return bool
      */
-    protected function hasRole(Model $authority, $roles, $boolean = 'or')
+    protected function hasRole(Model $authority, $roles, $boolean = 'or'): bool
     {
-        $available = $this->store->getMap($authority)->getRoleNames()->intersect($roles);
+        $available = $this->store->getMap($authority)->roleNames()->intersect($roles);
 
         if ($boolean === 'or') {
             return $available->count() > 0;
-        } elseif ($boolean === 'not') {
+        }
+
+        if ($boolean === 'not') {
             return $available->isEmpty();
         }
 

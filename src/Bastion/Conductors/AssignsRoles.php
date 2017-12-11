@@ -3,7 +3,6 @@
 namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
-use InvalidArgumentException;
 
 class AssignsRoles
 {
@@ -41,27 +40,27 @@ class AssignsRoles
      * @param \Illuminate\Database\Eloquent\Model|array|string $authorities
      * @param array $ids
      *
-     * @return $this
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
-     * @throws \InvalidArgumentException
+     * @return \Ethereal\Bastion\Conductors\AssignsRoles
+     * @throws \Ethereal\Bastion\Exceptions\InvalidRoleException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    public function to($authorities, array $ids = [])
+    public function to($authorities, array $ids = []): AssignsRoles
     {
         $authorities = $this->collectAuthorities($authorities, $ids);
-
         /** @var \Ethereal\Bastion\Database\Role $roleClass */
         $roleClass = Helper::getRoleModelClass();
-        $roles = $roleClass::ensureRoles($this->roles, $this->store->getGuard());
+        $keyName = (new $roleClass)->getKeyName();
+        $roles = $roleClass::ensureRoles($this->roles)->keyBy($keyName);
 
         if ($roles->isEmpty()) {
             return $this;
         }
 
         foreach ($authorities as $authority) {
-            $missingRolesKeys = $roles->keys()->diff($roleClass::ofAuthority($authority)->keys());
+            $missingRolesKeys = $roles->keys()->diff($roleClass::allRoles($authority)->pluck($keyName));
 
             foreach ($missingRolesKeys as $missingRoleId) {
-                $roles->get($missingRoleId)->assignTo($authority, $this->store->getGuard());
+                $roles->get($missingRoleId)->assignTo($authority);
             }
         }
 

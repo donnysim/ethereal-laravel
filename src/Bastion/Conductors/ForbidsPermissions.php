@@ -5,7 +5,7 @@ namespace Ethereal\Bastion\Conductors;
 use Ethereal\Bastion\Exceptions\InvalidAuthorityException;
 use Ethereal\Bastion\Helper;
 
-class RemovesPermissions
+class ForbidsPermissions
 {
     use Traits\CollectsAuthorities;
 
@@ -24,7 +24,7 @@ class RemovesPermissions
     protected $store;
 
     /**
-     * RemovesPermissions constructor.
+     * AssignsPermissions constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param array $authorities
@@ -36,17 +36,17 @@ class RemovesPermissions
     }
 
     /**
-     * Remove permissions from one or more authorities.
+     * Assign permissions to one or more authorities.
      *
      * @param $permissions
      * @param string|\Illuminate\Database\Eloquent\Model|null $model
      * @param int|null $id
      *
-     * @return \Ethereal\Bastion\Conductors\RemovesPermissions
-     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
+     * @return \Ethereal\Bastion\Conductors\ForbidsPermissions
      * @throws \Ethereal\Bastion\Exceptions\InvalidPermissionException
+     * @throws \Ethereal\Bastion\Exceptions\InvalidAuthorityException
      */
-    public function to($permissions, $model = null, $id = null): RemovesPermissions
+    public function to($permissions, $model = null, $id = null): ForbidsPermissions
     {
         $authorities = $this->collectAuthorities($this->authorities);
 
@@ -59,34 +59,30 @@ class RemovesPermissions
             return $this;
         }
 
-        $assignedPermissionModelClass = Helper::getAssignedPermissionModelClass();
-        $assignedPermission = new $assignedPermissionModelClass();
-        $apTable = $assignedPermission->getTable();
-        $query = $assignedPermissionModelClass::query();
-        $queries = 0;
-
         foreach ($authorities as $authority) {
             if (!$authority->exists) {
                 throw new InvalidAuthorityException('Cannot assign permissions to authority that does not exist.');
             }
 
-            $query->orWhere(function ($query) use ($keyName, $apTable, $collection, $authority) {
-                $query
-                    ->whereIn("{$apTable}.permission_id", $collection->pluck($keyName)->all())
-                    ->where([
-                        "{$apTable}.model_type" => $authority->getMorphClass(),
-                        "{$apTable}.model_id" => $authority->getKey(),
-                        'forbid' => false,
-                    ]);
-            });
+            $authorityPermissions = $permissionClass::ofAuthority($authority);
+            $missingPermissionKeys = $collection->keys()->diff($authorityPermissions->where('forbid', true)->pluck($keyName));
+            foreach ($missingPermissionKeys as $missingPermissionKey) {
+                $permission = $collection->get($missingPermissionKey);
+                $allowed = $authorityPermissions->first(function ($entry) use ($permission) {
+                    return
+                        $entry->getKey() === $permission->getKey() &&
+                        $entry->forbid === false;
+                });
 
-            $queries++;
+                if ($allowed) {
+                    $allowed->removeFrom($authority, false);
+                }
+
+                $permission->assignTo($authority, true);
+            }
         }
 
-        if ($queries > 0) {
-            $query->delete();
-            $this->store->clearCache();
-        }
+        $this->store->clearCache();
 
         return $this;
     }

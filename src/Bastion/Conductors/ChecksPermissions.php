@@ -4,7 +4,6 @@ namespace Ethereal\Bastion\Conductors;
 
 use Ethereal\Bastion\Helper;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class ChecksPermissions
 {
@@ -23,7 +22,7 @@ class ChecksPermissions
     protected $store;
 
     /**
-     * ChecksRoles constructor.
+     * ChecksPermissions constructor.
      *
      * @param \Ethereal\Bastion\Store $store
      * @param \Illuminate\Database\Eloquent\Model $authority
@@ -43,18 +42,29 @@ class ChecksPermissions
      * @return bool
      * @throws \InvalidArgumentException
      */
-    public function can($action, $model = null)
+    public function can($action, $model = null): bool
     {
-        $permissions = $this->store->getMap($this->authority)->getPermissionIdentifiers();
+        $map = $this->store->getMap($this->authority);
+        $permitted = $map->permissions()->filter(function ($permission) {
+            return !$permission->forbid;
+        })->pluck('identifier');
+        $forbidden = $map->permissions()->filter(function ($permission) {
+            return $permission->forbid;
+        })->pluck('identifier');
         $matches = $this->buildMatches($action, $model);
 
-        foreach ($permissions as $permission) {
-            if (\in_array($permission, $matches, true)) {
-                return true;
+        $allowed = false;
+        foreach ($matches as $match) {
+            if ($forbidden->contains($match)) {
+                return false;
+            }
+
+            if (!$allowed && $permitted->contains($match)) {
+                $allowed = true;
             }
         }
 
-        return false;
+        return $allowed;
     }
 
     /**
@@ -65,30 +75,24 @@ class ChecksPermissions
      *
      * @return array
      */
-    protected function buildMatches($action, $model = null)
+    protected function buildMatches($action, $model = null): array
     {
-        $matches = [];
-        $parts = [\strtolower($action)];
-
-        if ($model) {
-            if (\is_string($model)) {
-                $parts[] = \strtolower(Helper::getMorphOfClass($model));
-                $matches[] = \implode('-', $parts);
-            } else {
-                $parts[] = \strtolower($model->getMorphClass());
-                $matches[] = \implode('-', $parts);
-
-                if ($model->exists) {
-                    $parts[] = $model->getKey();
-                }
-            }
-
-            $matches[] = '*-*';
+        if ($model === null) {
+            $matches = ['*', '*-*', $action];
         } else {
-            $matches[] = '*';
+            if (\is_string($model)) {
+                $matches = ['*-*', "$action-*", "$action-" . Helper::getMorphOfClass($model), '*-' . Helper::getMorphOfClass($model)];
+            } else {
+                $matches = [
+                    '*-*',
+                    "$action-*",
+                    '*-' . $model->getMorphClass(),
+                    "$action-" . $model->getMorphClass(),
+                    '*-' . $model->getMorphClass() . '-' . $model->getKey(),
+                    "$action-" . $model->getMorphClass() . '-' . $model->getKey(),
+                ];
+            }
         }
-
-        $matches[] = \implode('-', $parts);
 
         return $matches;
     }
