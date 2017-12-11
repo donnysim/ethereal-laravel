@@ -14,8 +14,7 @@ trait HasRoles
      */
     public function roles(): MorphToMany
     {
-        return $this->morphToMany(Helper::getRoleModelClass(), 'model', Helper::getAssignedRolesTable(), 'model_id', 'role_id')
-            ->where('guard', \app('bastion')->getGuard());
+        return $this->morphToMany(Helper::getRoleModelClass(), 'model', Helper::getAssignedRolesTable(), 'model_id', 'role_id');
     }
 
     /**
