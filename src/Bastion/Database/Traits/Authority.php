@@ -8,6 +8,7 @@ use Ethereal\Bastion\Conductors\PermitsPermissions;
 use Ethereal\Bastion\Conductors\RemovesPermissions;
 use Ethereal\Bastion\Conductors\RemovesRoles;
 use Ethereal\Bastion\Database\AssignedPermission;
+use Ethereal\Bastion\Map;
 
 trait Authority
 {
@@ -139,6 +140,16 @@ trait Authority
     public function isNotAn($role): bool
     {
         return $this->isNotA(\is_array($role) ? $role : \func_get_args());
+    }
+
+    /**
+     * Get permissions map.
+     *
+     * @return \Ethereal\Bastion\Map
+     */
+    public function permissionsMap(): Map
+    {
+        return \app('bastion')->store()->getMap($this);
     }
 
     /**
