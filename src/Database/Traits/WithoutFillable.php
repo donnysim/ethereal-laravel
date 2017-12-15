@@ -23,7 +23,7 @@ trait WithoutFillable
      *
      * @return bool
      */
-    public function totallyGuarded()
+    public function totallyGuarded(): bool
     {
         return false;
     }
@@ -35,7 +35,7 @@ trait WithoutFillable
      *
      * @return bool
      */
-    public function isGuarded($key)
+    public function isGuarded($key): bool
     {
         return false;
     }
@@ -47,7 +47,7 @@ trait WithoutFillable
      *
      * @return bool
      */
-    public function isFillable($key)
+    public function isFillable($key): bool
     {
         return !Str::startsWith($key, '_');
     }
@@ -59,7 +59,7 @@ trait WithoutFillable
      *
      * @return array
      */
-    protected function fillableFromArray(array $attributes)
+    protected function fillableFromArray(array $attributes): array
     {
         return $attributes;
     }
