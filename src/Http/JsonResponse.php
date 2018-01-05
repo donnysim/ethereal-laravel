@@ -127,7 +127,7 @@ class JsonResponse extends BaseJsonResponse
      */
     public function data($data)
     {
-        if ($this->data) {
+        if (!$this->data) {
             $this->data = [];
         }
 
