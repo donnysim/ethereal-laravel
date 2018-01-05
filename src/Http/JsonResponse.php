@@ -2,6 +2,7 @@
 
 namespace Ethereal\Http;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
@@ -126,7 +127,15 @@ class JsonResponse extends BaseJsonResponse
      */
     public function data($data)
     {
-        $this->setContent($data);
+        if ($this->data) {
+            $this->data = [];
+        }
+
+        if (\is_array($data)) {
+            $this->setContent(\array_merge($this->data, $data));
+        } elseif ($data instanceof Arrayable) {
+            $this->setContent(\array_merge($this->data, $data->toArray()));
+        }
 
         return $this;
     }
@@ -372,7 +381,7 @@ class JsonResponse extends BaseJsonResponse
     /**
      * Get exception message.
      *
-     * @return string
+     * @return string|null
      */
     protected function getErrorMessage()
     {
