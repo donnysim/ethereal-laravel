@@ -35,6 +35,13 @@ class JsonResponse extends BaseJsonResponse
     protected $error;
 
     /**
+     * Response error message.
+     *
+     * @var string|null
+     */
+    protected $errorMessage;
+
+    /**
      * Error type.
      *
      * @var string|null
@@ -69,9 +76,9 @@ class JsonResponse extends BaseJsonResponse
      * @param int $status
      * @param array $headers
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public static function make($data = null, $status = 200, array $headers = [])
+    public static function make($data = null, $status = 200, array $headers = []): JsonResponse
     {
         $instance = new static(null, $status, $headers);
 
@@ -84,10 +91,10 @@ class JsonResponse extends BaseJsonResponse
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      */
-    public function add($key, $value = null)
+    public function add($key, $value = null): JsonResponse
     {
         if (!$this->fields) {
             $this->fields = [];
@@ -107,10 +114,10 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param int $code
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      * @throws \InvalidArgumentException
      */
-    public function code($code)
+    public function code($code): JsonResponse
     {
         $this->setStatusCode($code);
 
@@ -122,10 +129,10 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param mixed $data
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      */
-    public function data($data)
+    public function data($data): JsonResponse
     {
         if (!$this->data) {
             $this->data = [];
@@ -145,9 +152,9 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param bool $value
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function debug($value = true)
+    public function debug($value = true): JsonResponse
     {
         $this->debug = $value;
 
@@ -158,13 +165,14 @@ class JsonResponse extends BaseJsonResponse
      * Response error.
      *
      * @param \Exception|\Illuminate\Validation\Validator|\Illuminate\Contracts\Support\MessageBag|string $error
-     * @param string|null $type
+     * @param string|null $message
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function error($error, $type = null)
+    public function error($error, $message = null): JsonResponse
     {
         $this->error = $error;
+        $this->errorMessage = $message;
 
         return $this;
     }
@@ -177,7 +185,7 @@ class JsonResponse extends BaseJsonResponse
      * @throws \Exception
      * @throws \InvalidArgumentException
      */
-    public function getContent()
+    public function getContent(): string
     {
         if ($this->isInformational() || $this->isEmpty()) {
             return '';
@@ -201,7 +209,7 @@ class JsonResponse extends BaseJsonResponse
      *
      * @return array
      */
-    public function getResponseData()
+    public function getResponseData(): array
     {
         $responseData = [
             'success' => $this->isSuccessful(),
@@ -230,9 +238,9 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param string $message
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function message($message)
+    public function message($message): JsonResponse
     {
         $this->message = $message;
 
@@ -245,10 +253,10 @@ class JsonResponse extends BaseJsonResponse
      * @param string|array $key
      * @param mixed $value This value will be used only if key is a string.
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      */
-    public function meta($key, $value = null)
+    public function meta($key, $value = null): JsonResponse
     {
         if (!$this->meta) {
             $this->meta = [];
@@ -268,12 +276,12 @@ class JsonResponse extends BaseJsonResponse
     /**
      * Sends content for the current web response.
      *
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      * @throws \Exception
      * @throws \InvalidArgumentException
      */
-    public function sendContent()
+    public function sendContent(): JsonResponse
     {
         echo $this->getContent();
 
@@ -290,11 +298,9 @@ class JsonResponse extends BaseJsonResponse
         if ($this->callback !== null) {
             // Not using application/javascript for compatibility reasons with older browsers.
             $this->headers->set('Content-Type', 'text/javascript');
-        }
-
-        // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
-        // in order to not overwrite a custom definition.
-        elseif (!$this->headers->has('Content-Type') || $this->headers->get('Content-Type') === 'text/javascript') {
+        } elseif (!$this->headers->has('Content-Type') || $this->headers->get('Content-Type') === 'text/javascript') {
+            // Only set the header when there is none or when it equals 'text/javascript' (from a previous update with callback)
+            // in order to not overwrite a custom definition.
             $this->headers->set('Content-Type', 'application/json');
         } else {
             $this->headers->set('Content-Type', 'application/json');
@@ -308,9 +314,9 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param mixed $content
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function setContent($content)
+    public function setContent($content): JsonResponse
     {
         $this->data = $content;
 
@@ -323,10 +329,10 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param array|mixed $data Content that can be cast to array.
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      * @throws \UnexpectedValueException
      */
-    public function setData($data = [])
+    public function setData($data = []): JsonResponse
     {
         $this->setContent($data);
 
@@ -338,9 +344,9 @@ class JsonResponse extends BaseJsonResponse
      *
      * @param mixed $data
      *
-     * @return $this
+     * @return \Ethereal\Http\JsonResponse
      */
-    public function setMeta($data)
+    public function setMeta($data): JsonResponse
     {
         $this->meta = $data;
 
@@ -385,10 +391,18 @@ class JsonResponse extends BaseJsonResponse
      */
     protected function getErrorMessage()
     {
+        if ($this->errorMessage) {
+            return $this->errorMessage;
+        }
+
         if (\is_string($this->error)) {
             return $this->error;
         }
 
-        return $this->error->getMessage();
+        if (\is_object($this->error) && \method_exists($this->error, 'getMessage')) {
+            return $this->error->getMessage();
+        }
+
+        return null;
     }
 }
