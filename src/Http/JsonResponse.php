@@ -5,6 +5,7 @@ namespace Ethereal\Http;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\ResponseTrait;
 use Illuminate\Support\Arr;
+use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\JsonResponse as BaseJsonResponse;
 use UnexpectedValueException;
@@ -379,6 +380,8 @@ class JsonResponse extends BaseJsonResponse
             } else {
                 $error['errors'] = [];
             }
+        } elseif ($this->error instanceof MessageBag) {
+            $error['errors'] = $this->error->getMessages();
         }
 
         return $error;
