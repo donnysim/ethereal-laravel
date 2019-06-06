@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class Ethereal extends Model
 {
@@ -65,8 +66,8 @@ class Ethereal extends Model
                 $this->setAttribute($key, $value);
             } elseif ($totallyGuarded) {
                 throw new MassAssignmentException($key);
-            } elseif (in_array($key, $this->fillableRelations, true)) {
-                $this->setRelation($key, $value);
+            } elseif (in_array(Str::camel($key), $this->fillableRelations, true)) {
+                $this->setRelation(Str::camel($key), $value);
             }
         }
 
